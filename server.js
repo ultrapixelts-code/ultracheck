@@ -16,7 +16,7 @@ app.use(express.json());
 
 // Serve la pagina principale
 app.get("/", (req, res) => {
-  res.sendFile("ultracheck.html", { root: "." });
+  res.sendFile("index.html", { root: "." });
 });
 
 // 📂 Upload temporaneo dei file

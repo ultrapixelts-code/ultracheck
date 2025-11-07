@@ -1,0 +1,1875 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Étiquettes Rhônalpines — Le migliori etichette al mondo</title>
+  <meta name="description" content="Étiquettes premium tra Italia e Francia: doratura a caldo, rilievi 3D, vernici selettive, taglio laser. Campioni rapidi dalla zona di Lione." />
+
+  <!-- Preload immagini hero/orbit/zoom per evitare flash -->
+  <link rel="preload" as="image" href="5.png">
+  <link rel="preload" as="image" href="6.png">
+  <link rel="preload" as="image" href="7.png">
+  <link rel="preload" as="image" href="8.png">
+  <link rel="preload" as="image" href="9.png">
+  <link rel="preload" as="image" href="10.png">
+  <link rel="preload" as="image" href="11.png">
+  <link rel="preload" as="image" href="12.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800;900&display=swap" rel="stylesheet">
+
+<style>
+/* =========================
+   0) VARIABILI & BASE
+   ========================= */
+:root {
+  --bg: #000;
+  --bg-2: #0f0f11;
+  --text: #f5f5f7;
+  --muted: #a1a1aa;
+  --accent: #009dff;
+  --glass: rgba(255,255,255,.06);
+  --grid: #1b1b1f;
+  --card: #111115;
+  --stroke: rgba(255,255,255,.12);
+  --hero-src: url('0.png');
+  --zoom-src: url('gd.png');
+  --header-h: calc(64px + env(safe-area-inset-top));
+}
+
+html {
+  scroll-padding-top: calc(var(--header-h) + 16px);
+  scroll-behavior: smooth;
+}
+
+section[id], .testimonials, .contact, .social-cta {
+  scroll-margin-top: calc(var(--header-h) + 16px);
+}
+
+@media (max-width: 560px) {
+  html { scroll-padding-top: calc(var(--header-h) + 20px); }
+  section[id], .testimonials, .contact, .social-cta {
+    scroll-margin-top: calc(var(--header-h) + 20px);
+  }
+}
+
+header.nav {
+  height: var(--header-h);
+  padding-top: calc(env(safe-area-inset-top) + 6px);
+  overflow: visible !important;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+}
+
+/* =========================
+   1) NAV
+   ========================= */
+header.nav {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  height: var(--header-h);
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 50;
+  backdrop-filter: saturate(140%) blur(10px);
+  background: linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,0));
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  overflow-x: hidden;
+}
+
+.brand {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 800;
+  letter-spacing: .2px;
+  z-index: 51;
+}
+
+.brand .logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 3px;
+  background: conic-gradient(from 180deg at 50% 50%, #009fe3, #e6007e, #ffed00, #000000);
+  animation: spin 8s linear infinite;
+}
+
+@keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+
+nav {
+  display: flex;
+  align-items: center;
+}
+
+nav ul {
+  display: flex;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex-wrap: wrap;
+}
+
+nav a {
+  display: inline-flex;
+  align-items: center;
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: var(--glass);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+
+nav a:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.hamburger {
+  display: none;
+  width: 28px;
+  height: 28px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+  z-index: 51;
+}
+
+.hamburger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--text);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.hamburger.active span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.hamburger.active span:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* Mobile styles */
+@media (max-width: 560px) {
+  header.nav {
+    padding: 0 12px;
+    flex-wrap: nowrap; /* Prevent wrapping of logo and hamburger */
+  }
+
+  nav {
+    position: fixed;
+    top: var(--header-h);
+    left: 0;
+    right: 0;
+    background: rgba(10,10,10,.95);
+    border-top: 1px solid rgba(255,255,255,.06);
+    padding: 16px;
+    transform: translateY(-100%);
+    transition: transform 0.3s ease;
+    z-index: 50;
+  }
+
+  nav.active {
+    transform: translateY(0);
+  }
+
+  nav ul {
+    display: none; /* Hidden by default */
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  nav.active ul {
+    display: flex; /* Shown when nav is active */
+  }
+
+  nav a {
+    width: 100%;
+    justify-content: center;
+    height: 40px;
+    font-size: 14px;
+    border-radius: 12px;
+  }
+
+  .hamburger {
+    display: flex;
+  }
+}
+
+/* =========================
+   2) HERO
+   ========================= */
+.hero {
+  min-height: 120svh;
+  display: grid;
+  place-items: center;
+  position: relative;
+  overflow: visible !important;
+  isolation: isolate;
+  text-align: center;
+  padding-top: calc(var(--header-h) + 5vh);
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  background: var(--hero-src) center/cover no-repeat;
+  filter: saturate(115%) contrast(110%) brightness(.95);
+  transform: scale(1.30);
+  transition: transform 1s ease;
+  animation: kenburns 30s infinite alternate ease-in-out;
+  will-change: transform;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(80% 60% at 50% 30%, rgba(0,0,0,.2), rgba(0,0,0,.75));
+}
+
+@keyframes kenburns { 0% { transform: scale(1.50) translate(0,0); } 100% { transform: scale(1.2) translate(-2%,-2%); } }
+
+.hero h1 {
+  font-size: clamp(42px, 8vw, 120px);
+  line-height: .9;
+  margin: 0;
+  font-weight: 900;
+  position: relative;
+  animation: fadeInUp 1.4s ease;
+  z-index: 2;
+}
+
+.sub {
+  margin-top: 18px;
+  font-size: clamp(16px, 2vw, 20px);
+  color: var(--muted);
+  position: relative;
+  animation: fadeIn 1.2s ease .2s both;
+  z-index: 2;
+}
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.chips { display: none !important; }
+
+.badges-stack {
+  position: absolute;
+  left: 50%;
+  bottom: 9%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 2;
+  width: min(92vw, 900px);
+}
+
+.badges-row.top {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #fff;
+  text-decoration: none;
+  backdrop-filter: blur(10px) saturate(140%);
+  background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+  border: 1px solid rgba(255,255,255,.18);
+  transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.badge:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255,255,255,.35);
+  background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.06));
+}
+
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, max-content));
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: .2px;
+  backdrop-filter: blur(10px) saturate(140%);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+  border: 1px solid rgba(255,255,255,.15);
+  transition: transform .2s ease, border-color .2s ease, background .2s ease;
+}
+
+.chip:hover {
+  transform: translateY(-2px) scale(1.03);
+  border-color: rgba(255,255,255,.32);
+  background: linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.05));
+}
+
+@media (max-width: 720px) {
+  .badges-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .badges-grid .chip {
+    width: 100%;
+    padding: 0 12px;
+    height: 34px;
+  }
+}
+
+@media (max-width: 560px) {
+  .badges-stack { bottom: 8%; gap: 10px; }
+  .badge { height: 36px; padding: 0 14px; font-size: 12.8px; }
+  .chip { height: 34px; padding: 0 12px; font-size: 12.6px; }
+}
+
+/* =========================
+   3) ORBIT 3D
+   ========================= */
+.orbit {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  perspective: 1400px;
+  z-index: 1;
+}
+
+.orbit-ring {
+  position: relative;
+  width: min(90vw, 1100px);
+  height: min(90vw, 1100px);
+  transform-style: preserve-3d;
+}
+
+.label-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 140px;
+  height: 180px;
+  border-radius: 18px;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  box-shadow: 0 12px 40px rgba(0,0,0,.45);
+  border: 1px solid rgba(255,255,255,.1);
+  background: #0f0f12;
+  opacity: .30;
+  filter: saturate(.80) brightness(.85);
+  transition: opacity .25s ease, filter .25s ease, transform .25s ease, box-shadow .25s ease;
+  backface-visibility: hidden;
+  z-index: 1;
+}
+
+.label-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.label-card.is-front {
+  opacity: 1;
+  filter: saturate(1.35) brightness(1.150) drop-shadow(0 28px 90px rgba(0,0,0,.65));
+  z-index: 3;
+  box-shadow: 0 30px 100px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.12) inset, 0 0 22px rgba(155,135,245,.35);
+}
+
+.label-card.is-front::after,
+.label-card.is-front::before {
+  content: none !important;
+  animation: none !important;
+}
+
+/* =========================
+   4) STICKY ZOOM
+   ========================= */
+.sticky-section {
+  position: relative;
+  min-height: 220vh;
+  contain: layout paint;
+  overflow: visible;
+}
+
+.sticky {
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  will-change: transform;
+}
+
+.zoom-stage {
+  position: relative;
+  width: min(1000px, 92vw);
+  height: min(1000px, 92vw);
+  border-radius: 28px;
+  background: radial-gradient(120% 120% at 30% 10%, rgba(255,255,255,.08), rgba(255,255,255,.02) 40%, transparent 70%), linear-gradient(180deg, var(--bg-2), #060607);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 30px 120px rgba(0,0,0,.6) inset, 0 0 1px rgba(255,255,255,.2) inset;
+}
+
+.zoom-label {
+  position: absolute;
+  inset: 10% 12% 28%;
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.01));
+  border: 1px solid rgba(255,255,255,.10);
+  overflow: hidden;
+}
+
+.zoom-art {
+  position: absolute;
+  inset: 0;
+  background: var(--zoom-src) center/cover no-repeat;
+  filter: contrast(112%) saturate(112%);
+  transform-origin: center center;
+  will-change: transform;
+  transform: scale(var(--z, 1));
+  transition: transform 0.2s ease-out;
+}
+
+.zoom-callout {
+  position: absolute;
+  right: 3%;
+  top: 3%;
+  background: rgba(0,0,0,.45);
+  border: 1px solid rgba(255,255,255,.12);
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.gloss {
+  position: absolute;
+  inset: -30% -30%;
+  background: radial-gradient(closest-side at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.22), rgba(255,255,255,0) 60%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  opacity: .65;
+  transition: opacity .2s ease;
+}
+
+.zoom-label:hover .gloss { opacity: .9; }
+
+@media (max-width: 899px) {
+  .sticky-section { min-height: 180vh; }
+  .zoom-stage {
+    width: min(620px, 96vw);
+    height: min(620px, 96vw);
+    border-radius: 22px;
+  }
+  .zoom-label { inset: 12% 8% 30%; border-radius: 18px; }
+}
+
+/* =========================
+   5) SEZIONI & CARD
+   ========================= */
+.section { padding: 110px 24px; max-width: 1200px; margin: 0 auto; }
+.split { display: grid; grid-template-columns: 1.1fr 1fr; gap: 40px; align-items: center; }
+.split h2 { font-size: clamp(28px, 4vw, 56px); margin: .2em 0; }
+.lead { color: var(--muted); font-size: 18px; line-height: 1.6; }
+.card {
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+}
+
+/* =========================
+   6) GALLERY
+   ========================= */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 14px;
+  margin-top: 40px;
+}
+
+.g-item {
+  grid-column: span 4;
+  height: 280px;
+  border-radius: 18px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(255,255,255,.08);
+  background: var(--card);
+}
+
+.g-item.large { grid-column: span 8; height: 380px; }
+.g-item img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .6s ease;
+  filter: brightness(1.05);
+}
+
+.g-item:hover img { transform: scale(1.12) rotate(.4deg); }
+.g-cap {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  font-size: 12px;
+  background: rgba(0,0,0,.5);
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* =========================
+   7) TESTIMONIALS
+   ========================= */
+.testimonials { padding: 110px 24px; max-width: 1200px; margin: 0 auto; }
+.testimonials h2 { font-size: clamp(28px, 4vw, 56px); margin: .2em 0; }
+.t-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 30px; }
+.t-card {
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 22px;
+  padding: 22px;
+  box-shadow: 0 12px 50px rgba(0,0,0,.35);
+}
+
+.t-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.t-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #222, #444);
+}
+
+.stars { font-size: 14px; letter-spacing: 2px; color: #ffd166; }
+.t-body { color: var(--muted); font-size: 15px; line-height: 1.6; }
+
+/* =========================
+   8) MINI HERO (foil)
+   ========================= */
+.foil-hero {
+  position: relative;
+  padding: 120px 24px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.foil-hero::before {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background: radial-gradient(120% 80% at 50% 20%, rgba(155,135,245,.15), transparent 60%),
+              repeating-linear-gradient(90deg, #ffffff08 0 2px, transparent 2px 6px);
+}
+
+.foil-title {
+  font-size: clamp(40px, 7vw, 100px);
+  line-height: .9;
+  margin: 0;
+  font-weight: 900;
+  letter-spacing: -.5px;
+  background: linear-gradient(120deg, #fff 20%, #bfa8ff 30%, #fff 40%, #9b87f5 60%, #fff 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shine 6s linear infinite;
+}
+
+@keyframes shine { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
+
+.foil-sub { color: var(--muted); margin-top: 10px; }
+
+/* =========================
+   9) CONTACT
+   ========================= */
+.contact {
+  padding: 100px 24px;
+  background: linear-gradient(180deg, #0f0f12, #0a0a0a);
+}
+
+.contact .card {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px;
+  border-radius: 28px;
+  background: radial-gradient(100% 100% at 0% 0%, rgba(155,135,245,.15), rgba(255,255,255,.02) 60%);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 30px 100px rgba(0,0,0,.5);
+}
+
+.contact h2 { text-align: center; font-size: 42px; margin-bottom: 28px; }
+.contact form { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.field { position: relative; display: flex; flex-direction: column; }
+.field label { font-size: 13px; color: #bfbfc5; margin-bottom: 6px; }
+.field input, .field textarea, .field select {
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: #0f0f12;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.chips-row { grid-column: span 2; display: flex; gap: 12px; flex-wrap: wrap; font-size: 14px; margin-top: 4px; }
+.actions { grid-column: span 2; display: flex; justify-content: flex-end; gap: 12px; margin-top: 10px; }
+.btn {
+  padding: 14px 20px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.22);
+  font-weight: 700;
+  cursor: pointer;
+  transition: .20s;
+}
+
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.primary:hover { filter: brightness(1.1); }
+.btn.ghost { background: transparent; color: var(--text); }
+
+/* =========================
+   10) FOOTER & UTILITIES
+   ========================= */
+footer {
+  padding: 40px 24px;
+  color: #9a9aa0;
+  font-size: 13px;
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity .8s ease, transform .8s ease; }
+.reveal.visible { opacity: 1; transform: none; }
+
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* =========================
+   11) FAB & STICKY CTA
+   ========================= */
+.fab-contact {
+  position: fixed;
+  right: calc(12px + env(safe-area-inset-right));
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 60;
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.18);
+  background: var(--accent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 12.5px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  cursor: pointer;
+}
+
+.fab-contact:active {
+  transform: translateY(1px);
+}
+
+.mobile-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: -100%;
+  z-index: 70;
+  background: linear-gradient(180deg, #0f0f12, #0a0a0a);
+  border-top: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 -20px 60px rgba(0,0,0,.6);
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  transition: bottom .35s ease;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.mobile-sheet.open {
+  bottom: 0;
+}
+
+.mobile-sheet .grab {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: #555;
+  margin: 8px auto;
+}
+
+.mobile-sheet .inner {
+  padding: 16px 12px 20px;
+}
+
+.mobile-sheet h3 {
+  text-align: center;
+  margin: 4px 0 12px;
+  font-size: 16px;
+}
+
+.mobile-sheet form {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.mobile-sheet .field {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-sheet .field label {
+  font-size: 12px;
+  color: #bfbfc5;
+  margin-bottom: 4px;
+}
+
+.mobile-sheet .field input,
+.mobile-sheet .field textarea {
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.15);
+  background: #0f0f12;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.mobile-sheet .actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.mobile-sheet .btn {
+  padding: 10px 16px;
+  font-size: 12.5px;
+}
+
+@media (max-width: 560px) {
+  .fab-contact {
+    display: inline-flex;
+  }
+}
+
+/* =========================
+   12) PARALLAX LAYERS
+   ========================= */
+.parallax-hero {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  perspective: 1000px;
+}
+
+.p-layer {
+  position: absolute;
+  inset: -12%;
+  transform: translate3d(var(--tx, 0), var(--ty, 0), 0) scale(var(--s, 1));
+  will-change: transform;
+  filter: saturate(110%) contrast(105%);
+}
+
+/* =========================
+   13) SOCIAL CTA
+   ========================= */
+.social-cta {
+  position: relative;
+  padding: 80px 24px;
+  overflow: hidden;
+}
+
+.social-cta .wrap {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: 1.2fr .8fr;
+  align-items: center;
+}
+
+.social-cta h2 {
+  font-size: clamp(24px, 4vw, 48px);
+  line-height: 1.1;
+  margin: 0;
+}
+
+.social-cta p {
+  color: var(--muted);
+  font-size: clamp(14px, 2vw, 16px);
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+
+.s-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.s-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.16);
+  background: var(--glass);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 13px;
+  transition: transform .15s ease, background .2s ease, border-color .2s ease;
+}
+
+.s-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.12);
+  border-color: rgba(255,255,255,.28);
+}
+
+.s-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.social-card {
+  background: radial-gradient(100% 100% at 0% 0%, rgba(155,135,245,.18), rgba(255,255,255,.02) 60%), linear-gradient(180deg, var(--bg-2), #090909);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px;
+  padding: 20px;
+  min-height: 180px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  box-shadow: 0 20px 80px rgba(0,0,0,.45);
+}
+
+.social-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.social-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid rgba(255,255,255,.08);
+  font-size: 12px;
+}
+
+.social-chip svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Brand colors */
+.s-btn[aria-label="Instagram"] {
+  background: linear-gradient(45deg, #f58529, #dd2a7b, #8134af, #515bd4);
+  color: #fff;
+  border: none !important;
+}
+.s-btn[aria-label="Instagram"]:hover { filter: brightness(1.1); }
+.s-btn[aria-label="LinkedIn"] { background: #0077b5; color: #fff; border: none !important; }
+.s-btn[aria-label="LinkedIn"]:hover { filter: brightness(1.15); }
+.s-btn[aria-label="Facebook"] { background: #1877f2; color: #fff; border: none !important; }
+.s-btn[aria-label="Facebook"]:hover { filter: brightness(1.15); }
+.s-btn[aria-label="TikTok"] { background: #000; color: #fff; border: none !important; }
+.s-btn[aria-label="TikTok"]:hover { filter: brightness(1.2); }
+.s-btn[aria-label="WhatsApp"] { background: #25D366; color: #fff; border: none !important; }
+.s-btn[aria-label="WhatsApp"]:hover { filter: brightness(1.1); }
+
+/* Mobile styles */
+@media (max-width: 560px) {
+  .social-cta {
+    padding: 60px 16px;
+  }
+
+  .social-cta .wrap {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .social-cta h2 {
+    font-size: clamp(20px, 5vw, 32px);
+    text-align: center;
+  }
+
+  .social-cta p {
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .s-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .s-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 14px;
+    font-size: 12.5px;
+    border-radius: 14px;
+  }
+
+  .social-card {
+    padding: 16px;
+    border-radius: 16px;
+    min-height: 160px;
+  }
+
+  .social-card .lead {
+    font-size: 13px;
+    margin: 6px 0 12px;
+  }
+
+  .social-card .s-btn {
+    padding: 12px 14px;
+    font-size: 12.5px;
+  }
+
+  .social-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .social-chip {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .social-chip svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+/* =========================
+   14) ZOOM ETICHETTA
+   ========================= */
+.z-section {
+  display: block;
+  position: relative;
+  min-height: 150svh;
+  padding: 0;
+}
+
+.z-sticky {
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.z-stage {
+  position: relative;
+  width: min(620px, 96vw);
+  height: min(620px, 96vw);
+  border-radius: 22px;
+  background: radial-gradient(120% 120% at 30% 10%, rgba(255,255,255,.06), rgba(255,255,255,.02) 40%, transparent 70%), linear-gradient(180deg, var(--bg-2), #08090b);
+  border: 1px solid var(--stroke);
+  box-shadow: 0 20px 80px rgba(0,0,0,.5) inset, 0 0 1px rgba(255,255,255,.12) inset;
+}
+
+.z-label {
+  position: absolute;
+  inset: 12% 8% 30%;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  border: 1px solid var(--stroke);
+}
+
+.z-art {
+  position: absolute;
+  inset: 0;
+  background: var(--src, url('2.png')) center/cover no-repeat;
+  filter: contrast(110%) saturate(110%);
+  transform: scale(var(--z, 1));
+  transition: transform .12s ease-out;
+  will-change: transform;
+}
+
+.z-badge {
+  position: absolute;
+  right: 3%;
+  top: 3%;
+  background: rgba(0,0,0,.45);
+  border: 1px solid var(--stroke);
+  padding: 7px 9px;
+  border-radius: 11px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.z-gloss {
+  position: absolute;
+  inset: -30% -30%;
+  background: radial-gradient(closest-side at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.18), rgba(255,255,255,0) 60%);
+  mix-blend-mode: screen;
+  pointer-events: none;
+  opacity: .7;
+}
+
+@media (min-width: 900px) {
+  .z-section { min-height: 200svh; }
+  .z-stage {
+    width: min(1000px, 86vw);
+    height: min(1000px, 86vw);
+    border-radius: 26px;
+    box-shadow: 0 30px 120px rgba(0,0,0,.55) inset, 0 0 1px rgba(255,255,255,.15) inset;
+  }
+  .z-label { inset: 10% 12% 26%; border-radius: 22px; }
+  .z-badge { font-size: 12px; padding: 8px 10px; }
+  .z-art { transition: transform .15s ease-out; }
+}
+
+/* =========================
+   15) RESPONSIVE TWEAKS
+   ========================= */
+@media (max-width: 900px) {
+  .split { grid-template-columns: 1fr; }
+  .g-item { grid-column: span 6; }
+  .g-item.large { grid-column: span 12; }
+}
+
+@media (max-width: 560px) {
+  .contact form { grid-template-columns: 1fr; }
+  .actions { justify-content: center; }
+  .g-item { grid-column: span 12; }
+}
+
+@media (max-width: 599px) {
+  #testimonianze { overflow-x: hidden; }
+  #testimonianze .container { max-width: 100%; padding-left: 16px; padding-right: 16px; }
+  #testimonianze .t-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 100%;
+  }
+  #testimonianze .t-card {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    border-radius: 14px;
+    padding: 14px;
+  }
+  #testimonianze .t-head { align-items: flex-start; gap: 10px; }
+  #testimonianze .t-card * { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+  #testimonianze .stars { font-size: 12px; letter-spacing: 1.5px; }
+}
+
+@media (max-width: 960px) {
+  .social-cta .wrap { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 599px) {
+  .social-cta .wrap { gap: 16px; padding: 0 16px; }
+  .social-cta .s-buttons {
+    display: block !important;
+    margin-top: 14px !important;
+  }
+  .social-cta .s-buttons .s-btn {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 14px 12px !important;
+    border-radius: 14px !important;
+    margin: 0 0 10px 0 !important;
+    white-space: normal !important;
+    text-align: center !important;
+    justify-content: center !important;
+  }
+  .social-cta .s-buttons .s-btn svg {
+    width: 16px !important;
+    height: 16px !important;
+    flex: 0 0 16px !important;
+  }
+  .social-cta .social-card {
+    padding: 18px 14px !important;
+    border-radius: 16px !important;
+    margin-top: 14px !important;
+  }
+  .social-cta .social-card .s-btn {
+    width: 100% !important;
+    padding: 14px 12px !important;
+    border-radius: 999px !important;
+    justify-content: center !important;
+  }
+  .sticky-cta { display: none !important; }
+  html, body { overflow-x: hidden; }
+}
+
+</style>
+</head>
+<body>
+  <!-- NAV/Header -->
+<header class="nav" aria-label="Navigazione principale">
+  <div class="brand"><span class="logo" aria-hidden="true"></span> UltraPixel France</div>
+  <div class="hamburger" id="hamburger" aria-label="Apri menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </div>
+  <nav aria-label="Sezioni">
+    <ul>
+      <li><a href="#qualita">Qualità</a></li>
+      <li><a href="#finiture">Finiture</a></li>
+      <li><a href="#testimonianze">Testimonianze</a></li>
+      <li><a href="#contatti">Contatti</a></li>
+    </ul>
+  </nav>
+</header>
+
+  <!-- HERO -->
+  <section class="hero" aria-label="Presentazione">
+    <div class="orbit" id="orbit"><div class="orbit-ring" id="orbitRing"></div></div>
+    <div class="parallax-hero" id="iphParallax">
+      <div class="p-layer p-glow" data-speed="0.03"></div>
+      <div class="p-layer p-grain" data-speed="0.06"></div>
+      <div class="p-layer p-shine" data-speed="0.10"></div>
+    </div>
+    <h1>Les meilleures étiquettes de vin<br>au monde</h1><br><br><br>
+    <p class="sub">Conçues et produites entre l’Italie et la France. Détail extrême, reliefs tactiles, délais de livraison rapides.</p>
+    <br>
+
+
+    <div class="badges-stack">
+      <div class="badges-row top">
+        <a class="badge">🇫🇷 Made in Rhône-Alpes</a>
+        <a class="badge">🚚 Consegne rapide</a>
+      </div>
+      <div class="badges-grid">
+        <a class="chip" href="#finiture">Hot foil multiplo</a>
+        <a class="chip" href="#finiture">Rilievo 3D</a>
+        <a class="chip" href="#finiture">Fustella laser</a>
+        <a class="chip" href="#contatti">Tirature flessibili</a>
+      </div>
+      <!-- 🔮 UltraCheck AI Banner -->
+<div style="display:flex; justify-content:center; margin-top:30px;">
+  <a href="https://ultracheck-ai.onrender.com" target="_blank" rel="noopener"
+     style="
+       display:flex;
+       align-items:center;
+       gap:12px;
+       background:linear-gradient(90deg, #007bff 0%, #8a2be2 100%);
+       color:white;
+       font-weight:600;
+       font-family:'Inter', sans-serif;
+       padding:16px 28px;
+       border-radius:50px;
+       text-decoration:none;
+       font-size:17px;
+       letter-spacing:0.3px;
+       box-shadow:0 0 20px rgba(0,123,255,0.4);
+       transition:all 0.25s ease;
+     "
+     onmouseover="this.style.boxShadow='0 0 25px rgba(138,43,226,0.7)'; this.style.transform='scale(1.05)'"
+     onmouseout="this.style.boxShadow='0 0 20px rgba(0,123,255,0.4)'; this.style.transform='scale(1)'">
+     <span>Analyser mon étiquette avec <strong>UltraCheck AI</strong></span>
+  </a>
+</div>
+
+    </div>
+  </section>
+
+  <!-- STICKY ZOOM -->
+  <section id="zoom" class="sticky-section" aria-label="Zoom etichetta">
+    <div class="sticky">
+      <div class="zoom-stage" role="img" aria-label="Zoom su etichetta con texture e micro-dettagli">
+        <div class="zoom-label">
+          <div class="zoom-art" id="zoomArt"></div>
+          <div class="gloss" aria-hidden="true"></div>
+          <div class="zoom-callout">Lavorazioni premium</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUALITÀ -->
+  <section id="qualita" class="section">
+    <div class="split">
+      <div>
+        <h2 class="reveal">Précision rhônalpine</h2>
+        <p class="lead reveal">Nées au cœur de la région Rhône-Alpes, à deux pas de Lyon, nos étiquettes marient la modernité de l’impression numérique haute définition à l’élégance des finitions artisanales. Elles enchantent les yeux et séduisent les sens dès le premier contact.</p>
+        <div class="card reveal">
+          <strong>Matériaux premium</strong><br>
+          Papiers naturels, coton, nacrés et films techniques. Adhésifs pour toute bouteille et condition de cave.
+        </div><br>
+        <div class="card reveal" style="overflow: hidden; position: relative">
+          <img class="parallax" loading="eager" alt="Macchine di stampa" src="1.png" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: contrast(110%); transform: scale(1); transition: transform .8s ease">
+          <div style="position: relative">
+            <br>
+            <h3>Contrôle qualité</h3>
+            <p>Vérification optique à 600 dpi et contrôle colorimétrique spectrophotométrique pour garantir l’uniformité du lot.</p>
+          </div>
+        </div>
+      </div>
+      <div class="gallery">
+        <figure class="g-item large reveal"><img loading="eager" alt="Etichetta foil oro" src="3.png"><figcaption class="g-cap">Impression numérique</figcaption></figure>
+        <figure class="g-item reveal"><img loading="eager" alt="Dettaglio etichetta" src="1.png"><figcaption class="g-cap">Gaufrage</figcaption></figure>
+        <figure class="g-item reveal"><img loading="eager" alt="Bottiglia con etichetta" src="1.png"><figcaption class="g-cap">Dorure à chaud</figcaption></figure>
+        <figure class="g-item reveal"><img loading="eager" alt="Rotoli etichette" src="1.png"><figcaption class="g-cap">Embossage</figcaption></figure>
+        <figure class="g-item reveal"><img loading="eager" alt="Rotoli etichette" src="1.png"><figcaption class="g-cap">Doming</figcaption></figure>
+        <figure class="g-item reveal"><img loading="eager" alt="Rotoli etichette" src="1.png"><figcaption class="g-cap">Numérotation</figcaption></figure>
+        <figure class="g-item reveal"><img loading="eager" alt="Étiquettes multipages" src="1.png"><figcaption class="g-cap">Étiquettes multipages</figcaption></figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- MINI HERO EFFETTO FOIL -->
+  <section class="foil-hero" aria-label="Finitions d'exception">
+    <h2 class="foil-title">Finitions d’exception</h2>
+    <p class="foil-sub">Dorure, reliefs, vernis, découpes — l’art de la matière au service de votre vin.</p>
+  </section>
+
+  <!-- FINITURE -->
+  <section id="finiture" class="section">
+    <div class="split">
+      <div>
+        <h2 class="reveal">Des finitions qui se ressentent</h2>
+        <ul class="lead reveal" style="line-height: 1.8">
+          <li>Dorure à chaud multicouche (or, cuivre, holographique)</li>
+          <li>Relief 3D et micro-embossage</li>
+          <li>Vernis sélectifs soft-touch</li>
+          <li>Découpe laser pour formes spéciales</li>
+        </ul>
+      </div>
+    </div>
+    <div class="gallery" style="margin: 0">
+      <figure class="g-item"><img loading="eager" src="1.png" alt="Foil"><figcaption class="g-cap">Foil brillante</figcaption></figure>
+      <figure class="g-item"><img loading="eager" src="1.png" alt="Texture"><figcaption class="g-cap">Texture tattile</figcaption></figure>
+      <figure class="g-item"><img loading="eager" src="1.png" alt="Bottiglie"><figcaption class="g-cap">Applicazione</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section id="testimonianze" class="testimonials" aria-label="Testimonianze clienti">
+    <h2 class="reveal">Ce que disent nos clients</h2>
+    <div class="t-row">
+      <article class="t-card reveal">
+        <div class="t-head"><div class="t-avatar" aria-hidden="true"></div><div><strong>Domaine des Collines</strong><div class="stars">★★★★★</div></div></div>
+        <p class="t-body">« Couleurs impeccables et reliefs très nets. Nos clients remarquent immédiatement la différence en rayon. »</p>
+      </article>
+      <article class="t-card reveal">
+        <div class="t-head"><div class="t-avatar" aria-hidden="true"></div><div><strong>Maison B.</strong><div class="stars">★★★★★</div></div></div>
+        <p class="t-body">« Délais rapides et conseils pointus sur les matières. On a réduit les retours et gagné en constance. »</p>
+      </article>
+      <article class="t-card reveal">
+        <div class="t-head"><div class="t-avatar" aria-hidden="true"></div><div><strong>Château La Rive</strong><div class="stars">★★★★★</div></div></div>
+        <p class="t-body">« Le gaufrage 3D donne un toucher luxueux. Les échantillons sont arrivés en 48h, parfait pour valider. »</p>
+      </article>
+    </div>
+  </section>
+
+<!-- CTA (REPLACE THIS WHOLE SECTION) -->
+<section class="section" style="display:flex;justify-content:center">
+  <style>
+    .flow{
+      display:grid;
+      grid-template-columns: 1fr 52px 1fr;
+      gap:16px;
+      align-items:center;
+      margin:22px 0 8px;
+    }
+    .step{
+      position:relative;
+      background: var(--card);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:20px;
+      overflow:hidden;
+      min-height:240px;
+      box-shadow:0 18px 60px rgba(0,0,0,.45);
+    }
+    .step img{
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; filter:contrast(105%);
+      transition: transform .5s ease;
+    }
+    .step:hover img{ transform: scale(1.04); }
+    .step .tag{
+      position:absolute; left:12px; top:12px;
+      font-size:12px; font-weight:800; letter-spacing:.2px;
+      padding:6px 10px; border-radius:999px;
+      background:rgba(0,0,0,.55); border:1px solid rgba(255,255,255,.16);
+    }
+    .step .bar{
+      position:absolute; right:12px; bottom:12px;
+      padding:6px 10px; border-radius:10px; font-size:12px;
+      background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.12);
+    }
+    .arrow{
+      display:grid; place-items:center; height:100%;
+      color:#fff; opacity:.7;
+    }
+    .arrow svg{ width:42px; height:42px; }
+    .cta-row{
+      display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:16px;
+    }
+    .cta-kicker{
+      display:inline-block; margin-bottom:10px; font-size:12px; letter-spacing:.25px;
+      padding:6px 10px; border-radius:999px; background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+      border:1px solid rgba(255,255,255,.18);
+    }
+    @media (max-width:720px){
+      .flow{ grid-template-columns:1fr; }
+      .arrow{ height:52px; transform: rotate(90deg); }
+      .step{ min-height:200px; }
+    }
+  </style>
+
+  <div class="card" style="text-align:center; max-width:1100px; width:100%">
+    <span class="cta-kicker">Transformation express depuis la région lyonnaise</span>
+    <h3 style="font-size:clamp(28px,4vw,52px); margin:0 0 8px">
+      Parlons de votre vin — et transformons votre étiquette
+    </h3>
+    <p class="lead" style="margin:0 auto; max-width:800px">
+      Si votre étiquette actuelle est <em>banale</em> (ou franchement ratée), on la refait de A à Z : concept, papiers, <strong>reliefs 3D</strong>, <strong>dorure à chaud</strong>, vernis, découpe laser.
+      Vous recevez des <strong>propositions + échantillons</strong> en quelques jours.
+    </p>
+
+    <!-- BEFORE ➜ CONSULT ➜ AFTER -->
+    <div class="flow" aria-label="Avant / Conseil / Après">
+      <!-- BEFORE -->
+      <figure class="step" role="img" aria-label="Avant : étiquette pauvre et peu lisible">
+        <img src="avant.png" alt="Avant : étiquette banale, peu lisible, sans finitions">
+        <figcaption class="tag">Avant</figcaption>
+        <div class="bar">Étiquette « bof », couleurs plates, zéro impact.</div>
+      </figure>
+
+      <!-- ARROW -->
+      <div class="arrow" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M5 12h11.6l-3.8-3.8 1.4-1.4L21 12l-6.8 5.2-1.4-1.4 3.8-3.8H5z"/></svg>
+      </div>
+
+      <!-- AFTER -->
+      <figure class="step" role="img" aria-label="Après : étiquette premium avec finitions">
+        <img src="apres.png" alt="Après : étiquette premium con rilievo, foil, vernici selettive">
+        <figcaption class="tag" style="background:var(--accent); color:#fff; border:none">Après</figcaption>
+        <div class="bar">Relief 3D + Foil multiplo + Vernis — effet WOW.</div>
+      </figure>
+    </div>
+
+    <p class="lead" style="margin:8px auto 0; max-width:760px">
+      Un consultant dédié vous conseille, puis on vous envoie des maquettes et des échantillons réels à valider.
+    </p>
+
+    <!-- ULTRA-CTA -->
+    <div class="cta-row">
+      <a class="chip" style="cursor:pointer; background:var(--accent); color:#fff; border:none"
+         href="https://wa.me/+393316436117?text=Bonjour%20UltraPixel%2C%20aidez-moi%20%C3%A0%20am%C3%A9liorer%20mon%20%C3%A9tiquette%20vin">
+        ⚡ Transformer mon étiquette maintenant
+      </a>
+      <a class="chip" href="#contatti">Parler à un consultant</a>
+      <a class="chip" href="mailto:info@ultrapixel.fr?subject=Demande%20d%E2%80%99%C3%A9chantillons&body=Bonjour%2C%20voici%20mon%20domaine%20et%20mon%20vin%3A%20...%0AJe%20souhaite%20recevoir%20des%20%C3%A9chantillons%20avec%20relief%2C%20dorure%2C%20vernis%20et%20d%C3%A9coupe.">
+        Demander des échantillons
+      </a>
+    </div>
+
+    <p style="color:var(--muted); font-size:12.5px; margin-top:10px">
+      Astuce : envoyez-nous une photo de votre étiquette actuelle — on vous renvoie une version « après » avec finitions.
+    </p>
+  </div>
+</section>
+
+  <!-- SOCIAL CTA -->
+  <section id="contatti" class="social-cta" aria-label="Seguici e contattaci">
+    <div class="wrap">
+      <div>
+        <h2>Suivez-nous pour voir nos coulisses, nos tests et nos finitions en direct !</h2>
+        <p>On partage des cas clients, des vidéos de production et nos dernières créations. Envoyez-nous un DM, on répond vite !</p>
+        <div class="s-buttons">
+          <a class="s-btn" href="https://www.instagram.com/ultrapixel" target="_blank" rel="noopener" aria-label="Instagram">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3Zm-5 3a6 6 0 1 1 0 12 6 6 0 0 1 0-12Zm0 2.2A3.8 3.8 0 1 0 12 17.8 3.8 3.8 0 0 0 12 9.2Zm5.25-2.2a1.05 1.05 0 1 1 0 2.1 1.05 1.05 0 0 1 0-2.1Z"/></svg>
+            Instagram
+          </a>
+          <a class="s-btn" href="https://www.linkedin.com/company/ultrapixel" target="_blank" rel="noopener" aria-label="LinkedIn">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4.98 3.5C4.98 4.88 3.87 6 2.5 6S0 4.88 0 3.5 1.12 1 2.5 1s2.48 1.12 2.48 2.5ZM.5 8.5h4V23h-4V8.5Zm7 0h3.8v2h.05c.53-1 1.83-2.05 3.77-2.05 4.03 0 4.78 2.65 4.78 6.08V23h-4v-6.45c0-1.54-.03-3.52-2.15-3.52-2.16 0-2.5 1.68-2.5 3.41V23h-3.8V8.5Z"/></svg>
+            LinkedIn
+          </a>
+          <a class="s-btn" href="https://www.facebook.com/ultrapixel" target="_blank" rel="noopener" aria-label="Facebook">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22 12a10 10 0 1 0-11.6 9.9v-7h-2.3V12h2.3V9.8c0-2.3 1.4-3.6 3.5-3.6.7 0 1.5.1 2.2.2v2.4h-1.3c-1.1 0-1.5.7-1.5 1.4V12h2.6l-.4 2.9h-2.2v7A10 10 0 0 0 22 12Z"/></svg>
+            Facebook
+          </a>
+          <a class="s-btn" href="https://www.tiktok.com/@ultrapixel" target="_blank" rel="noopener" aria-label="TikTok">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M21 8.3a7.4 7.4 0 0 1-4.6-1.6v7.3a6 6 0 1 1-6-6c.4 0 .8 0 1.2.1v3.6a2.4 2.4 0 1 0 2.4 2.4V1.5h3.1a4.8 4.8 0 0 0 4 4.6v2.2Z"/></svg>
+            TikTok
+          </a>
+        </div>
+      </div>
+      <div>
+        <div class="social-card">
+          <strong>Vous préférez WhatsApp ?</strong>
+          <p class="lead" style="margin: 8px 0 16px">Envoyez-nous une photo de votre étiquette actuelle, et votre consultant dédié vous proposera une transformation premium.</p>
+          <a class="s-btn" href="https://wa.me/+393316436117?text=Ciao%20UltraPixel%2C%20vorrei%20informazioni%20su%20etichette%20vino" target="_blank" rel="noopener" aria-label="WhatsApp">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M20.5 3.5A11 11 0 0 0 2 18.6L1 23l4.6-1.2A11 11 0 1 0 20.5 3.5Zm-8.7 2a9 9 0 0 1 7.8 13.5l-.3.5-.8.2a9 9 0 0 1-8-1.3l-.5-.3-2.8.7.7-2.7-.3-.6a9 9 0 0 1 3.5-11Z"/></svg>
+            WhatsApp
+          </a>
+          <div class="social-grid" aria-hidden="true" style="margin-top: 18px">
+            <div class="social-chip"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="currentColor"/></svg> foil</div>
+            <div class="social-chip"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" fill="currentColor"/></svg> emboss</div>
+            <div class="social-chip"><svg viewBox="0 0 24 24"><path d="M4 12h16" stroke="currentColor" stroke-width="2"/></svg> laser</div>
+            <div class="social-chip"><svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z" fill="none" stroke="currentColor" stroke-width="2"/></svg> HD</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    © <span id="year"></span> UltraPixel France, 11 rue Pouteau - 69001 Lyon, France
+
+  </footer>
+
+  <!-- FAB + Bottom Sheet -->
+  <button class="fab-contact" id="fabContact" aria-controls="mobileSheet" aria-expanded="false">Contattaci</button>
+  <aside class="mobile-sheet" id="mobileSheet" aria-hidden="true">
+    <div class="grab" aria-hidden="true"></div>
+    <div class="inner">
+      <h3>Scrivici</h3>
+      <form id="contactForm">
+        <div class="field">
+          <label for="nome">Nome</label>
+          <input id="nome" name="nome" required>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" type="email" name="email" required>
+        </div>
+        <div class="field" style="grid-column: 1 / -1">
+          <label for="messaggio">Messaggio</label>
+          <textarea id="messaggio" name="messaggio" rows="4" required></textarea>
+        </div>
+        <div class="actions">
+          <button type="submit" class="btn primary">Invia</button>
+        </div>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Sticky CTA -->
+  <div class="sticky-cta" id="stickyCta" role="region" aria-label="Richiedi campioni">
+    <div class="row" style="width: 100%">
+      <div class="txt">Vuoi vedere e toccare le finiture? Campioni gratuiti.</div>
+      <div style="display: flex; gap: 8px">
+        <button class="btn ghost" id="ctaScroll">Vai ai contatti</button>
+        <button class="btn primary" id="ctaSamples">Richiedi campioni</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // Footer year
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  // Sticky zoom effect
+  (function () {
+    const root = document.getElementById('zoom');
+    const art = document.getElementById('zoomArt');
+    const sticky = document.querySelector('#zoom .sticky');
+    if (!root || !art || !sticky) return;
+
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+
+    function updateZoom() {
+      const sectionRect = root.getBoundingClientRect();
+      const headerH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--header-h')) || 64;
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+
+      // Calculate progress
+      const offsetTop = sectionRect.top + window.scrollY - headerH;
+      const scrollPos = window.scrollY + vh - offsetTop;
+      const totalHeight = sectionRect.height - vh;
+      let progress = totalHeight > 0 ? scrollPos / totalHeight : 0;
+
+      // Apply offset and clamp progress
+      const isMobile = window.matchMedia('(max-width: 899px)').matches;
+      const maxZoom = isMobile ? 4 : 6;
+      const offset = isMobile ? 0.35 : 0.45;
+      progress = Math.max(0, (progress - offset) / (1 - offset));
+      progress = Math.min(1, Math.max(0, progress));
+
+      // Update zoom
+      const z = 1 + progress * (maxZoom - 1);
+      art.style.setProperty('--z', z.toFixed(3));
+
+      ticking = false;
+    }
+
+    function onScroll() {
+      lastScrollY = window.scrollY;
+      if (!ticking) {
+        requestAnimationFrame(updateZoom);
+        ticking = true;
+      }
+    }
+
+    // Initialize and attach listeners
+    document.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', updateZoom, { passive: true });
+    updateZoom();
+  })();
+
+  // Gloss highlight follows pointer
+  (function () {
+    const wrap = document.querySelector('.zoom-label');
+    const gloss = document.querySelector('.gloss');
+    if (!wrap || !gloss) return;
+    wrap.addEventListener('pointermove', (e) => {
+      const r = wrap.getBoundingClientRect();
+      const x = ((e.clientX - r.left) / r.width * 100).toFixed(2) + '%';
+      const y = ((e.clientY - r.top) / r.height * 100).toFixed(2) + '%';
+      gloss.style.setProperty('--mx', x);
+      gloss.style.setProperty('--my', y);
+    });
+  })();
+
+  // Reveal on view
+  (function () {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.2 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+  })();
+
+  // Parallax card image
+  (function () {
+    const parallax = document.querySelector('.parallax');
+    if (!parallax) return;
+    document.addEventListener('scroll', () => {
+      const r = parallax.getBoundingClientRect();
+      const p = 1 + Math.min(0.12, Math.max(0, (innerHeight - r.top) / (innerHeight * 2)));
+      parallax.style.transform = `scale(${p})`;
+    }, { passive: true });
+  })();
+
+  // Form submission (desktop)
+  (function () {
+    const form = document.getElementById('contactForm');
+    if (!form) return;
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      const fin = data.getAll('finiture').join(', ');
+      const body = `Nome: ${data.get('nome')}
+Email: ${data.get('email')}
+Telefono: ${data.get('telefono') || ''}
+Tiratura: ${data.get('tiratura') || ''}
+Finiture: ${fin}
+Messaggio: ${data.get('messaggio') || ''}`;
+      const mail = `mailto:info@ultrapixel.fr?subject=${encodeURIComponent('Richiesta etichette')}&body=${encodeURIComponent(body)}`;
+      window.location.href = mail;
+    });
+  })();
+
+  // FAB mobile: bottom sheet
+(function () {
+  const fab = document.getElementById('fabContact');
+  const sheet = document.getElementById('mobileSheet');
+  const form = document.getElementById('contactForm');
+  if (!fab || !sheet || !form) return;
+
+  const open = () => {
+    sheet.classList.add('open');
+    sheet.setAttribute('aria-hidden', 'false');
+    fab.setAttribute('aria-expanded', 'true');
+  };
+  const close = () => {
+    sheet.classList.remove('open');
+    sheet.setAttribute('aria-hidden', 'true');
+    fab.setAttribute('aria-expanded', 'false');
+  };
+
+  fab.addEventListener('click', open);
+  sheet.addEventListener('click', (e) => {
+    if (e.target === sheet) close();
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const data = new FormData(form);
+    const body = `Nome: ${data.get('nome') || ''}
+Email: ${data.get('email') || ''}
+Messaggio: ${data.get('messaggio') || ''}`;
+    const mail = `mailto:info@ultrapixel.fr?subject=${encodeURIComponent('Richiesta etichette (mobile)')}&body=${encodeURIComponent(body)}`;
+    window.location.href = mail;
+    close();
+  });
+
+  // Close sheet on resize to desktop
+  window.addEventListener('resize', () => {
+    if (window.matchMedia('(min-width: 561px)').matches) {
+      close();
+    }
+  }, { passive: true });
+})();
+
+  // Sticky CTA actions
+  (function () {
+    const cta = document.getElementById('stickyCta');
+    const btnScroll = document.getElementById('ctaScroll');
+    const btnSamples = document.getElementById('ctaSamples');
+    const toContacts = () => {
+      const el = document.getElementById('contatti');
+      if (!el) { window.location.hash = '#contatti'; return; }
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    if (btnScroll) btnScroll.addEventListener('click', toContacts);
+    if (btnSamples) btnSamples.addEventListener('click', () => {
+      const fab = document.getElementById('fabContact');
+      if (fab) { fab.click(); } else { toContacts(); }
+    });
+
+    const contact = document.getElementById('contatti');
+    if (cta && contact && 'IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => {
+        entries.forEach(e => { cta.style.display = e.isIntersecting ? 'none' : ''; });
+      }, { threshold: 0.2 });
+      io.observe(contact);
+    }
+  })();
+
+  // Orbit 3D
+  (function () {
+    const orbit = document.getElementById('orbit');
+    const ring = document.getElementById('orbitRing');
+    if (!orbit || !ring) return;
+
+    const imgs = ['7.png', '8.png', '9.png', '10.png', '11.png', '12.png', '13.png', '1.png'];
+    const n = imgs.length;
+    let radius = Math.min(window.innerWidth, 1100) / 2.4;
+
+    const cards = [];
+    for (let i = 0; i < n; i++) {
+      const angleDeg = (360 / n) * i;
+      const angleRad = angleDeg * Math.PI / 180;
+      const card = document.createElement('div');
+      card.className = 'label-card';
+      card.dataset.angle = String(angleRad);
+      const img = document.createElement('img');
+      img.loading = 'lazy';
+      img.src = imgs[i];
+      img.alt = 'Etichetta vino';
+      card.appendChild(img);
+      ring.appendChild(card);
+      cards.push(card);
+    }
+
+    let ang = 0;
+    const baseVel = -(2 * Math.PI) / 28;
+    let vel = baseVel;
+    let last = performance.now();
+
+    orbit.addEventListener('mouseenter', () => { vel = 0; });
+    orbit.addEventListener('mouseleave', () => { vel = baseVel; });
+    orbit.addEventListener('mousemove', (e) => {
+      const r = orbit.getBoundingClientRect();
+      const x = (e.clientX - r.left) / r.width - .5;
+      vel = baseVel * (1 - 0.6 * Math.abs(x));
+    }, { passive: true });
+
+    function normalizePi(a) { return Math.atan2(Math.sin(a), Math.cos(a)); }
+
+    function layout() {
+      radius = Math.min(window.innerWidth, 1100) / (window.innerWidth < 560 ? 3.2 : 2.4);
+    }
+
+    window.addEventListener('resize', layout);
+    layout();
+
+    function frame(now) {
+      const dt = (now - last) / 1000;
+      last = now;
+      ang += vel * dt;
+      ring.style.transform = `rotateY(${ang}rad)`;
+
+      let bestI = 0, bestVal = Infinity;
+      for (let i = 0; i < n; i++) {
+        const base = parseFloat(cards[i].dataset.angle || '0');
+        const d = Math.abs(normalizePi(base + ang));
+        if (d < bestVal) { bestVal = d; bestI = i; }
+      }
+
+      for (let i = 0; i < n; i++) {
+        const base = parseFloat(cards[i].dataset.angle || '0');
+        const deg = base * 180 / Math.PI;
+        const baseTransform = `translate3d(-50%,-50%,0) rotateY(${deg}deg) translateZ(${radius}px)`;
+        if (i === bestI) {
+          cards[i].classList.add('is-front');
+          cards[i].style.transform = baseTransform + ' scale(1.50)';
+        } else {
+          cards[i].classList.remove('is-front');
+          cards[i].style.transform = baseTransform;
+        }
+      }
+
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame((t) => { last = t; frame(t); });
+  })();
+
+  // Parallax hero layers
+  (function () {
+    const root = document.getElementById('iphParallax');
+    if (!root) return;
+    const layers = Array.from(root.querySelectorAll('.p-layer'));
+    const active = window.matchMedia('(pointer: fine)').matches;
+    if (!active) return;
+
+    function onMove(e) {
+      const r = root.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const dx = (e.clientX - cx) / r.width;
+      const dy = (e.clientY - cy) / r.height;
+      layers.forEach(l => {
+        const s = parseFloat(l.dataset.speed || '0.05');
+        l.style.setProperty('--tx', (dx * 40 * s).toFixed(2) + 'px');
+        l.style.setProperty('--ty', (dy * 40 * s).toFixed(2) + 'px');
+        l.style.setProperty('--s', (1 + Math.hypot(dx, dy) * 0.02 * s).toFixed(3));
+      });
+    }
+    window.addEventListener('mousemove', onMove, { passive: true });
+  })();
+
+  // Header dynamic height
+  (function () {
+    const docEl = document.documentElement;
+    const header = document.querySelector('header.nav');
+
+    function setHeaderVar() {
+      if (!header) return;
+      const h = header.offsetHeight || 64;
+      docEl.style.setProperty('--header-h', h + 'px');
+    }
+
+    setHeaderVar();
+    window.addEventListener('resize', setHeaderVar, { passive: true });
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(setHeaderVar).observe(header);
+    }
+
+    const nav = header && header.querySelector('nav');
+    nav?.addEventListener('click', (e) => {
+      const a = e.target.closest('a[href^="#"]');
+      if (!a) return;
+      const id = a.getAttribute('href').slice(1);
+      const target = document.getElementById(id);
+      if (!target) return;
+
+      e.preventDefault();
+      const top = window.scrollY + target.getBoundingClientRect().top - (parseFloat(getComputedStyle(docEl).getPropertyValue('--header-h')) || 64) - 16;
+      window.scrollTo({ top, behavior: 'smooth' });
+      history.replaceState(null, "", '#' + id);
+    });
+  })();
+// Hamburger menu toggle
+(function () {
+  const hamburger = document.getElementById('hamburger');
+  const nav = document.querySelector('header.nav nav');
+  if (!hamburger || !nav) return;
+
+  // Initialize: ensure nav is hidden on mobile
+  if (window.matchMedia('(max-width: 560px)').matches) {
+    nav.classList.remove('active');
+    hamburger.classList.remove('active');
+  }
+
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('active');
+    nav.classList.toggle('active');
+  });
+
+  // Close menu when clicking a link
+  nav.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      hamburger.classList.remove('active');
+      nav.classList.remove('active');
+    });
+  });
+
+  // Update on resize
+  window.addEventListener('resize', () => {
+    if (window.matchMedia('(max-width: 560px)').matches) {
+      nav.classList.remove('active');
+      hamburger.classList.remove('active');
+    } else {
+      nav.classList.remove('active');
+      hamburger.classList.remove('active');
+      nav.querySelector('ul').style.display = ''; // Reset inline style for desktop
+    }
+  }, { passive: true });
+})();
+  </script>
+</body>
+</html>

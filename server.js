@@ -3,6 +3,8 @@ import multer from "multer";
 import fs from "fs";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+try { dotenv.config(); } catch {}
+
 import nodemailer from "nodemailer";
 import PDFDocument from "pdfkit";
 

@@ -92,6 +92,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
 Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
 Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
 Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${language}.
+Se c'è anche 1 solo campo ❌ mancante, la valutazione finale sarà non conforme.
 
 ===============================
 ### 🔎 Conformità normativa (Reg. UE 2021/2117)

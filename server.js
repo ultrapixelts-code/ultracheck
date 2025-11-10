@@ -101,7 +101,7 @@ Volume nominale: (✅/⚠️/❌) + testo
 Titolo alcolometrico: (✅/⚠️/❌) + testo
 Indicazione allergeni: (✅/⚠️/❌) + testo
 Lotto: (✅/⚠️/❌) + testo
-QR code o link ingredienti/energia: (✅/⚠️/❌) + testo
+QR code: (✅/⚠️/❌) + testo
 Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
 Altezza minima dei caratteri: (✅/⚠️/❌) + testo
 Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo

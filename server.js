@@ -64,14 +64,23 @@ function normalizeAnalysis(md) {
 
 // 📤 Endpoint analisi etichetta
 app.post("/analyze", upload.single("label"), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: "Nessun file ricevuto." });
+  console.log("✅ Endpoint /analyze chiamato");
+  console.log("Lingua ricevuta:", req.body.lang);
 
-    console.log(`📥 Ricevuto: ${req.file.originalname}`);
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "Nessun file ricevuto." });
+    }
+
+    console.log("📦 Dati ricevuti dal form:", req.body);
+    const { azienda, nome, email, telefono, lang } = req.body || {};
+    const language = lang || "it";
+    console.log(`🌍 Lingua selezionata: ${language}`);
 
     const imageBytes = fs.readFileSync(req.file.path);
     const base64Image = imageBytes.toString("base64");
 
+    // 🧠 Analisi AI
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.1,
@@ -79,70 +88,109 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       messages: [
         {
           role: "system",
-          content: `Agisci come un ispettore tecnico *UltraCheck AI*... (testo invariato)`,
+          content: `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
+Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
+Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
+Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${language}.
+
+===============================
+### 🔎 Conformità normativa (Reg. UE 2021/2117)
+Denominazione di origine: (✅ conforme / ⚠️ parziale / ❌ mancante) + testo
+Nome e indirizzo del produttore o imbottigliatore: (✅/⚠️/❌) + testo
+Volume nominale: (✅/⚠️/❌) + testo
+Titolo alcolometrico: (✅/⚠️/❌) + testo
+Indicazione allergeni: (✅/⚠️/❌) + testo
+Lotto: (✅/⚠️/❌) + testo
+QR code o link ingredienti/energia: (✅/⚠️/❌) + testo
+Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
+Altezza minima dei caratteri: (✅/⚠️/❌) + testo
+Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo
+
+**Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
+===============================`
         },
+        {
+          role: "system",
+          content: `IMPORTANT: Se la lingua selezionata è francese (${language}), traduci completamente tutti i titoli e le intestazioni in francese, mantenendo il formato identico.
+Esempi di traduzione:
+
+🇫🇷 **Francese**
+- "Conformità normativa" → "Conformité réglementaire"
+- "Denominazione di origine" → "Dénomination d’origine"
+- "Nome e indirizzo del produttore o imbottigliatore" → "Nom et adresse du producteur ou de l’embouteilleur"
+- "Valutazione finale" → "Évaluation finale"
+
+🇬🇧 **Inglese**
+- "Conformità normativa" → "Regulatory compliance"
+- "Denominazione di origine" → "Designation of origin"
+- "Nome e indirizzo del produttore o imbottigliatore" → "Producer or bottler name and address"
+- "Valutazione finale" → "Final assessment"
+
+Non usare parole italiane in nessun caso. Tutto il testo deve essere nella lingua selezionata, inclusi i titoli e i campi.`
+},
         {
           role: "user",
           content: [
-            { type: "text", text: "Analizza questa etichetta di vino..." },
-            { type: "image_url", image_url: { url: `data:${req.file.mimetype};base64,${base64Image}` } },
-          ],
-        },
-      ],
+            {
+              type: "text",
+              text: `Analizza questa etichetta di vino e rispondi interamente in ${language}.
+Non mescolare l'italiano, traduci completamente ogni campo e intestazione.`
+            },
+            {
+              type: "image_url",
+              image_url: { url: `data:${req.file.mimetype};base64,${base64Image}` }
+            }
+          ]
+        }
+      ]
     });
 
     const raw = response.choices[0].message.content || "Nessuna risposta ricevuta dall'AI.";
     const analysis = normalizeAnalysis(raw);
-    console.log("✅ Analisi completata");
+    console.log("Analisi completata");
 
-    const { azienda, nome, email, telefono } = req.body || {};
+    // 📧 Invio email opzionale
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      const transporter = nodemailer.createTransport({
+        host: "smtp.gmail.com",
+        port: 587,
+        secure: false,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
 
-    // 📧 Invia email tramite API SendGrid
-    if (process.env.SMTP_PASS && process.env.MAIL_TO) {
-      sgMail.setApiKey(process.env.SMTP_PASS);
-
-      const msg = {
-        to: process.env.MAIL_TO,
-        from: "gabriele.russian@ultrapixel.it", // mittente verificato su SendGrid
-        subject: `🧠 Nuova analisi etichetta vino - ${azienda || "azienda non indicata"}`,
+      await transporter.sendMail({
+        from: `"UltraCheck AI" <${process.env.SMTP_USER}>`,
+        to: process.env.MAIL_TO || process.env.SMTP_USER,
+        subject: `🧠Nuova analisi etichetta vino - ${azienda || "azienda non indicata"}`,
         text: `
 Azienda: ${azienda || "non indicata"}
 Nome: ${nome || "non indicato"}
 Email: ${email || "non indicata"}
 Telefono: ${telefono || "non indicato"}
 
-📊 RISULTATO ANALISI:
+RISULTATO ANALISI:
 ${analysis}
         `,
-      };
+        attachments: [
+          {
+            filename: req.file.originalname,
+            path: req.file.path,
+            contentType: req.file.mimetype,
+          },
+        ],
+      });
 
-      // Aggiunge l’immagine come allegato
-      const attachment = fs.readFileSync(req.file.path).toString("base64");
-      msg.attachments = [
-        {
-          content: attachment,
-          filename: req.file.originalname,
-          type: req.file.mimetype,
-          disposition: "attachment",
-        },
-      ];
-
-      await sgMail.send(msg);
-      console.log("📧 Email inviata via SendGrid API");
+      console.log("Email inviata con allegato");
     }
 
-    // 🧹 Elimina file temporaneo
-    fs.unlink(req.file.path, (err) => {
-      if (err) console.warn("Impossibile eliminare file temporaneo:", err.message);
-    });
-
+    fs.unlinkSync(req.file.path);
     res.json({ result: analysis });
+
   } catch (error) {
-    console.error("💥 Errore /analyze:", error);
+    console.error("💥 Errore /analyze:", error.response?.data || error.message);
     res.status(500).json({ error: "Errore durante l'elaborazione o l'invio email." });
   }
 });
-
 // 🟢 Avvio server
 app.listen(port, "0.0.0.0", () => {
   console.log(`✅ UltraCheck AI attivo su porta ${port}`);

@@ -5,7 +5,7 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 try { dotenv.config(); } catch {}
 
-import nodemailer from "nodemailer";
+import sgMail from "@sendgrid/mail";
 import PDFDocument from "pdfkit";
 
 dotenv.config();
@@ -20,7 +20,7 @@ app.get("/", (req, res) => {
   res.sendFile("index.html", { root: "." });
 });
 
-// 📂 Upload temporaneo (✅ /tmp scrivibile su Vercel)
+// 📂 Upload temporaneo (✅ /tmp scrivibile su Render)
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, "/tmp"),
@@ -97,18 +97,13 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
 
     const { azienda, nome, email, telefono } = req.body || {};
 
-    // 📧 Email con allegato
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-      const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      });
+    // 📧 Invia email tramite API SendGrid
+    if (process.env.SMTP_PASS && process.env.MAIL_TO) {
+      sgMail.setApiKey(process.env.SMTP_PASS);
 
-      const mailOptions = {
-        from: `"UltraCheck AI" <${process.env.SMTP_USER}>`,
-        to: process.env.MAIL_TO || process.env.SMTP_USER,
+      const msg = {
+        to: process.env.MAIL_TO,
+        from: "gabriele.russian@ultrapixel.it", // mittente verificato su SendGrid
         subject: `🧠 Nuova analisi etichetta vino - ${azienda || "azienda non indicata"}`,
         text: `
 Azienda: ${azienda || "non indicata"}
@@ -119,17 +114,21 @@ Telefono: ${telefono || "non indicato"}
 📊 RISULTATO ANALISI:
 ${analysis}
         `,
-        attachments: [
-          {
-            filename: req.file.originalname,
-            path: req.file.path,
-            contentType: req.file.mimetype,
-          },
-        ],
       };
 
-      await transporter.sendMail(mailOptions);
-      console.log("📧 Email inviata con allegato");
+      // Aggiunge l’immagine come allegato
+      const attachment = fs.readFileSync(req.file.path).toString("base64");
+      msg.attachments = [
+        {
+          content: attachment,
+          filename: req.file.originalname,
+          type: req.file.mimetype,
+          disposition: "attachment",
+        },
+      ];
+
+      await sgMail.send(msg);
+      console.log("📧 Email inviata via SendGrid API");
     }
 
     // 🧹 Elimina file temporaneo
@@ -145,7 +144,6 @@ ${analysis}
 });
 
 // 🟢 Avvio server
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ UltraCheck AI attivo su porta ${PORT}`);
+app.listen(port, "0.0.0.0", () => {
+  console.log(`✅ UltraCheck AI attivo su porta ${port}`);
 });

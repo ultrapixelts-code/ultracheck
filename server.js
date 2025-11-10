@@ -149,48 +149,37 @@ Non mescolare l'italiano, traduci completamente ogni campo e intestazione.`
     const analysis = normalizeAnalysis(raw);
     console.log("Analisi completata");
 
-    // 📧 Invio email opzionale
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-      const transporter = nodemailer.createTransport({
-        host: "smtp.gmail.com",
-        port: 587,
-        secure: false,
-        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
-      });
+   // 📧 Invio email tramite SendGrid API
+if (process.env.SMTP_PASS && process.env.MAIL_TO) {
+  sgMail.setApiKey(process.env.SMTP_PASS);
 
-      await transporter.sendMail({
-        from: `"UltraCheck AI" <${process.env.SMTP_USER}>`,
-        to: process.env.MAIL_TO || process.env.SMTP_USER,
-        subject: `🧠Nuova analisi etichetta vino - ${azienda || "azienda non indicata"}`,
-        text: `
+  const msg = {
+    to: process.env.MAIL_TO,
+    from: "gabriele.russian@ultrapixel.it", // mittente verificato su SendGrid
+    subject: `🧠 Nuova analisi etichetta vino - ${azienda || "azienda non indicata"}`,
+    text: `
 Azienda: ${azienda || "non indicata"}
 Nome: ${nome || "non indicato"}
 Email: ${email || "non indicata"}
 Telefono: ${telefono || "non indicato"}
 
-RISULTATO ANALISI:
+📊 RISULTATO ANALISI:
 ${analysis}
-        `,
-        attachments: [
-          {
-            filename: req.file.originalname,
-            path: req.file.path,
-            contentType: req.file.mimetype,
-          },
-        ],
-      });
+    `,
+    attachments: [
+      {
+        content: fs.readFileSync(req.file.path).toString("base64"),
+        filename: req.file.originalname,
+        type: req.file.mimetype,
+        disposition: "attachment",
+      },
+    ],
+  };
 
-      console.log("Email inviata con allegato");
-    }
+  await sgMail.send(msg);
+  console.log("📧 Email inviata via SendGrid API");
+}
 
-    fs.unlinkSync(req.file.path);
-    res.json({ result: analysis });
-
-  } catch (error) {
-    console.error("💥 Errore /analyze:", error.response?.data || error.message);
-    res.status(500).json({ error: "Errore durante l'elaborazione o l'invio email." });
-  }
-});
 // 🟢 Avvio server
 app.listen(port, "0.0.0.0", () => {
   console.log(`✅ UltraCheck AI attivo su porta ${port}`);

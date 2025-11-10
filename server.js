@@ -163,22 +163,31 @@ Nome: ${nome || "non indicato"}
 Email: ${email || "non indicata"}
 Telefono: ${telefono || "non indicato"}
 
+
 📊 RISULTATO ANALISI:
 ${analysis}
-    `,
-    attachments: [
-      {
-        content: fs.readFileSync(req.file.path).toString("base64"),
-        filename: req.file.originalname,
-        type: req.file.mimetype,
-        disposition: "attachment",
-      },
-    ],
-  };
+        `,
+        attachments: [
+          {
+            content: fs.readFileSync(req.file.path).toString("base64"),
+            filename: req.file.originalname,
+            type: req.file.mimetype,
+            disposition: "attachment",
+          },
+        ],
+      };
 
-  await sgMail.send(msg);
-  console.log("📧 Email inviata via SendGrid API");
-}
+      await sgMail.send(msg);
+      console.log("📧 Email inviata via SendGrid API");
+    }
+
+    fs.unlinkSync(req.file.path);
+    res.json({ result: analysis });
+  } catch (error) {
+    console.error("💥 Errore /analyze:", error.response?.data || error.message);
+    res.status(500).json({ error: "Errore durante l'elaborazione o l'invio email." });
+  }
+}); // 👈 MANCAVA QUESTA PARENTESI
 
 // 🟢 Avvio server
 app.listen(port, "0.0.0.0", () => {

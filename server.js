@@ -219,29 +219,22 @@ Inglese → "Regulatory compliance", "Designation of origin", ecc.`
         },
         {
           role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Analizza questa etichetta di vino e rispondi interamente in ${language}. Non mescolare l'italiano.`,
-            },
-        // Se è PDF → invia come testo
-if (req.file.mimetype === "application/pdf") {
-  {
-    type: "text",
-    text: extractedText  // ← testo puro
-  }
-} else {
-  {
-    type: "image_url",
-    image_url: {
-      url: `data:${contentType};base64,${base64Data}`,
-    },
-  }
-}
-          ],
+      content: [
+        {
+          type: "text",
+          text: `Analizza questa etichetta di vino e rispondi interamente in ${language}. Non mescolare l'italiano.`,
         },
+        ...(req.file.mimetype === "application/pdf"
+          ? [{ type: "text", text: extractedText }]
+          : [{
+              type: "image_url",
+              image_url: { url: `data:${contentType};base64,${base64Data}` }
+            }]
+        ),
       ],
-    });
+    },
+  ],
+});
 
     const raw = response.choices[0].message.content || "Nessuna risposta ricevuta dall'AI.";
     const analysis = normalizeAnalysis(raw);

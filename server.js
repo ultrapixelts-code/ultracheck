@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
 import PDFDocument from "pdfkit";
 import cors from "cors";
+import pdfParse from "pdf-parse";  // Import statico per fix pdf-parse
 
 dotenv.config();
 
@@ -34,107 +35,98 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Normalizza simboli
+// Normalizza simboli (migliorato)
 function normalizeAnalysis(md) {
-  const statusFor = (line) => {
-    const low = line.toLowerCase();
-    if (/(non presente|mancante|assente|non riportat|assenza)/.test(low)) return "No";
-    if (/(non verificabil|non determinabil|non leggibil)/.test(low)) return "Warning";
-    if (/(conform|presente|indicata|riporta|adeguat|corrett)/.test(low)) return "Yes";
-    return null;
-  };
   return md
     .split("\n")
     .map((raw) => {
       const trimmed = raw.trimStart();
-      if (!/^[YesWarningNo]/.test(trimmed) && !/^[-*]/.test(trimmed)) return raw;
-      const wanted = statusFor(trimmed);
-      if (!wanted) return raw;
-      const noMarker = trimmed.replace(/^[YesWarningNo]\s*/, "");
-      const leftPad = raw.slice(0, raw.indexOf(trimmed));
-      return leftPad + `${wanted} ${noMarker}`;
+      const low = trimmed.toLowerCase();
+      let status = null;
+      if (/(non\s*presente|mancante|assente|non\s*riportat[oa]|assenza)/.test(low)) status = "❌";
+      else if (/(non\s*verificabil|non\s*determinabil|non\s*misurabil|non\s*leggibil)/.test(low)) status = "⚠️";
+      else if (/(conform|presente|indicata|indicato|riporta|adeguat|corrett)/.test(low)) status = "✅";
+      if (status && !/^[✅⚠️❌]/.test(trimmed)) {
+        const noMarker = trimmed.replace(/^[✅⚠️❌]\s*/, "");
+        const leftPad = raw.slice(0, raw.indexOf(trimmed));
+        return leftPad + `${status} ${noMarker}`;
+      }
+      return raw;
     })
     .join("\n");
 }
 
-// Estrai testo da PDF
-async function parsePdf(buffer) {
-  try {
-    const pdfParse = (await import("pdf-parse")).default;
-    const result = await pdfParse(buffer);
-    return { text: result.text || "" };
-  } catch (err) {
-    console.error("Errore pdf-parse:", err.message);
-    return { text: "[Errore: testo non estraibile]" };
-  }
-}
-
 // === ANALISI ETICHETTA ===
 app.post("/analyze", upload.single("label"), async (req, res) => {
-  console.log("Endpoint /analyze chiamato");
+  console.log("✅ Endpoint /analyze chiamato");
   try {
     if (!req.file) return res.status(400).json({ error: "Nessun file." });
 
     const { azienda, nome, email, telefono, lang } = req.body;
     const language = lang || "it";
+    console.log(`🌍 Lingua: ${language}`);
 
     let base64Image = null;
     let extractedText = "";
 
     if (req.file.mimetype === "application/pdf") {
-      console.log("PDF rilevato → estrazione testo...");
+      console.log("📄 PDF rilevato → estrazione testo...");
       const pdfBuffer = fs.readFileSync(req.file.path);
-      const pdfData = await parsePdf(pdfBuffer);
-      extractedText = pdfData.text;
+      const pdfData = await pdfParse(pdfBuffer);
+      extractedText = pdfData.text || "";
     } else {
+      console.log("🖼️ Immagine rilevata");
       base64Image = fs.readFileSync(req.file.path).toString("base64");
     }
 
-    // === ANALISI OPENAI ===
+    // === ANALISI OPENAI (fix MIME + temperature) ===
+    const messages = [
+      {
+        role: "system",
+        content: `Agisci come ispettore UltraCheck AI per etichette vino (Reg. UE 2021/2117).
+Rispondi in ${language} con formato markdown esatto. Se manca un campo → ❌ e finale "Non conforme".
+### 🔎 Conformità normativa
+Denominazione di origine: (✅/⚠️/❌) + testo
+Nome e indirizzo produttore: (✅/⚠️/❌) + testo
+Volume nominale: (✅/⚠️/❌) + testo
+Titolo alcolometrico: (✅/⚠️/❌) + testo
+Allergeni: (✅/⚠️/❌) + testo
+Lotto: (✅/⚠️/❌) + testo
+QR code: (✅/⚠️/❌) + testo
+Lingua UE: (✅/⚠️/❌) + testo
+Altezza caratteri: (✅/⚠️/❌) + testo
+Contrasto: (✅/⚠️/❌) + testo
+**Valutazione finale:** Conforme / Parzialmente conforme / Non conforme`
+      },
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: `Testo estratto dal PDF (se presente): ${extractedText}\n\nAnalizza l'etichetta in ${language}. Non mescolare lingue.`
+          }
+        ]
+      }
+    ];
+
+    // Aggiungi immagine solo se non PDF
+    if (base64Image) {
+      messages[1].content.push({
+        type: "image_url",
+        image_url: { url: `data:${req.file.mimetype};base64,${base64Image}` }
+      });
+    }
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.1,
+      temperature: 0.1,  // FIX: non "ambienti"
       seed: 42,
-      messages: [
-        {
-          role: "system",
-          content: `Sei UltraCheck AI. Analizza l'etichetta vino secondo Reg. UE 2021/2117.
-Rispondi in ${language} con formato markdown esatto. Se un campo manca → No.
-===============================
-### Conformità normativa
-Denominazione di origine: (Yes/No/Warning) + testo
-Nome produttore: (Yes/No/Warning) + testo
-Volume: (Yes/No/Warning) + testo
-Titolo alcolometrico: (Yes/No/Warning) + testo
-Allergeni: (Yes/No/Warning) + testo
-Lotto: (Yes/No/Warning) + testo
-QR code: (Yes/No/Warning) + testo
-Lingua UE: (Yes/No/Warning) + testo
-Altezza caratteri: (Yes/No/Warning) + testo
-Contrasto: (Yes/No/Warning) + testo
-**Valutazione finale:** Conforme / Parzialmente / Non conforme
-===============================`
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: `Testo estratto: ${extractedText}\n\nAnalizza in ${language}.`
-            },
-            ...(base64Image
-              ? [{
-                  type: "image_url",
-                  image_url: { url: `data:${req.file.mimetype};base64,${base64Image}` }
-                }]
-              : [])
-          ]
-        }
-      ]
+      messages
     });
 
     const raw = response.choices[0].message.content || "";
     const analysis = normalizeAnalysis(raw);
+    console.log("✅ Analisi completata");
 
     // === GENERA PDF REPORT ===
     const reportFilename = `report-${Date.now()}.pdf`;
@@ -145,31 +137,12 @@ Contrasto: (Yes/No/Warning) + testo
 
     doc.fontSize(18).text("UltraCheck AI - Report", { align: "center" });
     doc.moveDown(1.5);
-    doc.fontSize(12);
-
-    analysis.split("\n").forEach(line => {
-      if (!line.trim()) {
-        doc.moveDown(0.5);
-      } else if (line.startsWith("### ")) {
-        doc.fontSize(14).text(line.slice(4), { underline: true });
-        doc.moveDown(0.5);
-      } else if (line.includes("Valutazione finale")) {
-        const color = line.includes("Non conforme") ? "#a94442" : line.includes("Parzialmente") ? "#b77f00" : "#3c763d";
-        doc.fontSize(15).fillColor(color).text(line, { bold: true });
-      } else if (/^[YesWarningNo]/.test(line.trimStart())) {
-        const icon = line.trimStart()[0];
-        const text = line.replace(/^[YesWarningNo]\s*/, "");
-        doc.text(`${icon} ${text}`);
-      } else {
-        doc.text(line);
-      }
-      doc.moveDown(0.3);
-    });
+    doc.fontSize(12).text(analysis);
 
     doc.end();
     await new Promise((resolve, reject) => {
       stream.on("finish", resolve);
-      stream.on("error",", reject);
+      stream.on("error", reject);
     });
 
     // === EMAIL ===
@@ -177,78 +150,79 @@ Contrasto: (Yes/No/Warning) + testo
       sgMail.setApiKey(process.env.SENDGRID_API_KEY);
       await sgMail.send({
         to: process.env.MAIL_TO,
-        from: "no-reply@ultracheck.ai",
+        from: "gabriele.russian@ultrapixel.it",
         subject: `Analisi etichetta - ${azienda || "N/D"}`,
-        text: `Da: ${nome} <${email}>\n\n${analysis}`,
+        text: `${analysis}\n\nDa: ${nome} (${email})`,
         attachments: [
-          { content: fs.readFileSync(req.file.path).toString("base64"), filename: req.file.originalname, type: req.file.mimetype },
-          { content: fs.readFileSync(reportPath).toString("base64"), filename: "Report_UltraCheck.pdf", type: "application/pdf" }
+          { content: fs.readFileSync(req.file.path).toString("base64"), filename: req.file.originalname, type: req.file.mimetype, disposition: "attachment" },
+          { content: fs.readFileSync(reportPath).toString("base64"), filename: "UltraCheck_Report.pdf", type: "application/pdf", disposition: "attachment" }
         ]
       });
+      console.log("📧 Email inviata");
     }
 
-    // === PULIZIA ===
-    fs.unlinkSync(req.file.path);
+    fs.unlinkSync(req.file.path);  // Pulisci solo originale
 
-    // === RISPOSTA ===
     res.json({
       result: analysis,
       reportUrl: `/ultracheck.html?report=${reportFilename}&lang=${language}`
     });
 
   } catch (error) {
-    console.error("Errore /analyze:", error.message);
+    console.error("💥 Errore /analyze:", error.message);
     if (req.file?.path) fs.unlinkSync(req.file.path);
-    res.status(500).json({ error: "Errore server." });
+    res.status(500).json({ error: "Errore server: " + error.message });
   }
 });
 
 // === SERVI PDF ===
-app.get("/report/:file", (req, res) => {
-  const path = `/tmp/${req.params.file}`;
+app.get("/report/:filename", (req, res) => {
+  const path = `/tmp/${req.params.filename}`;
   if (fs.existsSync(path)) {
     res.set("Content-Type", "application/pdf");
-    res.sendFile(path, { root: "/" });
+    res.set("Content-Disposition", "inline; filename=report.pdf");
+    res.sendFile(path);
   } else {
     res.status(404).send("Report non trovato.");
   }
 });
 
-// === ultracheck.html ===
+// === ultracheck.html (migliorata con fallback) ===
 app.get("/ultracheck.html", (req, res) => {
   const { report, lang = "it" } = req.query;
-  const url = report ? `/report/${report}` : null;
+  const reportUrl = report ? `/report/${report}` : null;
 
-  const titles = { it: "Report", fr: "Rapport", en: "Report" };
-  const msgs = { it: "Report pronto", fr: "Rapport prêt", en: "Report ready" };
+  const titles = { it: "Report Analisi", fr: "Rapport d'Analyse", en: "Analysis Report" };
+  const msgs = { it: "Il tuo report è pronto!", fr: "Votre rapport est prêt!", en: "Your report is ready!" };
 
-  res.send(`
+  let html = `
 <!DOCTYPE html>
 <html lang="${lang}">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>UltraCheck AI - ${titles[lang]}</title>
   <style>
     body { font-family: Arial; margin: 40px; text-align: center; background: #f9f9f9; }
     h1 { color: #c6a450; }
-    .btn { padding: 12px 24px; margin: 10px; background: #111; color: white; border-radius: 6px; text-decoration: none; }
+    .btn { padding: 12px 24px; margin: 10px; background: #111; color: white; text-decoration: none; border-radius: 6px; }
     .btn:hover { background: #c6a450; color: #111; }
-    iframe { width: 100%; height: 75vh; border: none; margin-top: 20px; }
+    iframe { width: 100%; height: 75vh; border: none; margin-top: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .error { color: red; }
   </style>
 </head>
 <body>
   <h1>UltraCheck AI</h1>
   <p><strong>${msgs[lang]}</strong></p>
   <div>
-    <a href="${url}" download class="btn">Scarica PDF</a>
-    <a href="/" class="btn">Nuova Analisi</a>
+    ${reportUrl ? `<a href="${reportUrl}" download class="btn">📥 Scarica PDF</a>` : '<p class="error">Nessun report disponibile. Torna alla <a href="/">home</a> e riprova.</p>'}
+    <a href="/" class="btn">🔄 Nuova Analisi</a>
   </div>
-  ${url ? `<iframe src="${url}"></iframe>` : "<p>Nessun report.</p>"}
+  ${reportUrl ? `<iframe src="${reportUrl}"></iframe>` : ""}
 </body>
-</html>`);
+</html>`;
+  res.send(html);
 });
 
-// === START ===
 app.listen(port, "0.0.0.0", () => {
-  console.log(`UltraCheck AI attivo su porta ${port}`);
+  console.log(`✅ UltraCheck AI su porta ${port}`);
 });

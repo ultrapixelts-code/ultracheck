@@ -123,7 +123,7 @@ async function parsePdf(buffer) {
   try {
     fs.writeFileSync(pdfPath, buffer);
     await new Promise((resolve, reject) => {
-      const proc = spawn("pdftotext", ["-layout", pdfPath, txtPath]);
+      const proc = spawn("pdftotext", ["-raw", "-layout", pdfPath, txtPath]);
       proc.on("close", (code) => {
         if (code !== 0) return reject(new Error(`pdftotext exited with code ${code}`));
         resolve();

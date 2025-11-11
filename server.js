@@ -19,13 +19,11 @@ async function pdfToImageBase64(buffer) {
       width: 1200,
       height: 1600,
     });
-
-    const page = await convert(1); // prima pagina
+    const page = await convert(1);
     if (!page || !page.base64) {
       console.warn("pdf2pic non ha restituito base64");
       return null;
     }
-
     return page.base64;
   } catch (err) {
     console.warn("Conversione PDF → immagine fallita (pdf2pic):", err.message);
@@ -160,7 +158,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
     const language = lang || "it";
     console.log(`Lingua selezionata: ${language}`);
 
-    // Variabili di stato
+    // DICHIARA TUTTE LE VARIABILI FUORI
     let base64Data;
     let contentType;
     let extractedText = "";
@@ -269,7 +267,7 @@ Inglese → "Regulatory compliance", "Designation of origin", ecc.`
       sgMail.setApiKey(process.env.SMTP_PASS);
       const msg = {
         to: process.env.MAIL_TO,
-        from: "gabriele.russian@ultrapixel.it",
+        from: "("gabriele.russian@ultrapixel.it"),
         subject: `Nuova analisi etichetta vino - ${azienda || "azienda non indicata"}`,
         text: `Azienda: ${azienda || "non indicata"}
 Nome: ${nome || "non indicato"}

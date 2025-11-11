@@ -14,10 +14,10 @@ import { createCanvas } from "canvas";
 async function pdfToImageBase64(buffer) {
   try {
     const convert = fromBuffer(buffer, {
-      density: 300,
+      density: 600,
       format: "png",
-      width: 2000,
-      height: 2800,
+      width: 4000,
+      height: 5500,
     });
     const page = await convert(1);
     if (!page || !page.base64) {
@@ -217,6 +217,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
 Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
 Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
 Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${language}.
+Se trovi anche un solo ❌ allora la valutazione sarà "non conforme".
 
 ===============================
 ### 🔎 Conformità normativa (Reg. UE 2021/2117)

@@ -14,10 +14,10 @@ import { createCanvas } from "canvas";
 async function pdfToImageBase64(buffer) {
   try {
     const convert = fromBuffer(buffer, {
-      density: 200,
+      density: 300,
       format: "png",
-      width: 1200,
-      height: 1600,
+      width: 2000,
+      height: 2800,
     });
     const page = await convert(1);
     if (!page || !page.base64) {

@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
 import PDFDocument from "pdfkit";
 import cors from "cors";
-import pdfParse from "pdf-parse";  // Import statico per fix pdf-parse
+import pdfParse from "pdf-parse";  // Import statico
 
 dotenv.config();
 
@@ -35,7 +35,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Normalizza simboli (migliorato)
+// Normalizza simboli
 function normalizeAnalysis(md) {
   return md
     .split("\n")
@@ -79,7 +79,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       base64Image = fs.readFileSync(req.file.path).toString("base64");
     }
 
-    // === ANALISI OPENAI (fix MIME + temperature) ===
+    // === ANALISI OPENAI ===
     const messages = [
       {
         role: "system",
@@ -109,7 +109,6 @@ Contrasto: (✅/⚠️/❌) + testo
       }
     ];
 
-    // Aggiungi immagine solo se non PDF
     if (base64Image) {
       messages[1].content.push({
         type: "image_url",
@@ -119,7 +118,7 @@ Contrasto: (✅/⚠️/❌) + testo
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      temperature: 0.1,  // FIX: non "ambienti"
+      temperature: 0.1,
       seed: 42,
       messages
     });
@@ -142,7 +141,7 @@ Contrasto: (✅/⚠️/❌) + testo
     doc.end();
     await new Promise((resolve, reject) => {
       stream.on("finish", resolve);
-      stream.on("error", reject);
+      stream.on("error", reject);  // FIX: Rimosso la virgola extra
     });
 
     // === EMAIL ===
@@ -161,7 +160,7 @@ Contrasto: (✅/⚠️/❌) + testo
       console.log("📧 Email inviata");
     }
 
-    fs.unlinkSync(req.file.path);  // Pulisci solo originale
+    fs.unlinkSync(req.file.path);
 
     res.json({
       result: analysis,
@@ -187,7 +186,7 @@ app.get("/report/:filename", (req, res) => {
   }
 });
 
-// === ultracheck.html (migliorata con fallback) ===
+// === ultracheck.html ===
 app.get("/ultracheck.html", (req, res) => {
   const { report, lang = "it" } = req.query;
   const reportUrl = report ? `/report/${report}` : null;

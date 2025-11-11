@@ -224,12 +224,20 @@ Inglese → "Regulatory compliance", "Designation of origin", ecc.`
               type: "text",
               text: `Analizza questa etichetta di vino e rispondi interamente in ${language}. Non mescolare l'italiano.`,
             },
-            {
-              type: "image_url",
-              image_url: {
-                url: `data:${contentType};base64,${base64Data}`,
-              },
-            },
+        // Se è PDF → invia come testo
+if (req.file.mimetype === "application/pdf") {
+  {
+    type: "text",
+    text: extractedText  // ← testo puro
+  }
+} else {
+  {
+    type: "image_url",
+    image_url: {
+      url: `data:${contentType};base64,${base64Data}`,
+    },
+  }
+}
           ],
         },
       ],

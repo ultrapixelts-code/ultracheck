@@ -60,11 +60,19 @@ function normalizeAnalysis(md) {
     })
     .join("\n");
 }
-// ⚡ Funzione helper per leggere PDF in modo sicuro su Render
+// Funzione helper per leggere PDF in modo sicuro su Render
 async function parsePdf(buffer) {
-  const mod = await import("pdf-parse");
-  const pdf = mod.default || mod;
-  return await pdf(buffer);
+  try {
+    const pdfParse = (await import('pdf-parse')).default;
+    if (typeof pdfParse !== 'function') {
+      throw new Error('pdf-parse non è una funzione. Verifica installazione.');
+    }
+    const result = await pdfParse(buffer);
+    return result;
+  } catch (err) {
+    console.error("Errore pdf-parse:", err.message);
+    return { text: "[Errore: impossibile estrarre testo dal PDF]" };
+  }
 }
 
 // 📤 Endpoint analisi etichetta

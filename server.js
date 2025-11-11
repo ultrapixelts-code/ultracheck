@@ -3,7 +3,9 @@ import multer from "multer";
 import fs from "fs";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-import pdf from "pdf-parse";
+import pkg from "pdf-parse";
+const pdf = pkg;
+
 
 try { dotenv.config(); } catch {}
 

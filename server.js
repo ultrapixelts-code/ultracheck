@@ -3,16 +3,18 @@ import multer from "multer";
 import fs from "fs";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-import * as pdfParse from "pdf-parse";
-const pdf = pdfParse.default || pdfParse;
 
-
-try { dotenv.config(); } catch {}
+// 🧩 Import dinamico per compatibilità Render + ESM
+let pdf;
+import("pdf-parse").then((mod) => {
+  pdf = mod.default || mod;
+});
 
 import sgMail from "@sendgrid/mail";
 import PDFDocument from "pdfkit";
 
 dotenv.config();
+
 
 const app = express();
 const port = process.env.PORT || 8080;

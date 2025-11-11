@@ -213,7 +213,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       messages: [
         {
           role: "system",
-          `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
+          content:          `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
 Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
 Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
 Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${language}.

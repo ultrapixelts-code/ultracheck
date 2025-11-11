@@ -60,14 +60,78 @@ function normalizeAnalysis(md) {
     .join("\n");
 }
 
-// Helper per PDF
+// Helper PDF compatibile ESM (Render)
+import { spawn } from "child_process";
+import os from "os";
+import path from "path";
 import { createRequire } from "module";
+import fs from "fs";
+
 const require = createRequire(import.meta.url);
 
+// Prova a caricare pdf-parse (CommonJS)
+let pdfParse;
+try {
+  const lib = require("pdf-parse");
+  pdfParse = lib.default || lib;  // gestisce entrambi i casi
+  if (typeof pdfParse !== "function") pdfParse = null;
+} catch (err) {
+  console.log("pdf-parse non disponibile, uso pdftotext CLI");
+  pdfParse = null;
+}
+
+/**
+ * Estrae testo da un PDF.
+ * Priorità: pdf-parse → pdftotext CLI (sempre disponibile su Render)
+ */
 async function parsePdf(buffer) {
-  const { default: pdfParse } = require("pdf-parse");
-  const data = await pdfParse(buffer);
-  return data;
+  // 1. Usa pdf-parse se disponibile
+  if (pdfParse && typeof pdfParse === "function") {
+    try {
+      console.log("Estrazione testo con pdf-parse...");
+      const data = await pdfParse(buffer);
+      return data;
+    } catch (err) {
+      console.warn("pdf-parse fallito, passo a pdftotext:", err.message);
+    }
+  }
+
+  // 2. Fallback: pdftotext CLI (Render ha poppler-utils)
+  console.log("Estrazione testo con pdftotext CLI...");
+  const tmpDir = os.tmpdir();
+  const pdfPath = path.join(tmpDir, `upload-${Date.now()}.pdf`);
+  const txtPath = pdfPath.replace(".pdf", ".txt");
+
+  try {
+    // Scrivi PDF temporaneo
+    fs.writeFileSync(pdfPath, buffer);
+
+    // Esegui pdftotext
+    await new Promise((resolve, reject) => {
+      const proc = spawn("pdftotext", ["-layout", pdfPath, txtPath]);
+      proc.on("close", (code) => {
+        if (code !== 0) return reject(new Error(`pdftotext exited with code ${code}`));
+        resolve();
+      });
+      proc.on("error", reject);
+    });
+
+    // Leggi testo
+    const text = fs.existsSync(txtPath) ? fs.readFileSync(txtPath, "utf8") : "";
+    
+    // Pulizia
+    [pdfPath, txtPath].forEach(p => {
+      try { fs.unlinkSync(p); } catch {}
+    });
+
+    return { text };
+  } catch (err) {
+    // Pulizia in caso di errore
+    [pdfPath, txtPath].forEach(p => {
+      try { fs.unlinkSync(p); } catch {}
+    });
+    throw new Error("Impossibile estrarre testo dal PDF: " + err.message);
+  }
 }
 
 // Endpoint analisi

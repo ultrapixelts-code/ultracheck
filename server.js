@@ -213,32 +213,46 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       messages: [
         {
           role: "system",
-          content: `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
+          `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
 Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
 Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
 Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${language}.
-Se c'è anche 1 solo campo Failed mancante, la valutazione finale sarà non conforme.
+
 ===============================
-### Conformità normativa (Reg. UE 2021/2117)
-Denominazione di origine: (Success conforme / Warning parziale / Failed mancante) + testo
-Nome e indirizzo del produttore o imbottigliatore: (Success/Warning/Failed) + testo
-Volume nominale: (Success/Warning/Failed) + testo
-Titolo alcolometrico: (Success/Warning/Failed) + testo
-Indicazione allergeni: (Success/Warning/Failed) + testo
-Lotto: (Success/Warning/Failed) + testo
-QR code: (Success/Warning/Failed) + testo
-Lingua corretta per il mercato UE: (Success/Warning/Failed) + testo
-Altezza minima dei caratteri: (Success/Warning/Failed) + testo
-Contrasto testo/sfondo adeguato: (Success/Warning/Failed) + testo
+### 🔎 Conformità normativa (Reg. UE 2021/2117)
+Denominazione di origine: (✅ conforme / ⚠️ parziale / ❌ mancante) + testo
+Nome e indirizzo del produttore o imbottigliatore: (✅/⚠️/❌) + testo
+Volume nominale: (✅/⚠️/❌) + testo
+Titolo alcolometrico: (✅/⚠️/❌) + testo
+Indicazione allergeni: (✅/⚠️/❌) + testo
+Lotto: (✅/⚠️/❌) + testo
+QR code o link ingredienti/energia: (✅/⚠️/❌) + testo
+Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
+Altezza minima dei caratteri: (✅/⚠️/❌) + testo
+Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo
+
 **Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
 ===============================`
         },
         {
           role: "system",
-          content: `IMPORTANT: se la lingua selezionata è francese (${language}), traduci completamente tutti i titoli e le intestazioni in francese, mantenendo il formato identico.
-Francese → "Conformité réglementaire", "Dénomination d’origine", ecc.
-Inglese → "Regulatory compliance", "Designation of origin", ecc.`
-        },
+          content: `IMPORTANT: Se la lingua selezionata è francese (${language}), traduci completamente tutti i titoli e le intestazioni in francese, mantenendo il formato identico.
+Esempi di traduzione:
+
+🇫🇷 **Francese**
+- "Conformità normativa" → "Conformité réglementaire"
+- "Denominazione di origine" → "Dénomination d’origine"
+- "Nome e indirizzo del produttore o imbottigliatore" → "Nom et adresse du producteur ou de l’embouteilleur"
+- "Valutazione finale" → "Évaluation finale"
+
+🇬🇧 **Inglese**
+- "Conformità normativa" → "Regulatory compliance"
+- "Denominazione di origine" → "Designation of origin"
+- "Nome e indirizzo del produttore o imbottigliatore" → "Producer or bottler name and address"
+- "Valutazione finale" → "Final assessment"
+
+Non usare parole italiane in nessun caso. Tutto il testo deve essere nella lingua selezionata, inclusi i titoli e i campi.`
+},
         {
           role: "user",
           content: [

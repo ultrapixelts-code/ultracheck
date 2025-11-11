@@ -4,7 +4,6 @@ import fs from "fs";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
-import PDFDocument from "pdfkit";
 import { PDFDocument as PDFLibDocument } from "pdf-lib";
 import { createCanvas } from "canvas";
 
@@ -37,6 +36,7 @@ async function pdfToImageBase64(buffer) {
 dotenv.config();
 const app = express();
 const port = process.env.PORT || 8080;
+
 app.use(express.static("."));
 app.use(express.json());
 
@@ -49,8 +49,7 @@ app.get("/", (req, res) => {
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, "/tmp"),
-    filename: (req, file, cb) =>
-      cb(null, Date.now() + "-" + file.originalname),
+    filename: (req, file, cb) => cb(null, Date.now() + "-" + file.originalname),
   }),
 });
 
@@ -59,7 +58,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Normalizza simboli
+// Normalizza simboli Success/Warning/Failed
 function normalizeAnalysis(md) {
   function statusFor(line) {
     const low = line.toLowerCase();
@@ -86,14 +85,13 @@ function normalizeAnalysis(md) {
     .join("\n");
 }
 
-// Helper PDF compatibile ESM (Render)
+// Helper PDF (pdftotext CLI su Render)
 import { spawn } from "child_process";
 import os from "os";
 import path from "path";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
 
-// Prova a caricare pdf-parse (CommonJS)
 let pdfParse;
 try {
   const lib = require("pdf-parse");
@@ -106,7 +104,7 @@ try {
 
 /**
  * Estrae testo da un PDF.
- * Priorità: pdf-parse → pdftotext CLI (sempre disponibile su Render)
+ * Priorità: pdf-parse → pdftotext CLI
  */
 async function parsePdf(buffer) {
   if (pdfParse && typeof pdfParse === "function") {
@@ -162,6 +160,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
     const language = lang || "it";
     console.log(`Lingua selezionata: ${language}`);
 
+    // Variabili di stato
     let base64Data;
     let contentType;
     let extractedText = "";
@@ -249,7 +248,7 @@ Inglese → "Regulatory compliance", "Designation of origin", ecc.`
               type: "text",
               text: `Analizza questa etichetta di vino e rispondi interamente in ${language}. Non mescolare l'italiano.`,
             },
-            ...(req.file.mimetype === "application/pdf" && isTextExtracted
+            ...(isTextExtracted
               ? [{ type: "text", text: extractedText }]
               : [{
                   type: "image_url",

@@ -60,6 +60,12 @@ function normalizeAnalysis(md) {
     })
     .join("\n");
 }
+// ⚡ Funzione helper per leggere PDF in modo sicuro su Render
+async function parsePdf(buffer) {
+  const mod = await import("pdf-parse");
+  const pdf = mod.default || mod;
+  return await pdf(buffer);
+}
 
 // 📤 Endpoint analisi etichetta
 app.post("/analyze", upload.single("label"), async (req, res) => {

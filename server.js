@@ -5,12 +5,38 @@ import OpenAI from "openai";
 import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
 import PDFDocument from "pdfkit";
+import { PDFDocument as PDFLibDocument } from "pdf-lib";
+import { createCanvas } from "canvas";
+
+/**
+ * Converte la prima pagina di un PDF in immagine base64 (PNG)
+ */
+async function pdfToImageBase64(buffer) {
+  try {
+    const pdfDoc = await PDFLibDocument.load(buffer);
+    const page = pdfDoc.getPage(0);
+    const { width, height } = page.getSize();
+    const canvas = createCanvas(width, height);
+    const context = canvas.getContext("2d");
+
+    context.fillStyle = "white";
+    context.fillRect(0, 0, width, height);
+
+    await page.render({
+      canvasContext: context,
+      viewport: page.getViewport({ scale: 2 }),
+    }).promise;
+
+    return canvas.toDataURL("image/png").split(",")[1];
+  } catch (err) {
+    console.warn("Conversione PDF → immagine fallita:", err.message);
+    return null;
+  }
+}
 
 dotenv.config();
-
 const app = express();
 const port = process.env.PORT || 8080;
-
 app.use(express.static("."));
 app.use(express.json());
 
@@ -65,14 +91,13 @@ import { spawn } from "child_process";
 import os from "os";
 import path from "path";
 import { createRequire } from "module";
-
 const require = createRequire(import.meta.url);
 
 // Prova a caricare pdf-parse (CommonJS)
 let pdfParse;
 try {
   const lib = require("pdf-parse");
-  pdfParse = lib.default || lib;  // gestisce entrambi i casi
+  pdfParse = lib.default || lib;
   if (typeof pdfParse !== "function") pdfParse = null;
 } catch (err) {
   console.log("pdf-parse non disponibile, uso pdftotext CLI");
@@ -84,7 +109,6 @@ try {
  * Priorità: pdf-parse → pdftotext CLI (sempre disponibile su Render)
  */
 async function parsePdf(buffer) {
-  // 1. Usa pdf-parse se disponibile
   if (pdfParse && typeof pdfParse === "function") {
     try {
       console.log("Estrazione testo con pdf-parse...");
@@ -95,17 +119,13 @@ async function parsePdf(buffer) {
     }
   }
 
-  // 2. Fallback: pdftotext CLI (Render ha poppler-utils)
   console.log("Estrazione testo con pdftotext CLI...");
   const tmpDir = os.tmpdir();
   const pdfPath = path.join(tmpDir, `upload-${Date.now()}.pdf`);
   const txtPath = pdfPath.replace(".pdf", ".txt");
 
   try {
-    // Scrivi PDF temporaneo
     fs.writeFileSync(pdfPath, buffer);
-
-    // Esegui pdftotext
     await new Promise((resolve, reject) => {
       const proc = spawn("pdftotext", ["-layout", pdfPath, txtPath]);
       proc.on("close", (code) => {
@@ -115,17 +135,12 @@ async function parsePdf(buffer) {
       proc.on("error", reject);
     });
 
-    // Leggi testo
     const text = fs.existsSync(txtPath) ? fs.readFileSync(txtPath, "utf8") : "";
-    
-    // Pulizia
     [pdfPath, txtPath].forEach(p => {
       try { fs.unlinkSync(p); } catch {}
     });
-
     return { text };
   } catch (err) {
-    // Pulizia in caso di errore
     [pdfPath, txtPath].forEach(p => {
       try { fs.unlinkSync(p); } catch {}
     });
@@ -149,6 +164,8 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
 
     let base64Data;
     let contentType;
+    let extractedText = "";
+    let isTextExtracted = false;
 
     // GESTIONE PDF
     if (req.file.mimetype === "application/pdf") {
@@ -156,26 +173,34 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       try {
         const pdfBuffer = fs.readFileSync(req.file.path);
         const pdfData = await parsePdf(pdfBuffer);
-        const extractedText = pdfData.text || "";
+        extractedText = pdfData.text || "";
 
-        if (!extractedText.trim()) {
+        if (extractedText.trim()) {
+          isTextExtracted = true;
+          base64Data = Buffer.from(extractedText).toString("base64");
+          contentType = "text/plain";
+          console.log("Testo estratto (prime 200 char):", extractedText.substring(0, 200));
+        }
+      } catch (err) {
+        console.warn("Estrazione testo fallita:", err.message);
+      }
+
+      // Fallback: converti in immagine se non c'è testo
+      if (!isTextExtracted) {
+        console.log("Nessun testo estratto → converto PDF in immagine");
+        const imageBase64 = await pdfToImageBase64(fs.readFileSync(req.file.path));
+        if (imageBase64) {
+          base64Data = imageBase64;
+          contentType = "image/png";
+          console.log("PDF convertito in immagine (PNG)");
+        } else {
           fs.unlinkSync(req.file.path);
           return res.status(400).json({
-            error: "Il PDF è vuoto o non contiene testo estraibile."
+            error: "Impossibile analizzare il PDF: né testo né immagine estraibile."
           });
         }
-
-        base64Data = Buffer.from(extractedText).toString("base64");
-        contentType = "text/plain"; // OpenAI riceve testo
-        console.log("Testo estratto (prime 200 char):", extractedText.substring(0, 200));
-      } catch (err) {
-        console.error("Errore estrazione PDF:", err.message);
-        fs.unlinkSync(req.file.path);
-        return res.status(500).json({
-          error: "Impossibile leggere il testo dal PDF."
-        });
       }
-    } 
+    }
     // GESTIONE IMMAGINE
     else {
       const imageBytes = fs.readFileSync(req.file.path);
@@ -219,22 +244,22 @@ Inglese → "Regulatory compliance", "Designation of origin", ecc.`
         },
         {
           role: "user",
-      content: [
-        {
-          type: "text",
-          text: `Analizza questa etichetta di vino e rispondi interamente in ${language}. Non mescolare l'italiano.`,
+          content: [
+            {
+              type: "text",
+              text: `Analizza questa etichetta di vino e rispondi interamente in ${language}. Non mescolare l'italiano.`,
+            },
+            ...(req.file.mimetype === "application/pdf" && isTextExtracted
+              ? [{ type: "text", text: extractedText }]
+              : [{
+                  type: "image_url",
+                  image_url: { url: `data:${contentType};base64,${base64Data}` }
+                }]
+            ),
+          ],
         },
-        ...(req.file.mimetype === "application/pdf"
-          ? [{ type: "text", text: extractedText }]
-          : [{
-              type: "image_url",
-              image_url: { url: `data:${contentType};base64,${base64Data}` }
-            }]
-        ),
       ],
-    },
-  ],
-});
+    });
 
     const raw = response.choices[0].message.content || "Nessuna risposta ricevuta dall'AI.";
     const analysis = normalizeAnalysis(raw);
@@ -268,7 +293,6 @@ ${analysis}`,
 
     fs.unlinkSync(req.file.path);
     res.json({ result: analysis });
-
   } catch (error) {
     console.error("Errore /analyze:", error.response?.data || error.message);
     if (req.file && fs.existsSync(req.file.path)) {

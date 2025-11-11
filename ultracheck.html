@@ -346,11 +346,16 @@
       progress.style.display = "none";
       resultBox.style.display = "block";
 
-      if (res.ok) {
-        const data = await res.json();
-        resultText.textContent = translations[selectedLang].complete;
-        resultText.className = "ok";
-        resultDetails.innerHTML = data.result.replace(/\n/g, "<br>");
+     if (res.ok) {
+  const data = await res.json();
+  resultText.textContent = translations[selectedLang].complete;
+  resultText.className = "ok";
+  resultDetails.innerHTML = data.result.replace(/\n/g, "<br>");
+
+  setTimeout(() => {
+    window.location.href = data.reportUrl;
+  }, 1200);
+}
       } else {
         const err = await res.json().catch(() => ({}));
         resultText.textContent = translations[selectedLang].error;

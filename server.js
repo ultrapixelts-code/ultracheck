@@ -65,7 +65,6 @@ import { spawn } from "child_process";
 import os from "os";
 import path from "path";
 import { createRequire } from "module";
-import fs from "fs";
 
 const require = createRequire(import.meta.url);
 

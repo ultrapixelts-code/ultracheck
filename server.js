@@ -3,13 +3,6 @@ import multer from "multer";
 import fs from "fs";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-
-// 🧩 Import dinamico per compatibilità Render + ESM
-let pdf;
-import("pdf-parse").then((mod) => {
-  pdf = mod.default || mod;
-});
-
 import sgMail from "@sendgrid/mail";
 import PDFDocument from "pdfkit";
 
@@ -91,7 +84,8 @@ if (req.file.mimetype === "application/pdf") {
   isPdf = true;
 
   const pdfBuffer = fs.readFileSync(req.file.path);
-  const pdfData = await pdf(pdfBuffer);
+const pdfData = await parsePdf(pdfBuffer);
+
   const extractedText = pdfData.text;
 
   base64Image = Buffer.from(extractedText).toString("base64");

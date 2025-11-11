@@ -78,8 +78,23 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
     const language = lang || "it";
     console.log(`🌍 Lingua selezionata: ${language}`);
 
-    const imageBytes = fs.readFileSync(req.file.path);
-    const base64Image = imageBytes.toString("base64");
+let base64Image;
+let isPdf = false;
+
+if (req.file.mimetype === "application/pdf") {
+  console.log("📄 Rilevato PDF — converto in immagine temporanea per analisi...");
+  isPdf = true;
+
+  // Estrai il testo dal PDF (senza cambiare la logica di analisi)
+  const pdfData = await (await import("pdf-parse")).default(fs.readFileSync(req.file.path));
+  const extractedText = pdfData.text;
+
+  // Codifica il testo in base64 come se fosse un'immagine, per riutilizzare lo stesso input
+  base64Image = Buffer.from(extractedText).toString("base64");
+} else {
+  const imageBytes = fs.readFileSync(req.file.path);
+  base64Image = imageBytes.toString("base64");
+}
 
     // 🧠 Analisi AI
     const response = await openai.chat.completions.create({

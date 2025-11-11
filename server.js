@@ -4,7 +4,8 @@ import fs from "fs";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import * as pdfParse from "pdf-parse";
-const pdf = pdfParse.default || pdfParse;   // ✅ fix universale
+const pdfData = await pdf(pdfBuffer);  // ✅ usa la costante pdf, non pdfParse
+
 
 try { dotenv.config(); } catch {}
 

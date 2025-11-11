@@ -90,7 +90,7 @@ if (req.file.mimetype === "application/pdf") {
   isPdf = true;
 
   const pdfBuffer = fs.readFileSync(req.file.path);
-  const pdfData = await pdf(pdfBuffer);
+  const pdfData = await pdfParse(pdfBuffer);
   const extractedText = pdfData.text;
 
   base64Image = Buffer.from(extractedText).toString("base64");

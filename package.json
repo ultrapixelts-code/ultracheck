@@ -8,14 +8,11 @@
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
-    "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "express-fileupload": "^1.5.2",
     "multer": "^2.0.2",
-    "nodemailer": "^7.0.10",
     "openai": "^6.8.1",
-    "pdf-parse": "^2.4.5",
-    "pdfkit": "^0.17.2"
+    "pdf2pic": "^2.1.4",
+    "canvas": "^2.11.2"
   }
 }

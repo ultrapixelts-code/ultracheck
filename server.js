@@ -4,31 +4,31 @@ import fs from "fs";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
-import { PDFDocument as PDFLibDocument } from "pdf-lib";
+import { fromBuffer } from "pdf2pic";
 import { createCanvas } from "canvas";
 
 /**
  * Converte la prima pagina di un PDF in immagine base64 (PNG)
+ * Usa pdf2pic + ghostscript → funziona su Render (Node.js)
  */
 async function pdfToImageBase64(buffer) {
   try {
-    const pdfDoc = await PDFLibDocument.load(buffer);
-    const page = pdfDoc.getPage(0);
-    const { width, height } = page.getSize();
-    const canvas = createCanvas(width, height);
-    const context = canvas.getContext("2d");
+    const convert = fromBuffer(buffer, {
+      density: 200,
+      format: "png",
+      width: 1200,
+      height: 1600,
+    });
 
-    context.fillStyle = "white";
-    context.fillRect(0, 0, width, height);
+    const page = await convert(1); // prima pagina
+    if (!page || !page.base64) {
+      console.warn("pdf2pic non ha restituito base64");
+      return null;
+    }
 
-    await page.render({
-      canvasContext: context,
-      viewport: page.getViewport({ scale: 2 }),
-    }).promise;
-
-    return canvas.toDataURL("image/png").split(",")[1];
+    return page.base64;
   } catch (err) {
-    console.warn("Conversione PDF → immagine fallita:", err.message);
+    console.warn("Conversione PDF → immagine fallita (pdf2pic):", err.message);
     return null;
   }
 }

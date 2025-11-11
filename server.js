@@ -3,8 +3,9 @@ import multer from "multer";
 import fs from "fs";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-import pkg from "pdf-parse";
-const pdf = pkg;
+import * as pdfParse from "pdf-parse";
+const pdf = pdfParse.default || pdfParse;   // ✅ funziona in ESM e CJS
+
 
 
 try { dotenv.config(); } catch {}

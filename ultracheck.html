@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>UltraCheck AI – Analisi Etichette Vino</title>
+  <meta name="description" content="UltraCheck AI – Analisi automatica delle etichette vino conforme al Reg. UE 2021/2117.">
+  <link rel="icon" type="image/png" href="favicon.png" />
+
   <style>
     body {
       font-family: "Helvetica Neue", Arial, sans-serif;
@@ -151,54 +154,38 @@
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-.lang-switcher {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-}
-.lang-switcher button {
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  margin-left: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-.lang-switcher {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-}
-.lang-switcher button {
-  background: #fff;
-  border: 1px solid #eee;
-  border-radius: 8px;
-  margin-left: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s;
-}
-.lang-switcher button:hover {
-  background: #c6a450;
-  color: #111;
-}
 
+    .lang-switcher {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .lang-switcher button {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      margin-left: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    .lang-switcher button:hover {
+      background: #c6a450;
+      color: #111;
+    }
   </style>
 </head>
-<div class="lang-switcher">
-  <button data-lang="it">🇮🇹 IT</button>
-  <button data-lang="fr">🇫🇷 FR</button>
-  <button data-lang="en">🇬🇧 EN</button>
-</div>
+
 <body>
   <div class="lang-switcher">
-  <button data-lang="it">🇮🇹 IT</button>
-  <button data-lang="fr">🇫🇷 FR</button>
-  <button data-lang="en">🇬🇧 EN</button>
-</div>
+    <button data-lang="it">🇮🇹 IT</button>
+    <button data-lang="fr">🇫🇷 FR</button>
+    <button data-lang="en">🇬🇧 EN</button>
+  </div>
+
   <h1>UltraCheck AI</h1>
   <h2>Analisi automatica etichette vino</h2>
 
@@ -220,7 +207,7 @@
 
   <div class="upload-box" id="uploadSection" style="display:none">
     <p>Carica il tuo file immagine dell’etichetta</p>
-    <input type="file" id="fileInput" accept=".jpg,.png,.jpeg, .pdf" />
+    <input type="file" id="fileInput" accept=".jpg,.png,.jpeg,.pdf" />
     <label for="fileInput" class="btn">Scegli file</label>
   </div>
 
@@ -235,149 +222,143 @@
     </div>
   </div>
 
-<script>
-  // 🔹 Riferimenti agli elementi
-  const form = document.getElementById("userForm");
-  const uploadSection = document.getElementById("uploadSection");
-  const fileInput = document.getElementById("fileInput");
-  const progress = document.getElementById("progress");
-  const progressBar = document.getElementById("progressBar");
-  const resultBox = document.getElementById("resultBox");
-  const resultText = document.getElementById("resultText");
-  const resultDetails = document.getElementById("resultDetails");
+  <script>
+    // 🔹 Riferimenti agli elementi
+    const form = document.getElementById("userForm");
+    const uploadSection = document.getElementById("uploadSection");
+    const fileInput = document.getElementById("fileInput");
+    const progress = document.getElementById("progress");
+    const progressBar = document.getElementById("progressBar");
+    const resultBox = document.getElementById("resultBox");
+    const resultText = document.getElementById("resultText");
+    const resultDetails = document.getElementById("resultDetails");
 
-  // 🌍 Selettore lingua
-  let selectedLang = "it"; // lingua predefinita
+    // 🌍 Selettore lingua
+    let selectedLang = "it"; // lingua predefinita
 
-  const translations = {
-    it: {
-      title: "UltraCheck AI",
-      subtitle: "Analisi automatica etichette vino",
-      company: "Azienda *",
-      name: "Nome e Cognome *",
-      email: "Email *",
-      phone: "Telefono *",
-      analyze: "Procedi all’analisi",
-      upload: "Carica il tuo file immagine dell’etichetta",
-      choose: "Scegli file",
-      complete: "🧠 Analisi completata",
-      error: "❌ Errore nell’analisi",
-    },
-    fr: {
-      title: "UltraCheck AI",
-      subtitle: "Analyse automatique des étiquettes de vin",
-      company: "Entreprise *",
-      name: "Nom et prénom *",
-      email: "E-mail *",
-      phone: "Téléphone *",
-      analyze: "Lancer l’analyse",
-      upload: "Téléchargez l’image de votre étiquette",
-      choose: "Choisir un fichier",
-      complete: "🧠 Analyse terminée",
-      error: "❌ Erreur d’analyse",
-    },
-    en: {
-      title: "UltraCheck AI",
-      subtitle: "Automatic wine label analysis",
-      company: "Company *",
-      name: "Full name *",
-      email: "Email *",
-      phone: "Phone *",
-      analyze: "Start analysis",
-      upload: "Upload your label image",
-      choose: "Choose file",
-      complete: "🧠 Analysis complete",
-      error: "❌ Analysis error",
-    }
-  };
+    const translations = {
+      it: {
+        title: "UltraCheck AI",
+        subtitle: "Analisi automatica etichette vino",
+        company: "Azienda *",
+        name: "Nome e Cognome *",
+        email: "Email *",
+        phone: "Telefono *",
+        analyze: "Procedi all’analisi",
+        upload: "Carica il tuo file immagine dell’etichetta",
+        choose: "Scegli file",
+        complete: "🧠 Analisi completata",
+        error: "❌ Errore nell’analisi",
+      },
+      fr: {
+        title: "UltraCheck AI",
+        subtitle: "Analyse automatique des étiquettes de vin",
+        company: "Entreprise *",
+        name: "Nom et prénom *",
+        email: "E-mail *",
+        phone: "Téléphone *",
+        analyze: "Lancer l’analyse",
+        upload: "Téléchargez l’image de votre étiquette",
+        choose: "Choisir un fichier",
+        complete: "🧠 Analyse terminée",
+        error: "❌ Erreur d’analyse",
+      },
+      en: {
+        title: "UltraCheck AI",
+        subtitle: "Automatic wine label analysis",
+        company: "Company *",
+        name: "Full name *",
+        email: "Email *",
+        phone: "Phone *",
+        analyze: "Start analysis",
+        upload: "Upload your label image",
+        choose: "Choose file",
+        complete: "🧠 Analysis complete",
+        error: "❌ Analysis error",
+      }
+    };
 
-  // 🔄 Cambio lingua dinamico
-  document.querySelectorAll('.lang-switcher button').forEach(btn => {
-    btn.addEventListener('click', e => {
-      selectedLang = e.target.dataset.lang;
-      const t = translations[selectedLang];
+    // 🔄 Cambio lingua dinamico
+    document.querySelectorAll('.lang-switcher button').forEach(btn => {
+      btn.addEventListener('click', e => {
+        selectedLang = e.target.dataset.lang;
+        const t = translations[selectedLang];
 
-      document.querySelector('h1').textContent = t.title;
-      document.querySelector('h2').textContent = t.subtitle;
-      document.querySelector('label[for="company"]').textContent = t.company;
-      document.querySelector('label[for="name"]').textContent = t.name;
-      document.querySelector('label[for="email"]').textContent = t.email;
-      document.querySelector('label[for="phone"]').textContent = t.phone;
-      document.querySelector('#userForm .btn').textContent = t.analyze;
-      document.querySelector('#uploadSection p').textContent = t.upload;
-      document.querySelector('label[for="fileInput"]').textContent = t.choose;
+        document.querySelector('h1').textContent = t.title;
+        document.querySelector('h2').textContent = t.subtitle;
+        document.querySelector('label[for="company"]').textContent = t.company;
+        document.querySelector('label[for="name"]').textContent = t.name;
+        document.querySelector('label[for="email"]').textContent = t.email;
+        document.querySelector('label[for="phone"]').textContent = t.phone;
+        document.querySelector('#userForm .btn').textContent = t.analyze;
+        document.querySelector('#uploadSection p').textContent = t.upload;
+        document.querySelector('label[for="fileInput"]').textContent = t.choose;
+      });
     });
-  });
 
-  // 🧾 Gestione form
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const data = new FormData(form);
-    console.log("✅ Dati raccolti:", Object.fromEntries(data.entries()));
+    // 🧾 Gestione form
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const data = new FormData(form);
+      console.log("✅ Dati raccolti:", Object.fromEntries(data.entries()));
 
-    form.style.display = "none";
-    uploadSection.style.display = "block";
-  });
+      form.style.display = "none";
+      uploadSection.style.display = "block";
+    });
 
-  // 🧠 Analisi file etichetta
-  async function analyzeImageFile(file) {
-    progress.style.display = "block";
-    resultBox.style.display = "none";
-    progressBar.style.width = "0%";
+    // 🧠 Analisi file etichetta
+    async function analyzeImageFile(file) {
+      progress.style.display = "block";
+      resultBox.style.display = "none";
+      progressBar.style.width = "0%";
 
-    let width = 0;
-    const interval = setInterval(() => {
-      width = Math.min(100, width + 8);
-      progressBar.style.width = width + "%";
-    }, 200);
+      let width = 0;
+      const interval = setInterval(() => {
+        width = Math.min(100, width + 8);
+        progressBar.style.width = width + "%";
+      }, 200);
 
-    try {
-      const formData = new FormData();
-      formData.append("label", file);
-      formData.append("azienda", document.getElementById("company").value);
-      formData.append("nome", document.getElementById("name").value);
-      formData.append("email", document.getElementById("email").value);
-      formData.append("telefono", document.getElementById("phone").value);
-      formData.append("lang", selectedLang); // 🌍 inviamo la lingua scelta
+      try {
+        const formData = new FormData();
+        formData.append("label", file);
+        formData.append("azienda", document.getElementById("company").value);
+        formData.append("nome", document.getElementById("name").value);
+        formData.append("email", document.getElementById("email").value);
+        formData.append("telefono", document.getElementById("phone").value);
+        formData.append("lang", selectedLang);
 
-      const res = await fetch("/analyze", { method: "POST", body: formData });
+        const res = await fetch("/analyze", { method: "POST", body: formData });
 
-      clearInterval(interval);
-      progress.style.display = "none";
-      resultBox.style.display = "block";
+        clearInterval(interval);
+        progress.style.display = "none";
+        resultBox.style.display = "block";
 
-     if (res.ok) {
-  const data = await res.json();
-  resultText.textContent = translations[selectedLang].complete;
-  resultText.className = "ok";
-  resultDetails.innerHTML = data.result.replace(/\n/g, "<br>");
-
-  setTimeout(() => {
-    window.location.href = data.reportUrl;
-  }, 1200);
-}
-      } else {
-        const err = await res.json().catch(() => ({}));
+        if (res.ok) {
+          const data = await res.json();
+          resultText.textContent = translations[selectedLang].complete;
+          resultText.className = "ok";
+          resultDetails.innerHTML = data.result.replace(/\n/g, "<br>");
+        } else {
+          const err = await res.json().catch(() => ({}));
+          resultText.textContent = translations[selectedLang].error;
+          resultText.className = "error";
+          resultDetails.textContent = err.error || "Impossibile analizzare il file.";
+        }
+      } catch (e) {
+        clearInterval(interval);
+        progress.style.display = "none";
+        resultBox.style.display = "block";
         resultText.textContent = translations[selectedLang].error;
         resultText.className = "error";
-        resultDetails.textContent = err.error || "Impossibile analizzare il file.";
+        resultDetails.textContent = "Controlla la connessione o riprova.";
       }
-    } catch (e) {
-      clearInterval(interval);
-      progress.style.display = "none";
-      resultBox.style.display = "block";
-      resultText.textContent = translations[selectedLang].error;
-      resultText.className = "error";
-      resultDetails.textContent = "Controlla la connessione o riprova.";
     }
-  }
 
-  // 📤 Caricamento file
-  fileInput.addEventListener("change", () => {
-    const file = fileInput.files?.[0];
-    if (file) analyzeImageFile(file);
-  });
-</script>
-
+    // 📤 Caricamento file
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      if (file) analyzeImageFile(file);
+    });
+  </script>
 </body>
 </html>

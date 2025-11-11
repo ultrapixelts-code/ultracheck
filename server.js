@@ -3,6 +3,7 @@ import multer from "multer";
 import fs from "fs";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import pdfParse from "pdf-parse";
 try { dotenv.config(); } catch {}
 
 import sgMail from "@sendgrid/mail";

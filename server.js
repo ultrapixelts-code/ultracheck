@@ -3,7 +3,8 @@ import multer from "multer";
 import fs from "fs";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-import * as pdfParse from "pdf-parse";
+import pdf from "pdf-parse";
+
 try { dotenv.config(); } catch {}
 
 import sgMail from "@sendgrid/mail";
@@ -82,19 +83,19 @@ let base64Image;
 let isPdf = false;
 
 if (req.file.mimetype === "application/pdf") {
-  console.log("📄 Rilevato PDF — converto in immagine temporanea per analisi...");
+  console.log("📄 Rilevato PDF — estraggo testo con pdf-parse...");
   isPdf = true;
 
-  // Estrai il testo dal PDF (senza cambiare la logica di analisi)
-  const pdfData = await (await import("pdf-parse")).default(fs.readFileSync(req.file.path));
+  const pdfBuffer = fs.readFileSync(req.file.path);
+  const pdfData = await pdf(pdfBuffer);
   const extractedText = pdfData.text;
 
-  // Codifica il testo in base64 come se fosse un'immagine, per riutilizzare lo stesso input
   base64Image = Buffer.from(extractedText).toString("base64");
 } else {
   const imageBytes = fs.readFileSync(req.file.path);
   base64Image = imageBytes.toString("base64");
 }
+
 
     // 🧠 Analisi AI
     const response = await openai.chat.completions.create({

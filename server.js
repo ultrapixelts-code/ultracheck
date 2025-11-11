@@ -64,11 +64,13 @@ function normalizeAnalysis(md) {
     .join("\n");
 }
 
-// ⚡ Helper per PDF
+// ⚡ Helper per PDF (compatibile ESM + Render)
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse");
+
 async function parsePdf(buffer) {
-  const mod = await import("pdf-parse");
-  const pdf = mod.default || mod;
-  return await pdf(buffer);
+  return await pdfParse(buffer);
 }
 
 // 📤 Endpoint analisi etichetta

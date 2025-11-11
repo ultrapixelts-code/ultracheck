@@ -281,7 +281,7 @@ Non usare parole italiane in nessun caso. Tutto il testo deve essere nella lingu
       sgMail.setApiKey(process.env.SMTP_PASS);
       const msg = {
         to: process.env.MAIL_TO,
-        from: "("gabriele.russian@ultrapixel.it"),
+        from: "gabriele.russian@ultrapixel.it",
         subject: `Nuova analisi etichetta vino - ${azienda || "azienda non indicata"}`,
         text: `Azienda: ${azienda || "non indicata"}
 Nome: ${nome || "non indicato"}

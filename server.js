@@ -32,13 +32,6 @@ async function ocrGoogle(buffer) {
 }
 
 
-    return enhanced.toString("base64");
-  } catch (err) {
-    console.warn("pdfToImageBase64 fallita:", err.message);
-    return null;
-  }
-}
-
 
 dotenv.config();
 const app = express();

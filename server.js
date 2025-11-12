@@ -164,10 +164,10 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       console.log("📄 PDF → estrai testo nativo...");
       const { text } = await parsePdf(fileBuffer);
       if (text.trim().length > 30) {
-        extractedText = text;
-        isTextExtracted = true;
-        console.log("✅ Testo nativo estratto");
-      }
+  extractedText = text;  // tieni il testo nativo come backup
+  isTextExtracted = false;  // FORZA OCR con Google Vision
+  console.log("FORZO OCR con Google Vision (test)");
+}
 
       // Fallback OCR se testo scarso
       if (!isTextExtracted) {

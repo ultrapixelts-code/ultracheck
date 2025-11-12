@@ -7,6 +7,7 @@ import sgMail from "@sendgrid/mail";
 import { fromBuffer } from "pdf2pic";
 import { createCanvas } from "canvas";
 import Tesseract from "tesseract.js";
+import sharp from "sharp";
 
 /**
  * Converte la prima pagina di un PDF in immagine base64 (PNG)
@@ -14,23 +15,25 @@ import Tesseract from "tesseract.js";
  */
 async function pdfToImageBase64(buffer) {
   try {
-    const convert = fromBuffer(buffer, {
-      density: 400,
-      format: "png",
-      width: 3000,
-      height: 4000,
-    });
+    const convert = fromBuffer(buffer, { density: 300, format: "png" });
     const page = await convert(1);
-    if (!page || !page.base64) {
-      console.warn("pdf2pic non ha restituito base64");
-      return null;
-    }
-    return page.base64;
+    if (!page || !page.base64) return null;
+
+    // migliora contrasto prima dell'OCR
+    const imageBuffer = Buffer.from(page.base64, "base64");
+    const enhanced = await sharp(imageBuffer)
+      .grayscale()
+      .normalise()
+      .sharpen()
+      .toBuffer();
+
+    return enhanced.toString("base64");
   } catch (err) {
-    console.warn("Conversione PDF → immagine fallita (pdf2pic):", err.message);
+    console.warn("pdfToImageBase64 fallita:", err.message);
     return null;
   }
 }
+
 
 dotenv.config();
 const app = express();
@@ -195,11 +198,13 @@ if (!isTextExtracted) {
     try {
       const { data: { text } } = await Tesseract.recognize(imageBuffer, "eng+ita", {
         tessedit_pageseg_mode: 6,
-        tessedit_ocr_engine_mode: 3,
+        tessedit_ocr_engine_mode: 1,
       });
 
       if (text && text.trim().length > 30) {
         console.log("OCR riuscito (prime 200 char):", text.substring(0, 200));
+        console.log("🔎 TESTO COMPLETO OCR:", text);
+
         extractedText = text
           .replace(/m\s*l/gi, "ml")
           .replace(/c\s*l/gi, "cl")

@@ -8,26 +8,28 @@ import { fromBuffer } from "pdf2pic";
 import { createCanvas } from "canvas";
 import Tesseract from "tesseract.js";
 import sharp from "sharp";
+import vision from "@google-cloud/vision";
+const visionClient = new vision.ImageAnnotatorClient();
 
 /**
  * Converte la prima pagina di un PDF in immagine base64 (PNG)
  * Usa pdf2pic + ghostscript → funziona su Render (Node.js)
  */
-async function pdfToImageBase64(buffer) {
+async function ocrGoogle(buffer) {
   try {
-    const convert = fromBuffer(buffer, { density: 300, format: "png" });
-    const page = await convert(1);
-    if (!page || !page.base64) return null;
-
-    // migliora contrasto prima dell'OCR
-    const imageBuffer = Buffer.from(page.base64, "base64");
-    const enhanced = await sharp(imageBuffer)
-  .resize({ width: 2500 })      // ingrandisce un po' i testi piccoli
-  .grayscale()
-  .normalize()
-  .threshold(180)               // aumenta contrasto netto bianco/nero
-  .sharpen()
-  .toBuffer();
+    const [result] = await visionClient.textDetection({ image: { content: buffer } });
+    const text = result.fullTextAnnotation?.text || "";
+    if (text.trim().length) {
+      console.log("✅ Google OCR estratto:", text.substring(0, 300));
+    } else {
+      console.warn("⚠️ Google OCR non ha trovato testo.");
+    }
+    return text;
+  } catch (err) {
+    console.warn("❌ Errore Google OCR:", err.message);
+    return "";
+  }
+}
 
 
     return enhanced.toString("base64");
@@ -189,45 +191,56 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
         console.warn("Estrazione testo fallita:", err.message);
       }
 
-// Fallback: OCR con Tesseract se non è stato estratto testo
+// Fallback: OCR con Google Vision e Tesseract se non è stato estratto testo
 if (!isTextExtracted) {
-  console.log("Nessun testo estratto → OCR con Tesseract...");
+  console.log("Nessun testo estratto → provo Google Vision OCR...");
   const pdfBuffer = fs.readFileSync(req.file.path);
   const imageBase64 = await pdfToImageBase64(pdfBuffer);
 
   if (imageBase64) {
     const imageBuffer = Buffer.from(imageBase64, "base64");
 
-    try {
-      const { data: { text } } = await Tesseract.recognize(imageBuffer, "eng+ita", {
-        tessedit_pageseg_mode: 3,
-        tessedit_ocr_engine_mode: 1,
-        timeout: 120000
-      });
+    // 🔹 Primo tentativo: Google Vision
+    let textGoogle = await ocrGoogle(imageBuffer);
 
-      if (text && text.trim().length > 30) {
-        console.log("OCR riuscito (prime 200 char):", text.substring(0, 200));
-        console.log("🔎 TESTO COMPLETO OCR:", text);
-        console.log("📏 Volume:", text.match(/\b\d+\s?(ml|cl|l)\b/gi));
-console.log("🆔 Lotto:", text.match(/\b[lL]\s?\d{3,}|UD\d{3,}|LOT\s?\d+/gi));
+    if (textGoogle && textGoogle.trim().length > 30) {
+      console.log("✅ Google Vision OCR riuscito (prime 200 char):", textGoogle.substring(0, 200));
+      extractedText = textGoogle
+        .replace(/m\s*l/gi, "ml")
+        .replace(/c\s*l/gi, "cl")
+        .replace(/%[\s]*v[\s]*ol/gi, "% vol");
+      isTextExtracted = true;
+      base64Data = Buffer.from(extractedText).toString("base64");
+      contentType = "text/plain";
+    } else {
+      // 🔸 Se Google non trova testo, usa Tesseract come backup
+      console.log("⚠️ Google Vision non ha trovato testo → passo a Tesseract...");
+      try {
+        const { data: { text } } = await Tesseract.recognize(imageBuffer, "eng+ita+fra+deu", {
+          tessedit_pageseg_mode: 3,
+          tessedit_ocr_engine_mode: 1,
+          timeout: 120000
+        });
 
-
-        extractedText = text
-          .replace(/m\s*l/gi, "ml")
-          .replace(/c\s*l/gi, "cl")
-          .replace(/%[\s]*v[\s]*ol/gi, "% vol");
-        isTextExtracted = true;
-        base64Data = Buffer.from(extractedText).toString("base64");
-        contentType = "text/plain";
-      } else {
-        console.warn("OCR non ha trovato testo utile, invio immagine all’AI");
+        if (text && text.trim().length > 30) {
+          console.log("✅ OCR Tesseract riuscito (prime 200 char):", text.substring(0, 200));
+          extractedText = text
+            .replace(/m\s*l/gi, "ml")
+            .replace(/c\s*l/gi, "cl")
+            .replace(/%[\s]*v[\s]*ol/gi, "% vol");
+          isTextExtracted = true;
+          base64Data = Buffer.from(extractedText).toString("base64");
+          contentType = "text/plain";
+        } else {
+          console.warn("❌ Nessun testo utile trovato da Tesseract — invio immagine a GPT");
+          base64Data = imageBase64;
+          contentType = "image/png";
+        }
+      } catch (ocrErr) {
+        console.warn("❌ Errore OCR Tesseract:", ocrErr.message);
         base64Data = imageBase64;
         contentType = "image/png";
       }
-    } catch (ocrErr) {
-      console.warn("Errore OCR:", ocrErr.message);
-      base64Data = imageBase64;
-      contentType = "image/png";
     }
   } else {
     fs.unlinkSync(req.file.path);
@@ -235,8 +248,8 @@ console.log("🆔 Lotto:", text.match(/\b[lL]\s?\d{3,}|UD\d{3,}|LOT\s?\d+/gi));
       error: "Impossibile analizzare il PDF: né testo né immagine estraibile.",
     });
   }
-  
-} // chiude l'if del PDF
+}
+
 
 
 

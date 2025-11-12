@@ -31,6 +31,32 @@ async function ocrGoogle(buffer) {
   }
 }
 
+/**
+ * Converte la prima pagina di un PDF in immagine base64 (PNG)
+ * Usa pdf2pic + ghostscript → funziona su Render (Node.js)
+ */
+async function pdfToImageBase64(buffer) {
+  try {
+    const convert = fromBuffer(buffer, { density: 300, format: "png" });
+    const page = await convert(1);
+    if (!page || !page.base64) return null;
+
+    // Migliora contrasto e leggibilità per OCR
+    const imageBuffer = Buffer.from(page.base64, "base64");
+    const enhanced = await sharp(imageBuffer)
+      .resize({ width: 2500 })     // ingrandisce testi piccoli
+      .grayscale()
+      .normalize()
+      .threshold(180)              // aumenta contrasto bianco/nero
+      .sharpen()
+      .toBuffer();
+
+    return enhanced.toString("base64");
+  } catch (err) {
+    console.warn("pdfToImageBase64 fallita:", err.message);
+    return null;
+  }
+}
 
 
 dotenv.config();

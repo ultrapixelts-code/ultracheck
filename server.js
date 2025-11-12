@@ -115,19 +115,42 @@ async function parsePdf(buffer) {
   }
 }
 
-// PDF → Immagine base64 (senza dipendenze native)
+// PDF → Immagine base64 (usa pdftoppm, NO GraphicsMagick)
 async function pdfToImageBase64(buffer) {
+  const tmpDir = os.tmpdir();
+  const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
+  const pngPath = path.join(tmpDir, `page-${Date.now()}.png`);
+
   try {
-    const { fromBuffer } = await import("pdf2pic");
-    const convert = fromBuffer(buffer, { density: 200, format: "png" });
-    const page = await convert(1); // prima pagina
-    if (!page?.base64) throw new Error("pdf2pic non ha restituito dati");
-    console.log("✅ Conversione PDF → immagine base64 riuscita");
-    return page.base64;
+    await fs.writeFile(pdfPath, buffer);
+
+    await new Promise((resolve, reject) => {
+      const proc = spawn("pdftoppm", [
+        "-png", "-f", "1", "-l", "1", "-r", "300",
+        pdfPath, path.join(tmpDir, "page")
+      ]);
+      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm exit ${code}`)));
+      proc.on("error", reject);
+    });
+
+    const imgBuf = await fs.readFile(pngPath);
+    const enhanced = await sharp(imgBuf)
+      .grayscale()
+      .normalize()
+      .threshold(180)
+      .sharpen()
+      .toBuffer();
+
+    console.log("pdftoppm: conversione riuscita");
+    return enhanced.toString("base64");
   } catch (err) {
-    console.warn("pdfToImageBase64 fallita:", err.message);
+    console.warn("pdftoppm fallito:", err.message);
     return null;
+  } finally {
+    await fs.unlink(pdfPath).catch(() => {});
+    await fs.unlink(pngPath).catch(() => {});
   }
+}
 }
 
 

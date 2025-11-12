@@ -1,15 +1,22 @@
-import fs from "fs";
-import { ImageAnnotatorClient } from "@google-cloud/vision";
+import vision from '@google-cloud/vision';
+import fs from 'fs';
 
-const client = new ImageAnnotatorClient({
-  keyFilename: "./ultracheck-ocr.json",
+console.log('Credenziali:', process.env.GOOGLE_APPLICATION_CREDENTIALS);
+console.log('File trovato:', fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS));
+
+const client = new vision.ImageAnnotatorClient({
+  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS,
 });
 
-const file = fs.readFileSync("apres.png");
-client
-  .textDetection({ image: { content: file } })
-  .then(([res]) => {
-    console.log("✅ Google Vision funziona:");
-    console.log(res.fullTextAnnotation?.text || "(vuoto)");
-  })
-  .catch((err) => console.error("❌ Vision errore:", err.message));
+async function testVision() {
+  try {
+    const [result] = await client.textDetection('./EA252774-0386-4E7E-8903-BFCFFECA4E9E.jpeg');
+    const detections = result.textAnnotations;
+    console.log('✅ Test riuscito!');
+    console.log(detections[0]?.description || 'Nessun testo trovato');
+  } catch (error) {
+    console.error('❌ Vision errore:', error);
+  }
+}
+
+testVision();

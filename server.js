@@ -22,10 +22,13 @@ async function pdfToImageBase64(buffer) {
     // migliora contrasto prima dell'OCR
     const imageBuffer = Buffer.from(page.base64, "base64");
     const enhanced = await sharp(imageBuffer)
-      .grayscale()
-      .normalise()
-      .sharpen()
-      .toBuffer();
+  .resize({ width: 2500 })      // ingrandisce un po' i testi piccoli
+  .grayscale()
+  .normalize()
+  .threshold(180)               // aumenta contrasto netto bianco/nero
+  .sharpen()
+  .toBuffer();
+
 
     return enhanced.toString("base64");
   } catch (err) {
@@ -197,13 +200,17 @@ if (!isTextExtracted) {
 
     try {
       const { data: { text } } = await Tesseract.recognize(imageBuffer, "eng+ita", {
-        tessedit_pageseg_mode: 6,
+        tessedit_pageseg_mode: 3,
         tessedit_ocr_engine_mode: 1,
+        timeout: 120000
       });
 
       if (text && text.trim().length > 30) {
         console.log("OCR riuscito (prime 200 char):", text.substring(0, 200));
         console.log("🔎 TESTO COMPLETO OCR:", text);
+        console.log("📏 Volume:", text.match(/\b\d+\s?(ml|cl|l)\b/gi));
+console.log("🆔 Lotto:", text.match(/\b[lL]\s?\d{3,}|UD\d{3,}|LOT\s?\d+/gi));
+
 
         extractedText = text
           .replace(/m\s*l/gi, "ml")

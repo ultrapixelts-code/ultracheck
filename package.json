@@ -15,8 +15,7 @@
     "pdf2pic": "^2.1.4",
     "canvas": "^2.11.2",
     "tesseract.js": "^5.0.0",
-    "pdf-parse": "^1.1.1"
+    "pdf-parse": "^1.1.1",
     "@google-cloud/vision": "^4.5.0"
-
   }
 }

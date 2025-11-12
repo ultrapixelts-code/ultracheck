@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: ultracheck
+    env: node
+    buildCommand: |
+      apt-get update
+      apt-get install -y poppler-utils
+      npm install
+    startCommand: npm start

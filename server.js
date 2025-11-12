@@ -111,26 +111,21 @@ async function parsePdf(buffer) {
   }
 }
 
-// PDF → Immagine base64 (con sharp per OCR)
+// PDF → Immagine base64 (senza dipendenze native)
 async function pdfToImageBase64(buffer) {
   try {
-    const convert = fromBuffer(buffer, { density: 300, format: "png" });
-    const page = await convert(1);
-    if (!page?.base64) return null;
-    const imgBuffer = Buffer.from(page.base64, "base64");
-    const enhanced = await sharp(imgBuffer)
-      .resize({ width: 2500 })
-      .grayscale()
-      .normalize()
-      .threshold(180)
-      .sharpen()
-      .toBuffer();
-    return enhanced.toString("base64");
+    const { fromBuffer } = await import("pdf2pic");
+    const convert = fromBuffer(buffer, { density: 200, format: "png" });
+    const page = await convert(1); // prima pagina
+    if (!page?.base64) throw new Error("pdf2pic non ha restituito dati");
+    console.log("✅ Conversione PDF → immagine base64 riuscita");
+    return page.base64;
   } catch (err) {
     console.warn("pdfToImageBase64 fallita:", err.message);
     return null;
   }
 }
+
 
 // OCR Google Vision
 async function ocrGoogle(buffer) {

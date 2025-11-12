@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "chatbot-ultrapixel",
+  "private_key_id": "8286db5b9ae606e1cef65008a62ba9cdfc8f57e0",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC4GhwLXyifQUP/\nNO1/5eqT/4KeJhdFyyKE2qx+AYAP9YuGCA/xqoX7ez3gwDOLnqpjfEK2msl2pBpx\n+dmxA8Erg+pRq2lbfGR9NDqxvl9blLBZLEMoAtvWVG0ToKMIDBZ7duOFQ7hGGu9V\nJtOa4gYPyCnRM+MnmwVQjckCW2e3K8ITMgUcMTXOI3Y42QaVBYlqjZSmKB2DQ7FW\nr+S65zx55bYV+WXShHVAuw3/PtawEG99HO4cqkluzPlaL3P520uRnYkbEz4vZ89n\n73lYAzouH4dxc0UxasWLejhn3NTFsibagPmWXnSa+5jk6LOdrFj+8hnZjTlc/LPe\nzunnK+JBAgMBAAECggEASGFLgVUKPYKFX0LJ1SzpiwI7sj27jJ8OlTj79BZW6O9a\nyXlF+3dVccfETiaCnXPl/XMPL4eviUt/ciwO4D9fpOIaL726kFNZlrgAE32LNBBD\nPOvgA00MbTmIIN1Y+4L1G9lkHjK/siBI1CuNqikOxQmnFy7VMe8Kqd70lk6leie3\nXC1C2027IDiIvp7skBlyOqpUnI0x5obRJMAJC6Jxi/0gcPiew2dZTK+2T8PimY4Y\nlcOkN0u0kw/pfbdPkvUiNdFpql/MivU8XGmYMLXSTO2NJjIe9llgPO1du9BL9VNp\nJ7d6XlAnRJYzOLemFK0cCM3BDWRUIeTLL5snf7kJeQKBgQD8oBxvfw5w1D+uOaZP\n8Jb1DDfwvDUZlPs7TY2saqtpooKqZlKawSzMUwz2uu6sYnd02i1dHIaPI4iCHEzD\nsYH5XWwoKNBXAp53BLO0EY4tpo63Qin08iqgw67GCdENZuKn+14P+ThQ8XM92+SM\nitTJGL046e1hZeyRRqTXaK3pqwKBgQC6j6w3ozXmrZaDOzFAR5LwxKpWmzjCMyY5\n8xrPYI2Pz8oX2KewqKPmAxI7R0/NzvjBr+jPd1PWSOr17IuARXDRK8qH4ENuMR7g\noLIEj9JGOlkN09i7XiWXCVqDL771jf2r3lromj4bqqurJYXNzyYqUZy6CWxcuNZW\nz9HuxuWvwwKBgAle6w8buG5pAR+2Vbv7Ya4fUOfmI1Yal6MgglPV9RvLAmvNtdy1\ns7K0lfOFBZtxX5r/CNW+XCNtHwAsipBrwjV8yKlIskm3+CbUDtJsIEkDN6IGm0XR\nwdEK0S3ZaV7E5T1z7o5LIVKnUi4GPRkVgUUgXMyCqOKHBFpzM2QmJuVXAoGBAIyj\nlINY4WBlygpiDA3WJxqkV3j0iQQ1RQL4lmRw+CbK0SHK7RdK+kuCUzMm3i1bcsGo\nl8wWu7fVvnLoAH4RWywEZCisUoj2NL3HxouT1EOm5s16v274WUQUBAzTaJR6lxoC\nhOvGoz1+Gu3pWoY9PBs47Pp98hewK7zD7BGiFTK7AoGBAN6fySExPvTIvd8h+dqZ\norJzrH6JFg9ZLpvu9vDr//pUclpoSrrMwrNMnNFu93X7pUBmvD9S81iRAiJyV2tN\nKZe61w0kEoLxjBw0WjyK9SNz7oVPKeG7EQ/37z4Npmeavj7/p2QH2QWLFTHOeeLu\n/1tEM+5YDmG2wNoX2agfo2lj\n-----END PRIVATE KEY-----\n",
+  "client_email": "ultracheck-ocr@chatbot-ultrapixel.iam.gserviceaccount.com",
+  "client_id": "105968778294250470648",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/ultracheck-ocr%40chatbot-ultrapixel.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

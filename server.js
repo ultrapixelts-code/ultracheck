@@ -14,6 +14,10 @@ import { ImageAnnotatorClient } from "@google-cloud/vision";
 
 // Inizializza client (usa env per auth)
 dotenv.config();
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
+const pkg = require("pdf2pic/package.json");
+console.log("📦 pdf2pic versione:", pkg.version);
 const visionClient = new ImageAnnotatorClient({
   keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS || undefined,
 });

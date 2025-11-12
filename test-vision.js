@@ -5,7 +5,7 @@ const client = new ImageAnnotatorClient({
   keyFilename: "./ultracheck-ocr.json",
 });
 
-const file = fs.readFileSync("etichetta-prova.png");
+const file = fs.readFileSync("apres.png");
 client
   .textDetection({ image: { content: file } })
   .then(([res]) => {

@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "postinstall": "npm rebuild sharp --verbose && rm -rf node_modules/pdf2pic && npm install pdf2pic@3.1.1"
+    - "postinstall": "npm rebuild sharp --verbose && rm -rf node_modules/pdf2pic && npm install pdf2pic@3.1.1"
++ "postinstall": "npm rebuild sharp --verbose"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.3.4",

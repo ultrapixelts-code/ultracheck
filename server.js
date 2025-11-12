@@ -209,6 +209,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       } catch (err) {
         console.warn("Estrazione testo fallita:", err.message);
       }
+       }
 
 // Fallback: OCR con Google Vision e Tesseract se non è stato estratto testo
 if (!isTextExtracted) {

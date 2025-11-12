@@ -183,14 +183,40 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       }
 
       // Fallback: converti in immagine se non c'è testo
-      if (!isTextExtracted) {
-        console.log("Nessun testo estratto → converto PDF in immagine");
-        const imageBase64 = await pdfToImageBase64(fs.readFileSync(req.file.path));
-        if (imageBase64) {
-          base64Data = imageBase64;
-          contentType = "image/png";
-          console.log("PDF convertito in immagine (PNG)");
-        } else {
+   import Tesseract from "tesseract.js";
+
+if (!isTextExtracted) {
+  console.log("Nessun testo estratto → OCR con Tesseract...");
+  const pdfBuffer = fs.readFileSync(req.file.path);
+  const imageBase64 = await pdfToImageBase64(pdfBuffer);
+
+  if (imageBase64) {
+    // Decodifica l'immagine per OCR
+    const imageBuffer = Buffer.from(imageBase64, "base64");
+    const { data: { text } } = await Tesseract.recognize(imageBuffer, "eng+ita", {
+      tessedit_pageseg_mode: 6,
+    });
+
+    if (text && text.trim().length > 30) {
+      console.log("OCR riuscito (prime 200 char):", text.substring(0, 200));
+      extractedText = text;
+      isTextExtracted = true;
+      base64Data = Buffer.from(extractedText).toString("base64");
+      contentType = "text/plain";
+    } else {
+      console.warn("OCR non ha trovato testo utile, invio immagine all’AI");
+      base64Data = imageBase64;
+      contentType = "image/png";
+    }
+  } else {
+    fs.unlinkSync(req.file.path);
+    return res.status(400).json({
+      error: "Impossibile analizzare il PDF: né testo né immagine estraibile."
+    });
+  }
+}
+
+        else {
           fs.unlinkSync(req.file.path);
           return res.status(400).json({
             error: "Impossibile analizzare il PDF: né testo né immagine estraibile."

@@ -5,7 +5,7 @@ const client = new vision.ImageAnnotatorClient();
 
 async function main() {
   try {
-    const [result] = await client.textDetection('./test.jpg');
+    const [result] = await client.textDetection('./etichetta-prova.png');
     console.log('✅ OCR riuscito:', result.textAnnotations[0].description);
   } catch (err) {
     console.error('❌ Vision errore:', err.message);

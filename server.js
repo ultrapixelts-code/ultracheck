@@ -168,40 +168,56 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   try {
     const fileBuffer = await fs.readFile(filePath);
 
-    if (req.file.mimetype === "application/pdf") {
-      console.log("PDF → estrai testo nativo...");
-      const { text } = await parsePdf(fileBuffer);
+if (req.file.mimetype === "application/pdf") {
+  console.log("📄 PDF rilevato → estrazione testo con pdf-parse...");
+  const { text } = await parsePdf(fileBuffer);
 
-      if (text.trim().length > 30) {
-        extractedText = text;
-        isTextExtracted = false; // FORZA OCR
-        console.log("FORZO OCR con Google Vision (test)");
+  if (text && text.trim().length > 50) {
+    // Caso PDF vettoriale → testo nativo trovato
+    console.log("✅ Testo vettoriale trovato (pdf-parse).");
+    extractedText = text;
+    isTextExtracted = true;
+  } else {
+    // Caso PDF raster → estrai immagine e fai OCR
+    console.log("⚙️ Nessun testo nativo → converto PDF in immagine con pdftoppm...");
+    const tmpDir = os.tmpdir();
+    const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
+    const pngPath = path.join(tmpDir, `page-${Date.now()}.png`);
+    await fs.writeFile(pdfPath, fileBuffer);
+
+    try {
+      await new Promise((resolve, reject) => {
+        const proc = spawn("pdftoppm", [
+          "-png", "-singlefile", "-r", "300",
+          pdfPath, pngPath.replace(".png", "")
+        ]);
+        proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm code ${code}`)));
+        proc.on("error", reject);
+      });
+
+      const imgBuffer = await fs.readFile(pngPath);
+      console.log("✅ Conversione immagine riuscita, eseguo OCR Google Vision...");
+      const ocrText = await ocrGoogle(imgBuffer);
+
+      if (ocrText && ocrText.trim().length > 30) {
+        console.log("✅ Testo OCR trovato con Google Vision.");
+        extractedText = ocrText;
+        isTextExtracted = true;
+      } else {
+        console.log("⚠️ OCR Google insufficiente, provo Tesseract...");
+        const { data: { text: tesseractText } } = await Tesseract.recognize(imgBuffer, "eng+ita+fra+deu");
+        extractedText = tesseractText || "";
+        isTextExtracted = extractedText.trim().length > 30;
       }
+    } finally {
+      await fs.unlink(pdfPath).catch(() => {});
+      await fs.unlink(pngPath).catch(() => {});
+    }
+  }
 
-      if (!isTextExtracted) {
-        const imageBase64 = await pdfToImageBase64(fileBuffer);
-        if (!imageBase64) throw new Error("PDF non convertibile");
-        const imgBuffer = Buffer.from(imageBase64, "base64");
+  if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
+}
 
-        let ocrText = await ocrGoogle(imgBuffer);
-        if (ocrText.trim().length > 30) {
-          extractedText = ocrText;
-          isTextExtracted = true;
-        } else {
-          console.log("Google insufficiente → Tesseract...");
-          const { data: { text } } = await Tesseract.recognize(imgBuffer, "eng+ita+fra+deu", {
-            tessedit_pageseg_mode: "3",
-            tessedit_ocr_engine_mode: "1",
-          });
-          if (text.trim().length > 30) {
-            extractedText = text;
-            isTextExtracted = true;
-          } else {
-            base64Data = imageBase64;
-            contentType = "image/png";
-          }
-        }
-      }
 
       if (isTextExtracted) {
         extractedText = extractedText

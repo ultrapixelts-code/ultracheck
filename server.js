@@ -246,16 +246,20 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
     ];
 
 
-    const response = await openai.chat.completions.create({
+     // 🧠 Analisi AI
+ const response = await openai.chat.completions.create({
   model: "gpt-4o-mini",
-  temperature: 0.1,
-  seed: 42,
+  temperature: 0.1, // 🔒 quasi deterministico
+  seed: 42, // 🔁 per risultati sempre uguali
   messages: [
-
-    
     {
-  role: "system",
-  content: `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino. Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**. Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile". Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${language}.
+      role: "system",
+      content: `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
+Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
+Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
+Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${req.body.lang || "it"}.
+
+===============================
 ### 🔎 Conformità normativa (Reg. UE 2021/2117)
 Denominazione di origine: (✅ conforme / ⚠️ parziale / ❌ mancante) + testo
 Nome e indirizzo del produttore o imbottigliatore: (✅/⚠️/❌) + testo
@@ -267,53 +271,29 @@ QR code o link ingredienti/energia: (✅/⚠️/❌) + testo
 Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
 Altezza minima dei caratteri: (✅/⚠️/❌) + testo
 Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo
+
+
 **Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
-===============================`
-},
-{
-  role: "system",
-  content: `IMPORTANT: Se la lingua selezionata è francese (${language} = "fr"), traduci completamente tutti i titoli e le intestazioni in francese, mantenendo il formato identico. Se è inglese (${language} = "en"), traduci in inglese. Esempi di traduzione:
-🇫🇷 **Francese**
+===============================
 
-* "Conformità normativa" → "Conformité réglementaire"
-* "Denominazione di origine" → "Dénomination d’origine"
-* "Nome e indirizzo del produttore o di l’embouteilleur"
-* "Volume nominale" → "Volume nominal"
-* "Titolo alcolometrico" → "Titre alcoométrique"
-* "Indicazione allergeni" → "Indication des allergènes"
-* "Lotto" → "Lot"
-* "QR code o link ingredienti/energia" → "QR code ou lien ingrédients/énergie"
-* "Lingua corretta per il mercato UE" → "Langue correcte pour le marché UE"
-* "Altezza minima dei caratteri" → "Hauteur minimale des caractères"
-* "Contrasto testo/sfondo adeguato" → "Contraste texte/fond adéquat"
-* "Valutazione finale" → "Évaluation finale"
-
-🇬🇧 **Inglese**
-
-* "Conformità normativa" → "Regulatory compliance"
-* "Denominazione di origine" → "Designation of origin"
-* "Nome e indirizzo del produttore" → "Producer or bottler name and address"
-* "Volume nominale" → "Nominal volume"
-* "Titolo alcolometrico" → "Alcohol by volume"
-* "Indicazione allergeni" → "Allergen indication"
-* "Lotto" → "Batch code"
-* "QR code o link ingredienti/energia" → "QR code or link to ingredients/energy"
-* "Lingua corretta per il mercato UE" → "Correct language for EU market"
-* "Altezza minima dei caratteri" → "Minimum character height"
-* "Contrasto testo/sfondo adeguato" → "Adequate text/background contrast"
-* "Valutazione finale" → "Final assessment"
-
-Non usare parole italiane in nessun caso. Tutto il testo deve essere nella lingua selezionata, inclusi i titoli, i campi e le opzioni di valutazione.`
-},
-
+Tieni la valutazione coerente con la presenza o assenza reale dei campi.`
+    },
     {
       role: "user",
       content: [
-        { type: "text", text: `Analizza questa etichetta di vino in ${language}. Fornisci il report nel formato richiesto.` },
-        ...userContent
+        {
+          type: "text",
+          text: "Analizza questa etichetta di vino e valuta solo la conformità legale, senza interpretazioni grafiche."
+        },
+        {
+          type: "image_url",
+          image_url: { url: `data:${req.file.mimetype};base64,${base64Image}` }
+        }
       ]
     }
   ]
+});
+
 });
 
 

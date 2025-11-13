@@ -6,6 +6,10 @@ import os from "os";
 import { spawn } from "child_process";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+if (!process.env.RENDER) {
+  // solo in locale
+  dotenv.config();
+}
 import sgMail from "@sendgrid/mail";
 import Tesseract from "tesseract.js";
 import sharp from "sharp";

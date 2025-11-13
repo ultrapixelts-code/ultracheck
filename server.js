@@ -225,7 +225,7 @@ if (req.file.mimetype === "application/pdf") {
           .replace(/c\s*l/gi, "cl")
           .replace(/%[\s]*v[\s]*ol/gi, "% vol");
       }
-    } else {
+   else {
       base64Data = fileBuffer.toString("base64");
       contentType = req.file.mimetype;
     }

@@ -54,7 +54,8 @@ app.get("/ultracheck", (req, res) => {
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, "/tmp"),
-    filename: (req, file, cb) => cb(null, ${Date.now()}-${file.originalname}),
+    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+
   }),
   limits: { fileSize: 10 * 1024 * 1024 },
 });
@@ -83,7 +84,8 @@ function normalizeAnalysis(md) {
       if (!status) return raw;
       const clean = trimmed.replace(/^(Success|Warning|Failed)\s*/, "");
       const pad = raw.slice(0, raw.indexOf(trimmed));
-      return ${pad}${status} ${clean};
+      return `${pad}${status} ${clean}`;
+
     })
     .join("\n");
 }
@@ -112,14 +114,14 @@ async function parsePdf(buffer) {
   }
 
   const tmpDir = os.tmpdir();
-  const pdfPath = path.join(tmpDir, pdf-${Date.now()}.pdf);
+  const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
   const txtPath = pdfPath.replace(".pdf", ".txt");
 
   try {
     await fs.writeFile(pdfPath, buffer);
     await new Promise((resolve, reject) => {
       const proc = spawn("pdftotext", ["-raw", "-layout", pdfPath, txtPath]);
-      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(pdftotext code ${code})));
+      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftotext code ${code}`));
       proc.on("error", reject);
     });
     const text = await fs.readFile(txtPath, "utf8").catch(() => "");
@@ -135,14 +137,15 @@ async function parsePdf(buffer) {
 // === PDF → IMMAGINE (prima pagina) ===
 async function pdfToFirstPageImage(buffer) {
   const tmpDir = os.tmpdir();
-  const pdfPath = path.join(tmpDir, pdf-${Date.now()}.pdf);
-  const prefix = path.join(tmpDir, page-${Date.now()});
+  const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
+  const prefix = path.join(tmpDir, `page-${Date.now()}`);
 
   try {
     await fs.writeFile(pdfPath, buffer);
     await new Promise((resolve, reject) => {
       const proc = spawn("pdftoppm", ["-png", "-singlefile", "-r", "300", pdfPath, prefix]);
-      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(pdftoppm code ${code})));
+      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm code ${code}`));
+
       proc.on("error", reject);
     });
     const imgPath = prefix + ".png";
@@ -232,8 +235,16 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
     }
 
     const userContent = isTextExtracted
-      ? [{ type: "text", text: extractedText }]
-      : [{ type: "image_url", image_url: { url: data:${contentType};base64,${base64Data} } }];
+  ? [{ type: "text", text: extractedText }]
+  : [
+      {
+        type: "image_url",
+        image_url: {
+          url: `data:${contentType};base64,${base64Data}`
+        }
+      }
+    ];
+
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",

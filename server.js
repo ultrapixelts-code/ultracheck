@@ -6,6 +6,8 @@ import os from "os";
 import { spawn } from "child_process";
 import OpenAI from "openai";
 import dotenv from "dotenv";
+
+// Carica .env SOLO in locale
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
 }
@@ -14,6 +16,7 @@ import sgMail from "@sendgrid/mail";
 import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
+console.log("GOOGLE VAR LENGTH:", (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || "").length);
 
 // Inizializza
 dotenv.config();

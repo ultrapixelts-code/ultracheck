@@ -35,24 +35,21 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
 const app = express();
 const port = process.env.PORT || 8080;
 
-const app = express();
-const port = process.env.PORT || 8080;
-
-app.use(express.static("."));  // Serve TUTTI i file nella root
+// Serve TUTTI i file statici dalla root (main/)
+app.use(express.static("."));  // index.html, ultracheck.html, ecc.
 app.use(express.json());
 
-// Homepage → index
+// Homepage → index.html
 app.get("/", (req, res) => {
   res.sendFile(path.join(process.cwd(), "index.html"));
 });
 
-// Rotta per ultracheck.html
+// Rotta per ultracheck.html (opzionale)
 app.get("/ultracheck", (req, res) => {
   res.sendFile(path.join(process.cwd(), "ultracheck.html"));
 });
 
-
-
+// === UPLOAD ===
 const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, "/tmp"),
@@ -195,7 +192,6 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
 
     if (req.file.mimetype === "application/pdf") {
       console.log("PDF rilevato");
-
       const { text } = await parsePdf(fileBuffer);
       if (text?.trim().length > 50) {
         extractedText = text;
@@ -290,7 +286,6 @@ app.get("/test-vision", async (req, res) => {
   if (!visionClient) {
     return res.status(500).send("Google Vision non configurato. Controlla GOOGLE_APPLICATION_CREDENTIALS_JSON");
   }
-
   try {
     const testImage = Buffer.from(
       "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",

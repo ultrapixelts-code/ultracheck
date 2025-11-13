@@ -298,6 +298,47 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   }
 });
 
+// === TEST GOOGLE VISION API ===
+app.get("/test-vision", async (req, res) => {
+  if (!visionClient) {
+    return res.status(500).send("Google Vision non configurato. Controlla GOOGLE_APPLICATION_CREDENTIALS_JSON");
+  }
+
+  try {
+    // Immagine nera 1x1 (valida per test)
+    const testImage = Buffer.from(
+      "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "base64"
+    );
+
+    const [result] = await visionClient.textDetection({
+      image: { content: testImage },
+    });
+
+    const text = result.fullTextAnnotation?.text || "(nessun testo rilevato)";
+    res.send(`
+      <h2>Google Vision API: OK</h2>
+      <p><strong>Risultato OCR:</strong> "${text}"</p>
+      <p><em>Se vedi questo, Vision funziona al 100%!</em></p>
+      <hr>
+      <p>Puoi rimuovere questo endpoint in produzione.</p>
+    `);
+  } catch (err) {
+    console.error("Test Vision fallito:", err.message);
+    res.status(500).send(`
+      <h2>Errore Google Vision</h2>
+      <pre>${err.message}</pre>
+      <p>Controlla:</p>
+      <ul>
+        <li>API Vision abilitata?</li>
+        <li>Service Account con ruolo <code>Cloud Vision API User</code>?</li>
+        <li>Chiave JSON completa e corretta in <code>GOOGLE_APPLICATION_CREDENTIALS_JSON</code>?</li>
+      </ul>
+    `);
+  }
+});
+
+
 // === START ===
 app.listen(port, "0.0.0.0", () => {
   console.log(`UltraCheck LIVE su http://0.0.0.0:${port}`);

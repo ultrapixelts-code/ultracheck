@@ -13,9 +13,13 @@ import { ImageAnnotatorClient } from "@google-cloud/vision";
 
 // Inizializza
 dotenv.config();
+// Google Vision con JSON inline (Render-friendly)
+const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+
 const visionClient = new ImageAnnotatorClient({
-  keyFilename: process.env.GOOGLE_APPLICATION_CREDENTIALS || undefined,
+  credentials: creds
 });
+
 
 const app = express();
 const port = process.env.PORT || 8080;

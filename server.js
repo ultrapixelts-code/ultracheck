@@ -11,21 +11,6 @@ import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
 
-
-app.get("/test-vision", async (req, res) => {
-  if (!visionClient) return res.status(500).send("Vision non configurato");
-  try {
-    const [result] = await visionClient.textDetection({
-      image: { content: Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64") }
-    });
-    res.send("Vision API OK: " + (result.fullTextAnnotation?.text || "nessun testo"));
-  } catch (err) {
-    res.status(500).send("Errore: " + err.message);
-  }
-});
-
-
-
 // === CONFIG ===
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
@@ -50,7 +35,7 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
 const app = express();
 const port = process.env.PORT || 8080;
 
-app.use(express.static("public")); // ← SPOSTA ultracheck.html in /public
+app.use(express.static("public")); // ultracheck.html va in /public
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -115,11 +100,9 @@ async function parsePdf(buffer) {
       console.warn("pdf-parse fallito:", err.message);
     }
   }
-
   const tmpDir = os.tmpdir();
   const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
   const txtPath = pdfPath.replace(".pdf", ".txt");
-
   try {
     await fs.writeFile(pdfPath, buffer);
     await new Promise((resolve, reject) => {
@@ -142,7 +125,6 @@ async function pdfToFirstPageImage(buffer) {
   const tmpDir = os.tmpdir();
   const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
   const prefix = path.join(tmpDir, `page-${Date.now()}`);
-
   try {
     await fs.writeFile(pdfPath, buffer);
     await new Promise((resolve, reject) => {
@@ -152,7 +134,6 @@ async function pdfToFirstPageImage(buffer) {
     });
     const imgPath = prefix + ".png";
     const imgBuf = await fs.readFile(imgPath);
-
     return await sharp(imgBuf)
       .grayscale()
       .normalize()
@@ -204,14 +185,12 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
     if (req.file.mimetype === "application/pdf") {
       console.log("PDF rilevato");
 
-      // 1. Testo nativo
       const { text } = await parsePdf(fileBuffer);
       if (text?.trim().length > 50) {
         extractedText = text;
         isTextExtracted = true;
         console.log("Testo nativo estratto");
       } else {
-        // 2. OCR
         console.log("Nessun testo nativo → OCR");
         const imgBuffer = await pdfToFirstPageImage(fileBuffer);
         if (imgBuffer) {
@@ -237,12 +216,10 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
         .trim();
 
     } else {
-      // Immagine diretta
       base64Data = fileBuffer.toString("base64");
       contentType = req.file.mimetype;
     }
 
-    // Contenuto per OpenAI
     const userContent = isTextExtracted
       ? [{ type: "text", text: extractedText }]
       : [{ type: "image_url", image_url: { url: `data:${contentType};base64,${base64Data}` } }];
@@ -267,7 +244,6 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
     let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
     analysis = normalizeAnalysis(analysis);
 
-    // === EMAIL ===
     if (fileBuffer && process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {
       try {
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -305,16 +281,13 @@ app.get("/test-vision", async (req, res) => {
   }
 
   try {
-    // Immagine nera 1x1 (valida per test)
     const testImage = Buffer.from(
       "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "base64"
     );
-
     const [result] = await visionClient.textDetection({
       image: { content: testImage },
     });
-
     const text = result.fullTextAnnotation?.text || "(nessun testo rilevato)";
     res.send(`
       <h2>Google Vision API: OK</h2>
@@ -332,12 +305,11 @@ app.get("/test-vision", async (req, res) => {
       <ul>
         <li>API Vision abilitata?</li>
         <li>Service Account con ruolo <code>Cloud Vision API User</code>?</li>
-        <li>Chiave JSON completa e corretta in <code>GOOGLE_APPLICATION_CREDENTIALS_JSON</code>?</li>
+        <li>Chiave JSON completa in <code>GOOGLE_APPLICATION_CREDENTIALS_JSON</code>?</li>
       </ul>
     `);
   }
 });
-
 
 // === START ===
 app.listen(port, "0.0.0.0", () => {

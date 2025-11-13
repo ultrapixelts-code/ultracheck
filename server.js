@@ -6,38 +6,40 @@ import os from "os";
 import { spawn } from "child_process";
 import OpenAI from "openai";
 import dotenv from "dotenv";
-
-if (process.env.NODE_ENV !== "production") {
-  dotenv.config();
-}
-
-console.log("GOOGLE VAR LENGTH:", (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || "").length);
-
-
 import sgMail from "@sendgrid/mail";
 import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
-console.log("GOOGLE VAR LENGTH:", (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || "").length);
 
-// Inizializza
-dotenv.config();
-// Google Vision con JSON inline (Render-friendly)
-const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+// === CONFIG ===
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
 
-const visionClient = new ImageAnnotatorClient({
-  credentials: creds
-});
+// === GOOGLE VISION (Render-safe) ===
+let visionClient = null;
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+  try {
+    const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    visionClient = new ImageAnnotatorClient({ credentials: creds });
+    console.log("Google Vision: configurato da JSON env");
+  } catch (err) {
+    console.error("Google Vision: JSON non valido →", err.message);
+    console.error("Controlla GOOGLE_APPLICATION_CREDENTIALS_JSON");
+  }
+} else {
+  console.warn("Google Vision: GOOGLE_APPLICATION_CREDENTIALS_JSON non impostata → OCR disabilitato");
+}
 
-
+// === APP ===
 const app = express();
 const port = process.env.PORT || 8080;
 
-app.use(express.static("."));
+app.use(express.static("public")); // ← SPOSTA ultracheck.html in /public
 app.use(express.json());
 
 app.get("/", (req, res) => {
-  res.sendFile("ultracheck.html", { root: "." });
+  res.sendFile(path.join(process.cwd(), "public", "ultracheck.html"));
 });
 
 const upload = multer({
@@ -76,19 +78,19 @@ function normalizeAnalysis(md) {
     .join("\n");
 }
 
-// pdf-parse dinamico
+// === PDF-PARSE (dinamico) ===
 let pdfParse = null;
 (async () => {
   try {
     const lib = await import("pdf-parse");
     pdfParse = lib.default || lib;
-    console.log("pdf-parse caricato");
+    console.log("pdf-parse: caricato");
   } catch (err) {
-    console.log("pdf-parse non disponibile → uso pdftotext");
+    console.log("pdf-parse: non disponibile → fallback pdftotext");
   }
 })();
 
-// Estrai testo nativo
+// === ESTRAI TESTO NATIVO ===
 async function parsePdf(buffer) {
   if (pdfParse) {
     try {
@@ -102,6 +104,7 @@ async function parsePdf(buffer) {
   const tmpDir = os.tmpdir();
   const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
   const txtPath = pdfPath.replace(".pdf", ".txt");
+
   try {
     await fs.writeFile(pdfPath, buffer);
     await new Promise((resolve, reject) => {
@@ -112,53 +115,53 @@ async function parsePdf(buffer) {
     const text = await fs.readFile(txtPath, "utf8").catch(() => "");
     return { text };
   } finally {
-    [pdfPath, txtPath].forEach(async (p) => fs.unlink(p).catch(() => {}));
+    await Promise.all([
+      fs.unlink(pdfPath).catch(() => {}),
+      fs.unlink(txtPath).catch(() => {})
+    ]);
   }
 }
 
-// PDF → Immagine (pdftoppm)
-async function pdfToImageBase64(buffer) {
+// === PDF → IMMAGINE (prima pagina) ===
+async function pdfToFirstPageImage(buffer) {
   const tmpDir = os.tmpdir();
   const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
-  const pngPath = path.join(tmpDir, `page-${Date.now()}.png`);
+  const prefix = path.join(tmpDir, `page-${Date.now()}`);
 
   try {
     await fs.writeFile(pdfPath, buffer);
-
     await new Promise((resolve, reject) => {
-      const proc = spawn("pdftoppm", [
-        "-png", "-f", "1", "-l", "1", "-r", "300",
-        pdfPath, path.join(tmpDir, "page")
-      ]);
-      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm exit ${code}`)));
+      const proc = spawn("pdftoppm", ["-png", "-singlefile", "-r", "300", pdfPath, prefix]);
+      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm code ${code}`)));
       proc.on("error", reject);
     });
+    const imgPath = prefix + ".png";
+    const imgBuf = await fs.readFile(imgPath);
 
-    const imgBuf = await fs.readFile(pngPath);
-    const enhanced = await sharp(imgBuf)
+    return await sharp(imgBuf)
       .grayscale()
       .normalize()
       .threshold(180)
       .sharpen()
       .toBuffer();
-
-    console.log("pdftoppm: conversione riuscita");
-    return enhanced.toString("base64");
   } catch (err) {
     console.warn("pdftoppm fallito:", err.message);
     return null;
   } finally {
-    await fs.unlink(pdfPath).catch(() => {});
-    await fs.unlink(pngPath).catch(() => {});
+    await Promise.all([
+      fs.unlink(pdfPath).catch(() => {}),
+      fs.unlink(prefix + ".png").catch(() => {})
+    ]);
   }
 }
 
-// OCR Google Vision
+// === OCR GOOGLE VISION ===
 async function ocrGoogle(buffer) {
+  if (!visionClient) return "";
   try {
     const [result] = await visionClient.textDetection({ image: { content: buffer } });
     const text = result.fullTextAnnotation?.text || "";
-    if (text.trim()) console.log("Google Vision OCR:", text.substring(0, 200));
+    if (text.trim()) console.log("Google Vision OCR: OK");
     return text;
   } catch (err) {
     console.warn("Google Vision errore:", err.message);
@@ -173,121 +176,105 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
 
   const { azienda = "", nome = "", email = "", telefono = "", lang = "it" } = req.body;
   const language = lang.toLowerCase();
+
+  let fileBuffer = null;
   let extractedText = "";
   let isTextExtracted = false;
   let base64Data = "";
   let contentType = "";
 
   try {
-    const fileBuffer = await fs.readFile(filePath);
+    fileBuffer = await fs.readFile(filePath);
 
-if (req.file.mimetype === "application/pdf") {
-  console.log("📄 PDF rilevato → estrazione testo con pdf-parse...");
-  const { text } = await parsePdf(fileBuffer);
+    if (req.file.mimetype === "application/pdf") {
+      console.log("PDF rilevato");
 
-  if (text && text.trim().length > 50) {
-    // Caso PDF vettoriale → testo nativo trovato
-    console.log("✅ Testo vettoriale trovato (pdf-parse).");
-    extractedText = text;
-    isTextExtracted = true;
-  } else {
-    // Caso PDF raster → estrai immagine e fai OCR
-    console.log("⚙️ Nessun testo nativo → converto PDF in immagine con pdftoppm...");
-    const tmpDir = os.tmpdir();
-    const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
-    const pngPath = path.join(tmpDir, `page-${Date.now()}.png`);
-    await fs.writeFile(pdfPath, fileBuffer);
-
-    try {
-      await new Promise((resolve, reject) => {
-        const proc = spawn("pdftoppm", [
-          "-png", "-singlefile", "-r", "300",
-          pdfPath, pngPath.replace(".png", "")
-        ]);
-        proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm code ${code}`)));
-        proc.on("error", reject);
-      });
-
-      const imgBuffer = await fs.readFile(pngPath);
-      console.log("✅ Conversione immagine riuscita, eseguo OCR Google Vision...");
-      const ocrText = await ocrGoogle(imgBuffer);
-
-      if (ocrText && ocrText.trim().length > 30) {
-        console.log("✅ Testo OCR trovato con Google Vision.");
-        extractedText = ocrText;
+      // 1. Testo nativo
+      const { text } = await parsePdf(fileBuffer);
+      if (text?.trim().length > 50) {
+        extractedText = text;
         isTextExtracted = true;
+        console.log("Testo nativo estratto");
       } else {
-        console.log("⚠️ OCR Google insufficiente, provo Tesseract...");
-        const { data: { text: tesseractText } } = await Tesseract.recognize(imgBuffer, "eng+ita+fra+deu");
-        extractedText = tesseractText || "";
-        isTextExtracted = extractedText.trim().length > 30;
+        // 2. OCR
+        console.log("Nessun testo nativo → OCR");
+        const imgBuffer = await pdfToFirstPageImage(fileBuffer);
+        if (imgBuffer) {
+          let ocrText = await ocrGoogle(imgBuffer);
+          if (!ocrText?.trim()) {
+            console.log("Google Vision fallito → Tesseract");
+            const { data: { text: tessText } } = await Tesseract.recognize(imgBuffer, "ita+eng");
+            ocrText = tessText || "";
+          }
+          extractedText = ocrText;
+          isTextExtracted = extractedText.trim().length > 30;
+        }
       }
-    } finally {
-      await fs.unlink(pdfPath).catch(() => {});
-      await fs.unlink(pngPath).catch(() => {});
+
+      if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
+
+      extractedText = extractedText
+        .replace(/m\s*l/gi, "ml")
+        .replace(/c\s*l/gi, "cl")
+        .replace(/%[\s]*v[\s]*ol/gi, "% vol")
+        .replace(/\r\n/g, "\n")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    } else {
+      // Immagine diretta
+      base64Data = fileBuffer.toString("base64");
+      contentType = req.file.mimetype;
     }
-  }
 
-  if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
-  } else {
-    base64Data = fileBuffer.toString("base64");
-    contentType = req.file.mimetype;
-  }
-
-  if (isTextExtracted) {
-    extractedText = extractedText
-      .replace(/m\s*l/gi, "ml")
-      .replace(/c\s*l/gi, "cl")
-      .replace(/%[\s]*v[\s]*ol/gi, "% vol");
-  }
-
-
-    if (isTextExtracted) {
-      base64Data = Buffer.from(extractedText).toString("base64");
-      contentType = "text/plain";
-    }
+    // Contenuto per OpenAI
+    const userContent = isTextExtracted
+      ? [{ type: "text", text: extractedText }]
+      : [{ type: "image_url", image_url: { url: `data:${contentType};base64,${base64Data}` } }];
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.1,
       seed: 42,
       messages: [
-        {
-          role: "system",
-          content: `Sei UltraCheck AI...` // (il tuo prompt)
-        },
-        {
-          role: "system",
-          content: `Se ${language}="fr"...`
-        },
+        { role: "system", content: `Sei UltraCheck AI, un assistente esperto in etichette di vino.` },
+        { role: "system", content: `Se ${language}="fr" rispondi in francese, se "en" in inglese, altrimenti in italiano.` },
         {
           role: "user",
           content: [
-            { type: "text", text: `Analizza etichetta vino in ${language}.` },
-            isTextExtracted
-              ? { type: "text", text: extractedText }
-              : { type: "image_url", image_url: { url: `data:${contentType};base64,${base64Data}` } },
+            { type: "text", text: `Analizza questa etichetta di vino in ${language}. Fornisci un report chiaro con Success, Warning, Failed.` },
+            ...userContent
           ],
         },
       ],
     });
 
-    let analysis = response.choices[0].message.content || "No AI response.";
+    let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
     analysis = normalizeAnalysis(analysis);
 
-    if (process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-      await sgMail.send({
-        to: process.env.MAIL_TO,
-        from: "noreply@ultracheck.ai",
-        subject: `UltraCheck: ${azienda || "Analisi"}`,
-        text: `...`,
-        attachments: [{ content: fileBuffer.toString("base64"), filename: req.file.originalname, type: req.file.mimetype }],
-      });
-      console.log("Email inviata");
+    // === EMAIL ===
+    if (fileBuffer && process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {
+      try {
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+        await sgMail.send({
+          to: process.env.MAIL_TO,
+          from: "noreply@ultracheck.ai",
+          subject: `UltraCheck: ${azienda || "Analisi etichetta"}`,
+          text: `Analisi completata per ${nome || "utente"}\n\n${analysis}`,
+          attachments: [{
+            content: fileBuffer.toString("base64"),
+            filename: req.file.originalname,
+            type: req.file.mimetype,
+          }],
+        });
+        console.log("Email inviata a", process.env.MAIL_TO);
+      } catch (err) {
+        console.warn("Email fallita:", err.message);
+      }
     }
 
     res.json({ result: analysis });
+
   } catch (error) {
     console.error("Errore:", error.message);
     res.status(500).json({ error: "Elaborazione fallita: " + error.message });
@@ -296,6 +283,8 @@ if (req.file.mimetype === "application/pdf") {
   }
 });
 
+// === START ===
 app.listen(port, "0.0.0.0", () => {
-  console.log(`UltraCheck su http://0.0.0.0:${port}`);
+  console.log(`UltraCheck LIVE su http://0.0.0.0:${port}`);
+  console.log(`URL: https://ultracheck.onrender.com`);
 });

@@ -35,7 +35,7 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
 const app = express();
 const port = process.env.PORT || 8080;
 
-app.use(express.static("public")); // ultracheck.html va in /public
+app.use(express.static("public")); // ultracheck.html
 app.use(express.json());
 
 app.get("/", (req, res) => {

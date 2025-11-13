@@ -11,6 +11,21 @@ import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
 
+
+app.get("/test-vision", async (req, res) => {
+  if (!visionClient) return res.status(500).send("Vision non configurato");
+  try {
+    const [result] = await visionClient.textDetection({
+      image: { content: Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64") }
+    });
+    res.send("Vision API OK: " + (result.fullTextAnnotation?.text || "nessun testo"));
+  } catch (err) {
+    res.status(500).send("Errore: " + err.message);
+  }
+});
+
+
+
 // === CONFIG ===
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();

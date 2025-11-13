@@ -216,19 +216,18 @@ if (req.file.mimetype === "application/pdf") {
   }
 
   if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
-}
+  } else {
+    base64Data = fileBuffer.toString("base64");
+    contentType = req.file.mimetype;
+  }
 
+  if (isTextExtracted) {
+    extractedText = extractedText
+      .replace(/m\s*l/gi, "ml")
+      .replace(/c\s*l/gi, "cl")
+      .replace(/%[\s]*v[\s]*ol/gi, "% vol");
+  }
 
-      if (isTextExtracted) {
-        extractedText = extractedText
-          .replace(/m\s*l/gi, "ml")
-          .replace(/c\s*l/gi, "cl")
-          .replace(/%[\s]*v[\s]*ol/gi, "% vol");
-      }
-   else {
-      base64Data = fileBuffer.toString("base64");
-      contentType = req.file.mimetype;
-    }
 
     if (isTextExtracted) {
       base64Data = Buffer.from(extractedText).toString("base64");

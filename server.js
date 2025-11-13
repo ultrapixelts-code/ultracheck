@@ -35,12 +35,22 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
 const app = express();
 const port = process.env.PORT || 8080;
 
-app.use(express.static(".")); // serve file dalla root
+const app = express();
+const port = process.env.PORT || 8080;
+
+app.use(express.static("."));  // Serve TUTTI i file nella root
 app.use(express.json());
 
+// Homepage → index
 app.get("/", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "index.html"));
+});
+
+// Rotta per ultracheck.html
+app.get("/ultracheck", (req, res) => {
   res.sendFile(path.join(process.cwd(), "ultracheck.html"));
 });
+
 
 
 const upload = multer({

@@ -7,10 +7,12 @@ import { spawn } from "child_process";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 
-// Carica .env SOLO in locale
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
 }
+
+console.log("GOOGLE VAR LENGTH:", (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON || "").length);
+
 
 import sgMail from "@sendgrid/mail";
 import Tesseract from "tesseract.js";

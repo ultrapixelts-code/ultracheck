@@ -310,7 +310,7 @@ Tieni la valutazione coerente con la presenza o assenza reale dei campi.`
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
         await sgMail.send({
           to: process.env.MAIL_TO,
-          from: "noreply@ultracheck.ai",
+          from: "gabriele.russian@ultrapixel.it",
           subject: `UltraCheck: ${azienda || "Analisi etichetta"}`,
           text: `Analisi completata per ${nome || "utente"}\n\n${analysis}`,
           attachments: [{

@@ -1,4 +1,6 @@
-import express from "express";
+git add server.js
+git commit -m "fix: pdftoppm syntax + rimuovi duplicato"
+git pushimport express from "express";
 import multer from "multer";
 import fs from "fs/promises";
 import path from "path";

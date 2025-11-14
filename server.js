@@ -1,4 +1,3 @@
-git add server.js
 git commit -m "fix: pdftoppm syntax + rimuovi duplicato"
 git pushimport express from "express";
 import multer from "multer";

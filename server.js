@@ -81,9 +81,9 @@ function normalizeAnalysis(md) {
     .split("\n")
     .map((raw) => {
       const trimmed = raw.trimStart();
-      const isField =
-  /^[Success|Warning|Failed]/.test(trimmed) ||
-  /^[-*]\s+\S+/.test(trimmed) ||
+      const isField = 
+  /^(Success|Warning|Failed)\b/.test(trimmed) ||
+  /^[-*]\s+[^\s]/.test(trimmed) ||
   /^[-*]\s+[A-ZÀ-Ú]/.test(trimmed);
 
       if (!isField) return raw;

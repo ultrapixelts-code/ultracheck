@@ -124,13 +124,13 @@ async function parsePdf(buffer) {
   const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
   const txtPath = pdfPath.replace(".pdf", ".txt");
 
-  try {
-    await fs.writeFile(pdfPath, buffer);
-    await new Promise((resolve, reject) => {
-      const proc = spawn("pdftotext", ["-raw", "-layout", pdfPath, txtPath]);
-      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftotext code ${code}`));
-      proc.on("error", reject);
-    });
+try {
+  await fs.writeFile(pdfPath, buffer);
+  await new Promise((resolve, reject) => {
+    const proc = spawn("pdftotext", ["-raw", "-layout", pdfPath, txtPath]);
+    proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftotext code ${code}`)));
+    proc.on("error", reject);
+  });
     const text = await fs.readFile(txtPath, "utf8").catch(() => "");
     return { text };
   } finally {

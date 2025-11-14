@@ -78,7 +78,11 @@ function normalizeAnalysis(md) {
     .split("\n")
     .map((raw) => {
       const trimmed = raw.trimStart();
-      const isField = /^[Success|Warning|Failed]/.test(trimmed) || /^[-*]\s+**/.test(trimmed) || /^[-*]\s+[A-ZÀ-Ú]/.test(trimmed);
+      const isField =
+  /^[Success|Warning|Failed]/.test(trimmed) ||
+  /^[-*]\s+\S+/.test(trimmed) ||
+  /^[-*]\s+[A-ZÀ-Ú]/.test(trimmed);
+
       if (!isField) return raw;
       const status = statusFor(trimmed);
       if (!status) return raw;
@@ -246,11 +250,11 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
     ];
 
 
-     // 🧠 Analisi AI
- const response = await openai.chat.completions.create({
+// 🧠 Analisi AI
+const response = await openai.chat.completions.create({
   model: "gpt-4o-mini",
-  temperature: 0.1, // 🔒 quasi deterministico
-  seed: 42, // 🔁 per risultati sempre uguali
+  temperature: 0.1,
+  seed: 42,
   messages: [
     {
       role: "system",
@@ -272,7 +276,6 @@ Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
 Altezza minima dei caratteri: (✅/⚠️/❌) + testo
 Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo
 
-
 **Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
 ===============================
 
@@ -281,19 +284,11 @@ Tieni la valutazione coerente con la presenza o assenza reale dei campi.`
     {
       role: "user",
       content: [
-        {
-          type: "text",
-          text: "Analizza questa etichetta di vino e valuta solo la conformità legale, senza interpretazioni grafiche."
-        },
-        {
-          type: "image_url",
-          image_url: { url: `data:${req.file.mimetype};base64,${base64Image}` }
-        }
+        { type: "text", text: "Analizza questa etichetta di vino e valuta solo la conformità legale." },
+        ...userContent // 🔥 ADESSO FUNZIONA
       ]
     }
   ]
-});
-
 });
 
 

@@ -202,111 +202,66 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   let base64Data = "";
   let contentType = "";
 
-  try {
+ try {
     fileBuffer = await fs.readFile(filePath);
 
-  if (req.file.mimetype === "application/pdf") {
-  console.log("PDF rilevato");
-  const { text } = await parsePdf(fileBuffer);
-  const cleanText = text?.replace(/\s+/g, " ").trim() || "";
+    if (req.file.mimetype === "application/pdf") {
+      console.log("PDF rilevato");
+      const { text } = await parsePdf(fileBuffer);
+      const cleanText = text?.replace(/\s+/g, " ").trim() || "";
 
-  // FORZA OCR se:
-  // - testo nativo < 100 caratteri
-  // - oppure non contiene parole chiave come "MALVAZIJA", "vino", "vol."
-  const hasUsefulText = cleanText.length > 100 && /MALVAZIJA|vol\.?|l\s/i.test(cleanText);
+      const hasUsefulText = cleanText.length > 100 && /MALVAZIJA|vol\.?|l\s/i.test(cleanText);
 
-  if (hasUsefulText) {
-    extractedText = cleanText
-      .replace(/m\s*l/gi, "ml")
-      .replace(/c\s*l/gi, "cl")
-      .replace(/%[\s]*v[\s]*ol/gi, "% vol")
-      .trim();
-    isTextExtracted = true;
-    console.log("Testo nativo estratto (sufficiente)");
-  } else {
-    console.log("Testo nativo scarso o assente → OCR forzato");
-    const imgBuffer = await pdfToFirstPageImage(fileBuffer);
-    if (imgBuffer) {
-      let ocrText = await ocrGoogle(imgBuffer);
-      if (!ocrText?.trim()) {
-        console.log("Google Vision fallito → Tesseract (hrv+eng+ita)");
-        const { data: { text: tessText } } = await Tesseract.recognize(imgBuffer, "hrv+eng+ita");
-        ocrText = tessText || "";
+      if (hasUsefulText) {
+        extractedText = cleanText
+          .replace(/m\s*l/gi, "ml")
+          .replace(/c\s*l/gi, "cl")
+          .replace(/%[\s]*v[\s]*ol/gi, "% vol")
+          .replace(/\r\n/g, "\n")
+          .replace(/\s+/g, " ")
+          .trim();
+        isTextExtracted = true;
+        console.log("Testo nativo estratto (sufficiente)");
+      } else {
+        console.log("Testo nativo scarso o assente → OCR forzato");
+        const imgBuffer = await pdfToFirstPageImage(fileBuffer);
+        if (imgBuffer) {
+          let ocrText = await ocrGoogle(imgBuffer);
+          if (!ocrText?.trim()) {
+            console.log("Google Vision fallito → Tesseract (hrv+eng+ita)");
+            const { data: { text: tessText } } = await Tesseract.recognize(imgBuffer, "hrv+eng+ita");
+            ocrText = tessText || "";
+          }
+          extractedText = ocrText
+            .replace(/m\s*l/gi, "ml")
+            .replace(/c\s*l/gi, "cl")
+            .replace(/%[\s]*v[\s]*ol/gi, "% vol")
+            .replace(/(\d)[\.,](\d)\s*l/gi, "$1.$2 l")
+            .replace(/\r\n/g, "\n")
+            .replace(/\s+/g, " ")
+            .trim();
+          isTextExtracted = extractedText.length > 30;
+        }
       }
-      extractedText = ocrText
-        .replace(/m\s*l/gi, "ml")
-        .replace(/c\s*l/gi, "cl")
-        .replace(/%[\s]*v[\s]*ol/gi, "% vol")
-        .replace(/(\d)[\.,](\d)\s*l/gi, "$1.$2 l")
-        .replace(/\r\n/g, "\n")
-        .replace(/\s+/g, " ")
-        .trim();
-      isTextExtracted = extractedText.length > 30;
-    }
-  }
 
-  if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
-}
-
-      
+      if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
     } else {
+      // IMMAGINI (JPG, PNG)
       base64Data = fileBuffer.toString("base64");
       contentType = req.file.mimetype;
     }
 
+    // === USER CONTENT ===
     const userContent = isTextExtracted
-  ? [{ type: "text", text: extractedText }]
-  : [
-      {
-        type: "image_url",
-        image_url: {
-          url: `data:${contentType};base64,${base64Data}`
-        }
-      }
-    ];
-
-
-// 🧠 Analisi AI
-const response = await openai.chat.completions.create({
-  model: "gpt-4o-mini",
-  temperature: 0.1,
-  seed: 42,
-  messages: [
-    {
-      role: "system",
-      content: `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
-Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
-Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
-Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${req.body.lang || "it"}.
-
-===============================
-### 🔎 Conformità normativa (Reg. UE 2021/2117)
-Denominazione di origine: (✅ conforme / ⚠️ parziale / ❌ mancante) + testo
-Nome e indirizzo del produttore o imbottigliatore: (✅/⚠️/❌) + testo
-Volume nominale: (✅/⚠️/❌) + testo
-Titolo alcolometrico: (✅/⚠️/❌) + testo
-Indicazione allergeni: (✅/⚠️/❌) + testo
-Lotto: (✅/⚠️/❌) + testo
-QR code o link ingredienti/energia: (✅/⚠️/❌) + testo
-Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
-Altezza minima dei caratteri: (✅/⚠️/❌) + testo
-Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo
-
-**Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
-===============================
-
-Tieni la valutazione coerente con la presenza o assenza reale dei campi.`
-    },
-    {
-      role: "user",
-      content: [
-        { type: "text", text: "Analizza questa etichetta di vino e valuta solo la conformità legale." },
-        ...userContent // 🔥 ADESSO FUNZIONA
-      ]
-    }
-  ]
-});
-
+      ? [{ type: "text", text: extractedText }]
+      : [
+          {
+            type: "image_url",
+            image_url: {
+              url: `data:${contentType};base64,${base64Data}`
+            }
+          }
+        ];
 
     let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
     analysis = normalizeAnalysis(analysis);

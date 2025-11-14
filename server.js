@@ -248,15 +248,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
 }
 
-      if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
-
-      extractedText = extractedText
-        .replace(/m\s*l/gi, "ml")
-        .replace(/c\s*l/gi, "cl")
-        .replace(/%[\s]*v[\s]*ol/gi, "% vol")
-        .replace(/\r\n/g, "\n")
-        .replace(/\s+/g, " ")
-        .trim();
+      
     } else {
       base64Data = fileBuffer.toString("base64");
       contentType = req.file.mimetype;

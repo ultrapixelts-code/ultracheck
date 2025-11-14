@@ -40,6 +40,7 @@ const port = process.env.PORT || 8080;
 // Serve TUTTI i file statici dalla root (main/)
 app.use(express.static("."));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // AGGIUNTA
 
 // Homepage → index.html
 app.get("/", (req, res) => {

@@ -11,6 +11,9 @@ import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
 
+console.log("DEBUG: Deploy v3");
+
+
 // === CONFIG ===
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();

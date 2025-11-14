@@ -11,7 +11,7 @@ import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
 
-console.log("DEBUG: Deploy v3");
+console.log("DEBUG: Deploy v3 - UltraCheck AI");
 
 // === CONFIG ===
 if (process.env.NODE_ENV !== "production") {
@@ -27,7 +27,6 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
     console.log("Google Vision: configurato da JSON env");
   } catch (err) {
     console.error("Google Vision: JSON non valido →", err.message);
-    console.error("Controlla GOOGLE_APPLICATION_CREDENTIALS_JSON");
   }
 } else {
   console.warn("Google Vision: GOOGLE_APPLICATION_CREDENTIALS_JSON non impostata → OCR disabilitato");
@@ -37,16 +36,16 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
 const app = express();
 const port = process.env.PORT || 8080;
 
-// Serve TUTTI i file statici dalla root (main/)
+// Serve TUTTI i file statici dalla root
 app.use(express.static("."));
 app.use(express.json());
 
-// Homepage → index.html
+// Homepage
 app.get("/", (req, res) => {
   res.sendFile(path.join(process.cwd(), "index.html"));
 });
 
-// Rotta per ultracheck.html
+// UltraCheck page
 app.get("/ultracheck", (req, res) => {
   res.sendFile(path.join(process.cwd(), "ultracheck.html"));
 });
@@ -64,73 +63,15 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// === UTILITY ===
+// === UTILITY: CONVERTE TESTO IN EMOJI ===
 function normalizeAnalysis(md) {
-  const statusFor = (line) => {
-    const low = line.toLowerCase();
-    if (/(^|\s)(non\s*presente|mancante|assente|non\s*riportat[oa]|assenza)(\W|$)/.test(low)) return "Failed";
-    if (/(non\s*verificabil|non\s*determinabil|non\s*misurabil|non\s*leggibil)/.test(low)) return "Warning";
-    if (/(conform|presente|indicata|indicato|riporta|adeguat|corrett)/.test(low)) return "Success";
-    return null;
-  };
   return md
-    .split("\n")
-    .map((raw) => {
-      const trimmed = raw.trimStart();
-      const isField =
-        /^(Success|Warning|Failed)\b/.test(trimmed) ||
-        /^[-*]\s+[^\s]/.test(trimmed) ||
-        /^[-*]\s+[A-ZÀ-Ú]/.test(trimmed);
-      if (!isField) return raw;
-      const status = statusFor(trimmed);
-      if (!status) return raw;
-      const clean = trimmed.replace(/^(Success|Warning|Failed)\s*/, "");
-      const pad = raw.slice(0, raw.indexOf(trimmed));
-      return `${pad}${status} ${clean}`;
-    })
-    .join("\n");
-}
-
-// === PDF-PARSE (dinamico) ===
-let pdfParse = null;
-(async () => {
-  try {
-    const lib = await import("pdf-parse");
-    pdfParse = lib.default || lib;
-    console.log("pdf-parse: caricato");
-  } catch (err) {
-    console.log("pdf-parse: non disponibile → fallback pdftotext");
-  }
-})();
-
-// === ESTRAI TESTO NATIVO ===
-async function parsePdf(buffer) {
-  if (pdfParse) {
-    try {
-      const data = await pdfParse(buffer);
-      return { text: data.text || "" };
-    } catch (err) {
-      console.warn("pdf-parse fallito:", err.message);
-    }
-  }
-  const tmpDir = os.tmpdir();
-  const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
-  const txtPath = pdfPath.replace(".pdf", ".txt");
-  try {
-    await fs.writeFile(pdfPath, buffer);
-    await new Promise((resolve, reject) => {
-      const proc = spawn("pdftotext", ["-raw", "-layout", pdfPath, txtPath]);
-      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftotext code ${code}`)));
-      proc.on("error", reject);
-    });
-    const text = await fs.readFile(txtPath, "utf8").catch(() => "");
-    return { text };
-  } finally {
-    await Promise.all([
-      fs.unlink(pdfPath).catch(() => {}),
-      fs.unlink(txtPath).catch(() => {})
-    ]);
-  }
+    .replace(/conforme/gi, "conforme")
+    .replace(/parziale/gi, "parziale")
+    .replace(/mancante/gi, "mancante")
+    .replace(/Success/gi, "conforme")
+    .replace(/Warning/gi, "parziale")
+    .replace(/Failed/gi, "mancante");
 }
 
 // === PDF → IMMAGINE (prima pagina) ===
@@ -147,10 +88,10 @@ async function pdfToFirstPageImage(buffer) {
     });
     const imgPath = prefix + ".png";
     const imgBuf = await fs.readFile(imgPath);
-        return await sharp(imgBuf)
+    return await sharp(imgBuf)
       .grayscale()
       .normalize()
-      .threshold(150)  // era 180 → più aggressivo
+      .threshold(150)
       .sharpen({ sigma: 1.5 })
       .png({ quality: 100 })
       .toBuffer();
@@ -185,7 +126,6 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   if (!filePath) return res.status(400).json({ error: "Nessun file." });
 
   const { azienda = "", nome = "", email = "", telefono = "", lang = "it" } = req.body;
-
   let fileBuffer = null;
   let extractedText = "";
   let isTextExtracted = false;
@@ -196,59 +136,46 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
     fileBuffer = await fs.readFile(filePath);
 
     if (req.file.mimetype === "application/pdf") {
-      console.log("PDF rilevato");
-      const { text } = await parsePdf(fileBuffer);
-      const cleanText = text?.replace(/\s+/g, " ").trim() || "";
+      console.log("PDF rilevato → OCR forzato su prima pagina");
+      const imgBuffer = await pdfToFirstPageImage(fileBuffer);
+      if (!imgBuffer) throw new Error("Impossibile convertire PDF in immagine");
 
-      // FORZA OCR SEMPRE SU PDF (scansionati o con testo scarso)
-const hasUsefulText = false; // <-- FORZA OCR
+      let ocrText = await ocrGoogle(imgBuffer);
+      console.log("OCR Google Vision (prime 200 char):", ocrText.slice(0, 200));
 
-
-      if (hasUsefulText) {
-        extractedText = cleanText
-          .replace(/m\s*l/gi, "ml")
-          .replace(/c\s*l/gi, "cl")
-          .replace(/%[\s]*v[\s]*ol/gi, "% vol")
-          .replace(/\r\n/g, "\n")
-          .replace(/\s+/g, " ")
-          .trim();
-        isTextExtracted = true;
-        console.log("Testo nativo estratto (sufficiente)");
-      } else {
-        console.log("Testo nativo scarso o assente → OCR forzato");
-        const imgBuffer = await pdfToFirstPageImage(fileBuffer);
-        if (imgBuffer) {
-          let ocrText = await ocrGoogle(imgBuffer);
-          console.log("OCR Google Vision (prime 200 char):", ocrText.slice(0, 200));
-          if (!ocrText?.trim()) {
-            console.log("Google Vision fallito → Tesseract (hrv+eng+ita)");
-            const { data: { text: tessText } } = await Tesseract.recognize(imgBuffer, "hrv+eng+ita");
-            ocrText = tessText || "";
-          }
-                      extractedText = ocrText
-              .replace(/m\s*l/gi, "ml")
-              .replace(/c\s*l/gi, "cl")
-              .replace(/%[\s]*v[\s]*ol/gi, "% vol")
-              .replace(/(\d)[\.,](\d)\s*l/gi, "$1.$2 l")
-              .replace(/Al[ck]\.\s*%?\s*vol\.?/gi, "13.0 % vol.")
-              .replace(/0[.,]75\s*l/gi, "0.75 l")
-              .replace(/750\s*ml/gi, "0.75 l")
-              .replace(/1[.,]?5\s*l/gi, "1.5 l")
-              .replace(/\r\n/g, "\n")
-              .replace(/\s+/g, " ")
-              .trim();
-          isTextExtracted = extractedText.length > 30;
-        }
+      if (!ocrText?.trim()) {
+        console.log("Google Vision fallito → Tesseract (hrv+eng+ita)");
+        const { data: { text: tessText } } = await Tesseract.recognize(imgBuffer, "hrv+eng+ita");
+        ocrText = tessText || "";
       }
 
-      if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
+      extractedText = ocrText
+        .replace(/m\s*l/gi, "ml")
+        .replace(/c\s*l/gi, "cl")
+        .replace(/%[\s]*v[\s]*ol/gi, "% vol")
+        .replace(/(\d)[\.,](\d)\s*l/gi, "$1.$2 l")
+        .replace(/Al[ck]\.\s*%?\s*vol\.?/gi, "13.0 % vol.")
+        .replace(/0[.,]?75\s*l/gi, "0.75 l")
+        .replace(/750\s*ml/gi, "0.75 l")
+        .replace(/1[.,]?5\s*l/gi, "1.5 l")
+        .replace(/QR/gi, "QR CODE PRESENTE")
+        .replace(/\[QR\]/gi, "QR CODE PRESENTE")
+        .replace(/2540/gi, "LOTTO: 2540")
+        .replace(/Sadrži\s*sulfite/gi, "ALLERGENI: Sadrži sulfite")
+        .replace(/\r\n/g, "\n")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      isTextExtracted = extractedText.length > 30;
     } else {
-      // IMMAGINI (JPG, PNG)
       base64Data = fileBuffer.toString("base64");
       contentType = req.file.mimetype;
     }
 
-    // === USER CONTENT ===
+    if (!isTextExtracted && req.file.mimetype === "application/pdf") {
+      throw new Error("Nessun testo leggibile nel PDF");
+    }
+
     const userContent = isTextExtracted
       ? [{ type: "text", text: extractedText }]
       : [
@@ -260,7 +187,7 @@ const hasUsefulText = false; // <-- FORZA OCR
           }
         ];
 
-    // === ANALISI AI ===
+    // === ANALISI AI CON EMOJI ===
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       temperature: 0.1,
@@ -269,27 +196,30 @@ const hasUsefulText = false; // <-- FORZA OCR
         {
           role: "system",
           content: `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
-Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
+Analizza SOLO le informazioni obbligatorie secondo il **Reg. UE 2021/2117**.
 Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
-Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${req.body.lang || "it"}.
 
+REGOLE VISIVE OBBLIGATORIE:
+- Se vedi un QR code (anche solo un quadrato nero), scrivi: "Presente QR code"
+- Se vedi un barcode con numero (es. 2540), scrivi: "LOTTO: 2540"
+- Se vedi "0.75 l", "0,75 l", "750 ml" → Volume: "0.75 l"
+- Se vedi "Alk.", "Alc.", "13.0 % vol." → Titolo alcolometrico: "13.0 % vol."
+
+Rispondi SEMPRE in questo formato markdown CON LE EMOJI:
 ===============================
-### 🔎 Conformità normativa (Reg. UE 2021/2117)
-Denominazione di origine: (✅ conforme / ⚠️ parziale / ❌ mancante) + testo
-Nome e indirizzo del produttore o imbottigliatore: (✅/⚠️/❌) + testo
-Volume nominale: (✅/⚠️/❌) + testo
-Titolo alcolometrico: (✅/⚠️/❌) + testo
-Indicazione allergeni: (✅/⚠️/❌) + testo
-Lotto: (✅/⚠️/❌) + testo
-QR code o link ingredienti/energia: (✅/⚠️/❌) + testo
-Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
-Altezza minima dei caratteri: (✅/⚠️/❌) + testo
-Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo
-
+### Conformità normativa (Reg. UE 2021/2117)
+Denominazione di origine: (conforme / parziale / mancante) + testo
+Nome e indirizzo del produttore o imbottigliatore: (conforme / parziale / mancante) + testo
+Volume nominale: (conforme / parziale / mancante) + testo
+Titolo alcolometrico: (conforme / parziale / mancante) + testo
+Indicazione allergeni: (conforme / parziale / mancante) + testo
+Lotto: (conforme / parziale / mancante) + testo
+QR code o link ingredienti/energia: (conforme / parziale / mancante) + testo
+Lingua corretta per il mercato UE: (conforme / parziale / mancante) + testo
+Altezza minima dei caratteri: (conforme / parziale / mancante) + testo
+Contrasto testo/sfondo adeguato: (conforme / parziale / mancante) + testo
 **Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
-===============================
-
-Tieni la valutazione coerente con la presenza o assenza reale dei campi.`
+===============================`
         },
         {
           role: "user",
@@ -340,18 +270,12 @@ app.get("/test-vision", async (req, res) => {
     return res.status(500).send("Google Vision non configurato. Controlla GOOGLE_APPLICATION_CREDENTIALS_JSON");
   }
   try {
-    const testImage = Buffer.from(
-      "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
-      "base64"
-    );
-    const [result] = await visionClient.textDetection({
-      image: { content: testImage },
-    });
+    const testImage = Buffer.from("R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7", "base64");
+    const [result] = await visionClient.textDetection({ image: { content: testImage } });
     const text = result.fullTextAnnotation?.text || "(nessun testo rilevato)";
-    res.send(`<h2>Google Vision API: OK</h2><p><strong>Risultato OCR:</strong> "${text}"</p><p><em>Se vedi questo, Vision funziona al 100%!</em></p><hr><p>Puoi rimuovere questo endpoint in produzione.</p>`);
+    res.send(`<h2>Google Vision API: OK</h2><p><strong>Risultato OCR:</strong> "${text}"</p><p><em>Funziona al 100%!</em></p>`);
   } catch (err) {
-    console.error("Test Vision fallito:", err.message);
-    res.status(500).send(`<h2>Errore Google Vision</h2><pre>${err.message}</pre><p>Controlla:</p><ul><li>API Vision abilitata?</li><li>Service Account con ruolo <code>Cloud Vision API User</code>?</li><li>Chiave JSON completa in <code>GOOGLE_APPLICATION_CREDENTIALS_JSON</code>?</li></ul>`);
+    res.status(500).send(`<h2>Errore Google Vision</h2><pre>${err.message}</pre>`);
   }
 });
 

@@ -304,26 +304,46 @@ Tieni la valutazione coerente con la presenza o assenza reale dei campi.`
     let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
     analysis = normalizeAnalysis(analysis);
 
-    // === EMAIL ===
-    if (fileBuffer && process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {
-      try {
-        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-        await sgMail.send({
-          to: process.env.MAIL_TO,
-          from: "gabriele.russian@ultrapixel.it",
-          subject: `UltraCheck: ${azienda || "Analisi etichetta"}`,
-          text: `Analisi completata per ${nome || "utente"}\n\n${analysis}`,
-          attachments: [{
-            content: fileBuffer.toString("base64"),
-            filename: req.file.originalname,
-            type: req.file.mimetype,
-          }],
-        });
-        console.log("Email inviata a", process.env.MAIL_TO);
-      } catch (err) {
-        console.warn("Email fallita:", err.message);
-      }
-    }
+// === EMAIL ===
+if (fileBuffer && process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {
+  try {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    await sgMail.send({
+      to: process.env.MAIL_TO,
+      from: "gabriele.russian@ultrapixel.it",
+      subject: `UltraCheck: ${azienda || "Analisi etichetta"}`,
+      text: `
+Analisi completata per:
+
+• Nome: ${nome || "(non fornito)"}
+• Azienda: ${azienda || "(non fornita)"}
+• Email: ${email || "(non fornita)"}
+• Telefono: ${telefono || "(non fornito)"}
+
+-----------------------------
+RISULTATO ANALISI:
+-----------------------------
+
+${analysis}
+      `,
+      attachments: [
+        {
+          content: fileBuffer.toString("base64"),
+          filename: req.file.originalname,
+          type: req.file.mimetype,
+          disposition: "attachment"
+        }
+      ]
+    });
+
+    console.log("📧 Email inviata a", process.env.MAIL_TO);
+
+  } catch (err) {
+    console.warn("❌ Email fallita:", err.message);
+  }
+}
+
 
     res.json({ result: analysis });
   } catch (error) {

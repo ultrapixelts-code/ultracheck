@@ -204,6 +204,27 @@
 
     <button type="submit" class="btn">Procedi all’analisi</button>
   </form>
+  <!-- Dopo il form -->
+<div id="result-container" style="display: none; margin-top: 20px;">
+  <div id="loading" style="display: none; text-align: center; padding: 20px;">
+    <p style="font-size: 1.1em; color: #555;">
+      🔄 <strong>Analisi in corso...</strong><br>
+      <small>Stiamo leggendo l'etichetta e verificando la conformità (20–30 secondi)</small>
+    </p>
+    <div style="margin: 15px 0; height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
+      <div style="width: 0%; height: 100%; background: #4CAF50; animation: pulse 2s infinite;"></div>
+    </div>
+  </div>
+  <div id="result"></div>
+</div>
+
+<style>
+@keyframes pulse {
+  0% { width: 0%; }
+  50% { width: 70%; }
+  100% { width: 100%; }
+}
+</style>
 
   <div class="upload-box" id="uploadSection" style="display:none">
     <p>Carica il tuo file immagine dell’etichetta</p>

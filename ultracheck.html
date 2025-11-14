@@ -6,7 +6,6 @@
   <title>UltraCheck AI – Analisi Etichette Vino</title>
   <meta name="description" content="UltraCheck AI – Analisi automatica delle etichette vino conforme al Reg. UE 2021/2117.">
   <link rel="icon" type="image/png" href="favicon.png" />
-
   <style>
     body {
       font-family: "Helvetica Neue", Arial, sans-serif;
@@ -19,8 +18,8 @@
       min-height: 100vh;
       margin: 0;
       text-align: center;
+      padding: 20px;
     }
-
     h1 {
       font-weight: 500;
       letter-spacing: -0.5px;
@@ -28,7 +27,6 @@
       margin-bottom: 0.2rem;
       color: #111;
     }
-
     h2 {
       font-weight: 300;
       color: #a7a7a7;
@@ -36,7 +34,6 @@
       margin-bottom: 2.2rem;
       font-size: 1.2rem;
     }
-
     .form-box, .upload-box {
       background: #fafafa;
       border: 1px solid #eee;
@@ -46,7 +43,6 @@
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
       margin-bottom: 20px;
     }
-
     input[type="text"],
     input[type="email"],
     input[type="tel"] {
@@ -59,12 +55,10 @@
       font-size: 0.95rem;
       transition: border-color 0.3s;
     }
-
     input:focus {
       outline: none;
       border-color: #c6a450;
     }
-
     label {
       display: block;
       font-weight: 500;
@@ -72,21 +66,17 @@
       text-align: left;
       margin-top: 8px;
     }
-
     .upload-box {
       border: 2px dashed #c6a450;
       background-color: #fff;
       transition: border-color 0.3s, background 0.3s;
     }
-
     .upload-box:hover {
       background: #fdfbf6;
     }
-
     input[type="file"] {
       display: none;
     }
-
     .btn {
       display: inline-block;
       padding: 10px 24px;
@@ -99,12 +89,10 @@
       font-size: 0.95rem;
       margin-top: 6px;
     }
-
     .btn:hover {
       background-color: #c6a450;
       color: #111;
     }
-
     .progress {
       width: 320px;
       height: 8px;
@@ -114,21 +102,19 @@
       margin-top: 20px;
       display: none;
     }
-
     .progress-bar {
       width: 0;
       height: 100%;
       background: #c6a450;
       transition: width 0.3s;
     }
-
     .result {
       margin-top: 30px;
       text-align: left;
       display: none;
       max-width: 400px;
+      width: 100%;
     }
-
     .result-card {
       background: white;
       border-left: 6px solid #c6a450;
@@ -138,29 +124,24 @@
       animation: fadeIn 0.6s ease;
       line-height: 1.6;
     }
-
     .result h3 {
       font-weight: 500;
       font-size: 1.5rem;
       margin-bottom: 1rem;
       text-align: center;
     }
-
     .ok { color: #3c763d; }
     .warn { color: #b77f00; }
     .error { color: #a94442; }
-
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
-
     .lang-switcher {
       position: absolute;
       top: 20px;
       right: 20px;
     }
-
     .lang-switcher button {
       background: #fff;
       border: 1px solid #eee;
@@ -171,140 +152,217 @@
       font-size: 0.9rem;
       transition: all 0.2s;
     }
-
     .lang-switcher button:hover {
       background: #c6a450;
       color: #111;
     }
+
+    /* Loader personalizzato */
+    #loading {
+      text-align: center;
+      padding: 20px;
+      color: #555;
+    }
+    #loading p {
+      font-size: 1.1em;
+      margin-bottom: 12px;
+    }
+    .loader-bar {
+      height: 4px;
+      background: #eee;
+      border-radius: 2px;
+      overflow: hidden;
+      margin: 15px 0;
+    }
+    .loader-fill {
+      height: 100%;
+      background: #c6a450;
+      width: 0;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { width: 0%; }
+      50% { width: 70%; }
+      100% { width: 100%; }
+    }
+
+    /* Pulsanti post-analisi */
+    .post-analysis {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+    .post-analysis .btn {
+      width: 100%;
+      max-width: 320px;
+    }
+    .post-analysis a {
+      display: inline-block;
+      width: 100%;
+      max-width: 320px;
+      padding: 10px 24px;
+      background: #1E88E5;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+    .post-analysis a:hover {
+      background: #1565c0;
+    }
+
+    /* CTA WhatsApp */
+    .cta-section {
+      margin: 60px auto 40px;
+      max-width: 600px;
+      padding: 30px 20px;
+      background: linear-gradient(135deg, #6e8efb, #a777e3);
+      color: white;
+      border-radius: 16px;
+      text-align: center;
+    }
+    .cta-section h3 {
+      margin: 0 0 16px;
+      font-size: 1.8em;
+      font-weight: 500;
+    }
+    .cta-section p {
+      font-size: 1.1em;
+      margin: 0 0 20px;
+      opacity: 0.95;
+    }
+    .cta-btn {
+      display: inline-block;
+      background: #25D366;
+      color: white;
+      padding: 14px 32px;
+      border-radius: 50px;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+    .cta-btn:hover {
+      background: #1da851;
+    }
+
+    @media (max-width: 480px) {
+      .form-box, .upload-box, .result, .post-analysis .btn, .post-analysis a {
+        width: 100%;
+      }
+      h1 { font-size: 2.2rem; }
+      .lang-switcher { position: static; margin-bottom: 20px; }
+    }
   </style>
 </head>
-
 <body>
+
   <div class="lang-switcher">
-    <button data-lang="it">🇮🇹 IT</button>
-    <button data-lang="fr">🇫🇷 FR</button>
-    <button data-lang="en">🇬🇧 EN</button>
+    <button data-lang="it">IT</button>
+    <button data-lang="fr">FR</button>
+    <button data-lang="en">EN</button>
   </div>
 
   <h1>UltraCheck AI</h1>
   <h2>Analisi automatica etichette vino</h2>
 
+  <!-- Form dati utente -->
   <form id="userForm" class="form-box">
     <label for="company">Azienda *</label>
     <input type="text" id="company" name="azienda" required />
-
     <label for="name">Nome e Cognome *</label>
     <input type="text" id="name" name="nome" required />
-
     <label for="email">Email *</label>
     <input type="email" id="email" name="email" required />
-
     <label for="phone">Telefono *</label>
     <input type="tel" id="phone" name="telefono" required />
-
     <button type="submit" class="btn">Procedi all’analisi</button>
   </form>
-  <!-- Dopo il form -->
-<div id="result-container" style="display: none; margin-top: 20px;">
-  <div id="loading" style="display: none; text-align: center; padding: 20px;">
-    <p style="font-size: 1.1em; color: #555;">
-      🔄 <strong>Analisi in corso...</strong><br>
-      <small>Stiamo leggendo l'etichetta e verificando la conformità (20–30 secondi)</small>
-    </p>
-    <div style="margin: 15px 0; height: 4px; background: #eee; border-radius: 2px; overflow: hidden;">
-      <div style="width: 0%; height: 100%; background: #4CAF50; animation: pulse 2s infinite;"></div>
-    </div>
-  </div>
-  <div id="result"></div>
-</div>
 
-<style>
-@keyframes pulse {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
-}
-</style>
-
+  <!-- Upload etichetta -->
   <div class="upload-box" id="uploadSection" style="display:none">
     <p>Carica il tuo file immagine dell’etichetta</p>
     <input type="file" id="fileInput" accept=".jpg,.png,.jpeg,.pdf" />
     <label for="fileInput" class="btn">Scegli file</label>
   </div>
 
-  <div class="progress" id="progress">
-    <div class="progress-bar" id="progressBar"></div>
-  </div>
-
-  <div class="result" id="resultBox">
-    <div class="result-card">
-      <h3 id="resultText"></h3>
-      <div id="resultDetails"></div>
+  <!-- Loader -->
+  <div id="loading" style="display: none;">
+    <p>
+      <strong>Analisi in corso...</strong><br>
+      <small>Stiamo leggendo l'etichetta e verificando la conformità (20–30 secondi)</small>
+    </p>
+    <div class="loader-bar">
+      <div class="loader-fill"></div>
     </div>
   </div>
 
+  <!-- Risultato -->
+  <div class="result" id="resultBox" style="display: none;">
+    <div class="result-card">
+      <h3 id="resultText"></h3>
+      <div id="resultDetails"></div>
+      <div class="post-analysis" id="postAnalysis"></div>
+    </div>
+  </div>
+
+  <!-- CTA WhatsApp -->
+  <div class="cta-section">
+    <h3>Vuoi etichette conformi al 100%?</h3>
+    <p>Stampiamo etichette vino complete di <strong>QR code per ingredienti e valori nutrizionali</strong> – conformi al Reg. UE 2021/2117.</p>
+    <a href="https://wa.me/393271234567?text=Ciao,%20vorrei%20etichette%20conformi%20con%20QR%20code" 
+       target="_blank" class="cta-btn">
+      Contattaci su WhatsApp
+    </a>
+  </div>
+
   <script>
-    // 🔹 Riferimenti agli elementi
+    // Riferimenti
     const form = document.getElementById("userForm");
     const uploadSection = document.getElementById("uploadSection");
     const fileInput = document.getElementById("fileInput");
-    const progress = document.getElementById("progress");
-    const progressBar = document.getElementById("progressBar");
+    const loading = document.getElementById("loading");
     const resultBox = document.getElementById("resultBox");
     const resultText = document.getElementById("resultText");
     const resultDetails = document.getElementById("resultDetails");
+    const postAnalysis = document.getElementById("postAnalysis");
 
-    // 🌍 Selettore lingua
-    let selectedLang = "it"; // lingua predefinita
-
+    // Traduzioni
+    let selectedLang = "it";
     const translations = {
       it: {
         title: "UltraCheck AI",
         subtitle: "Analisi automatica etichette vino",
-        company: "Azienda *",
-        name: "Nome e Cognome *",
-        email: "Email *",
-        phone: "Telefono *",
-        analyze: "Procedi all’analisi",
-        upload: "Carica il tuo file immagine dell’etichetta",
-        choose: "Scegli file",
-        complete: "🧠 Analisi completata",
-        error: "❌ Errore nell’analisi",
+        company: "Azienda *", name: "Nome e Cognome *", email: "Email *", phone: "Telefono *",
+        analyze: "Procedi all’analisi", upload: "Carica il tuo file immagine dell’etichetta", choose: "Scegli file",
+        complete: "Analisi completata", error: "Errore nell’analisi",
+        another: "Analizza un'altra etichetta", elbl: "Crea il tuo QR code qui (ELBL)"
       },
       fr: {
         title: "UltraCheck AI",
         subtitle: "Analyse automatique des étiquettes de vin",
-        company: "Entreprise *",
-        name: "Nom et prénom *",
-        email: "E-mail *",
-        phone: "Téléphone *",
-        analyze: "Lancer l’analyse",
-        upload: "Téléchargez l’image de votre étiquette",
-        choose: "Choisir un fichier",
-        complete: "🧠 Analyse terminée",
-        error: "❌ Erreur d’analyse",
+        company: "Entreprise *", name: "Nom et prénom *", email: "E-mail *", phone: "Téléphone *",
+        analyze: "Lancer l’analyse", upload: "Téléchargez l’image de votre étiquette", choose: "Choisir un fichier",
+        complete: "Analyse terminée", error: "Erreur d’analyse",
+        another: "Analyser une autre étiquette", elbl: "Créez votre QR code ici (ELBL)"
       },
       en: {
         title: "UltraCheck AI",
         subtitle: "Automatic wine label analysis",
-        company: "Company *",
-        name: "Full name *",
-        email: "Email *",
-        phone: "Phone *",
-        analyze: "Start analysis",
-        upload: "Upload your label image",
-        choose: "Choose file",
-        complete: "🧠 Analysis complete",
-        error: "❌ Analysis error",
+        company: "Company *", name: "Full name *", email: "Email *", phone: "Phone *",
+        analyze: "Start analysis", upload: "Upload your label image", choose: "Choose file",
+        complete: "Analysis complete", error: "Analysis error",
+        another: "Analyze another label", elbl: "Create your QR code here (ELBL)"
       }
     };
 
-    // 🔄 Cambio lingua dinamico
+    // Cambio lingua
     document.querySelectorAll('.lang-switcher button').forEach(btn => {
       btn.addEventListener('click', e => {
         selectedLang = e.target.dataset.lang;
         const t = translations[selectedLang];
-
         document.querySelector('h1').textContent = t.title;
         document.querySelector('h2').textContent = t.subtitle;
         document.querySelector('label[for="company"]').textContent = t.company;
@@ -317,48 +375,42 @@
       });
     });
 
-    // 🧾 Gestione form
-    form.addEventListener("submit", (e) => {
+    // Passa al caricamento file
+    form.addEventListener("submit", e => {
       e.preventDefault();
-      const data = new FormData(form);
-      console.log("✅ Dati raccolti:", Object.fromEntries(data.entries()));
-
       form.style.display = "none";
       uploadSection.style.display = "block";
     });
 
-    // 🧠 Analisi file etichetta
+    // Analisi file
     async function analyzeImageFile(file) {
-      progress.style.display = "block";
+      loading.style.display = "block";
       resultBox.style.display = "none";
-      progressBar.style.width = "0%";
-
-      let width = 0;
-      const interval = setInterval(() => {
-        width = Math.min(100, width + 8);
-        progressBar.style.width = width + "%";
-      }, 200);
+      postAnalysis.innerHTML = "";
 
       try {
         const formData = new FormData();
         formData.append("label", file);
-        formData.append("azienda", document.getElementById("company").value);
-        formData.append("nome", document.getElementById("name").value);
-        formData.append("email", document.getElementById("email").value);
-        formData.append("telefono", document.getElementById("phone").value);
+        ["azienda", "nome", "email", "telefono"].forEach(field => {
+          formData.append(field, document.getElementById(field).value);
+        });
         formData.append("lang", selectedLang);
 
         const res = await fetch("/analyze", { method: "POST", body: formData });
-
-        clearInterval(interval);
-        progress.style.display = "none";
-        resultBox.style.display = "block";
+        loading.style.display = "none";
 
         if (res.ok) {
           const data = await res.json();
           resultText.textContent = translations[selectedLang].complete;
           resultText.className = "ok";
           resultDetails.innerHTML = data.result.replace(/\n/g, "<br>");
+
+          // Pulsanti post-anal conseguimos
+          const t = translations[selectedLang];
+          postAnalysis.innerHTML = `
+            <button class="btn" onclick="resetForm()">${t.another}</button>
+            <a href="https://elbl.eu/it/qr-code-generator" target="_blank">${t.elbl}</a>
+          `;
         } else {
           const err = await res.json().catch(() => ({}));
           resultText.textContent = translations[selectedLang].error;
@@ -366,16 +418,26 @@
           resultDetails.textContent = err.error || "Impossibile analizzare il file.";
         }
       } catch (e) {
-        clearInterval(interval);
-        progress.style.display = "none";
-        resultBox.style.display = "block";
+        loading.style.display = "none";
         resultText.textContent = translations[selectedLang].error;
         resultText.className = "error";
         resultDetails.textContent = "Controlla la connessione o riprova.";
+      } finally {
+        resultBox.style.display = "block";
       }
     }
 
-    // 📤 Caricamento file
+    // Reset form
+    window.resetForm = () => {
+      form.reset();
+      form.style.display = "block";
+      uploadSection.style.display = "none";
+      resultBox.style.display = "none";
+      fileInput.value = "";
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Avvia analisi al cambio file
     fileInput.addEventListener("change", () => {
       const file = fileInput.files?.[0];
       if (file) analyzeImageFile(file);

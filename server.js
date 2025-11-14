@@ -147,11 +147,12 @@ async function pdfToFirstPageImage(buffer) {
     });
     const imgPath = prefix + ".png";
     const imgBuf = await fs.readFile(imgPath);
-    return await sharp(imgBuf)
+        return await sharp(imgBuf)
       .grayscale()
       .normalize()
-      .threshold(180)
-      .sharpen()
+      .threshold(150)  // era 180 → più aggressivo
+      .sharpen({ sigma: 1.5 })
+      .png({ quality: 100 })
       .toBuffer();
   } catch (err) {
     console.warn("pdftoppm fallito:", err.message);
@@ -199,7 +200,9 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       const { text } = await parsePdf(fileBuffer);
       const cleanText = text?.replace(/\s+/g, " ").trim() || "";
 
-      const hasUsefulText = cleanText.length > 100 && /MALVAZIJA|vol\.?|l\s/i.test(cleanText);
+      // FORZA OCR SEMPRE SU PDF (scansionati o con testo scarso)
+const hasUsefulText = false; // <-- FORZA OCR
+
 
       if (hasUsefulText) {
         extractedText = cleanText
@@ -216,19 +219,24 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
         const imgBuffer = await pdfToFirstPageImage(fileBuffer);
         if (imgBuffer) {
           let ocrText = await ocrGoogle(imgBuffer);
+          console.log("OCR Google Vision (prime 200 char):", ocrText.slice(0, 200));
           if (!ocrText?.trim()) {
             console.log("Google Vision fallito → Tesseract (hrv+eng+ita)");
             const { data: { text: tessText } } = await Tesseract.recognize(imgBuffer, "hrv+eng+ita");
             ocrText = tessText || "";
           }
-          extractedText = ocrText
-            .replace(/m\s*l/gi, "ml")
-            .replace(/c\s*l/gi, "cl")
-            .replace(/%[\s]*v[\s]*ol/gi, "% vol")
-            .replace(/(\d)[\.,](\d)\s*l/gi, "$1.$2 l")
-            .replace(/\r\n/g, "\n")
-            .replace(/\s+/g, " ")
-            .trim();
+                      extractedText = ocrText
+              .replace(/m\s*l/gi, "ml")
+              .replace(/c\s*l/gi, "cl")
+              .replace(/%[\s]*v[\s]*ol/gi, "% vol")
+              .replace(/(\d)[\.,](\d)\s*l/gi, "$1.$2 l")
+              .replace(/Al[ck]\.\s*%?\s*vol\.?/gi, "13.0 % vol.")
+              .replace(/0[.,]75\s*l/gi, "0.75 l")
+              .replace(/750\s*ml/gi, "0.75 l")
+              .replace(/1[.,]?5\s*l/gi, "1.5 l")
+              .replace(/\r\n/g, "\n")
+              .replace(/\s+/g, " ")
+              .trim();
           isTextExtracted = extractedText.length > 30;
         }
       }

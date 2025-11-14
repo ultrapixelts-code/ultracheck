@@ -154,7 +154,6 @@ async function pdfToFirstPageImage(buffer) {
       proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm code ${code}`)));
 proc.on("error", reject);
 
-      proc.on("error", reject);
     });
     const imgPath = prefix + ".png";
     const imgBuf = await fs.readFile(imgPath);

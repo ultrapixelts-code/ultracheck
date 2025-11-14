@@ -13,7 +13,6 @@ import { ImageAnnotatorClient } from "@google-cloud/vision";
 
 console.log("DEBUG: Deploy v3");
 
-
 // === CONFIG ===
 if (process.env.NODE_ENV !== "production") {
   dotenv.config();
@@ -40,7 +39,6 @@ const port = process.env.PORT || 8080;
 
 // Serve TUTTI i file statici dalla root (main/)
 app.use(express.static("."));
-// index.html, ultracheck.html, ecc.
 app.use(express.json());
 
 // Homepage → index.html
@@ -48,7 +46,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(process.cwd(), "index.html"));
 });
 
-// Rotta per ultracheck.html (opzionale)
+// Rotta per ultracheck.html
 app.get("/ultracheck", (req, res) => {
   res.sendFile(path.join(process.cwd(), "ultracheck.html"));
 });
@@ -58,7 +56,6 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => cb(null, "/tmp"),
     filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
-
   }),
   limits: { fileSize: 10 * 1024 * 1024 },
 });
@@ -76,23 +73,20 @@ function normalizeAnalysis(md) {
     if (/(conform|presente|indicata|indicato|riporta|adeguat|corrett)/.test(low)) return "Success";
     return null;
   };
-
   return md
     .split("\n")
     .map((raw) => {
       const trimmed = raw.trimStart();
-      const isField = 
-  /^(Success|Warning|Failed)\b/.test(trimmed) ||
-  /^[-*]\s+[^\s]/.test(trimmed) ||
-  /^[-*]\s+[A-ZÀ-Ú]/.test(trimmed);
-
+      const isField =
+        /^(Success|Warning|Failed)\b/.test(trimmed) ||
+        /^[-*]\s+[^\s]/.test(trimmed) ||
+        /^[-*]\s+[A-ZÀ-Ú]/.test(trimmed);
       if (!isField) return raw;
       const status = statusFor(trimmed);
       if (!status) return raw;
       const clean = trimmed.replace(/^(Success|Warning|Failed)\s*/, "");
       const pad = raw.slice(0, raw.indexOf(trimmed));
       return `${pad}${status} ${clean}`;
-
     })
     .join("\n");
 }
@@ -119,18 +113,16 @@ async function parsePdf(buffer) {
       console.warn("pdf-parse fallito:", err.message);
     }
   }
-
   const tmpDir = os.tmpdir();
   const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
   const txtPath = pdfPath.replace(".pdf", ".txt");
-
-try {
-  await fs.writeFile(pdfPath, buffer);
-  await new Promise((resolve, reject) => {
-    const proc = spawn("pdftotext", ["-raw", "-layout", pdfPath, txtPath]);
-    proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftotext code ${code}`)));
-    proc.on("error", reject);
-  });
+  try {
+    await fs.writeFile(pdfPath, buffer);
+    await new Promise((resolve, reject) => {
+      const proc = spawn("pdftotext", ["-raw", "-layout", pdfPath, txtPath]);
+      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftotext code ${code}`)));
+      proc.on("error", reject);
+    });
     const text = await fs.readFile(txtPath, "utf8").catch(() => "");
     return { text };
   } finally {
@@ -146,14 +138,12 @@ async function pdfToFirstPageImage(buffer) {
   const tmpDir = os.tmpdir();
   const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
   const prefix = path.join(tmpDir, `page-${Date.now()}`);
-
   try {
     await fs.writeFile(pdfPath, buffer);
     await new Promise((resolve, reject) => {
       const proc = spawn("pdftoppm", ["-png", "-singlefile", "-r", "300", pdfPath, prefix]);
       proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm code ${code}`)));
-proc.on("error", reject);
-
+      proc.on("error", reject);
     });
     const imgPath = prefix + ".png";
     const imgBuf = await fs.readFile(imgPath);
@@ -194,7 +184,6 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   if (!filePath) return res.status(400).json({ error: "Nessun file." });
 
   const { azienda = "", nome = "", email = "", telefono = "", lang = "it" } = req.body;
-  const language = lang.toLowerCase();
 
   let fileBuffer = null;
   let extractedText = "";
@@ -202,7 +191,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   let base64Data = "";
   let contentType = "";
 
- try {
+  try {
     fileBuffer = await fs.readFile(filePath);
 
     if (req.file.mimetype === "application/pdf") {
@@ -263,9 +252,48 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
           }
         ];
 
+    // === ANALISI AI ===
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.1,
+      seed: 42,
+      messages: [
+        {
+          role: "system",
+          content: `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
+Analizza SOLO le informazioni obbligatorie secondo il **Reg. UE 2021/2117**.
+Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
+Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${req.body.lang || "it"}.
+===============================
+### Conformità normativa (Reg. UE 2021/2117)
+Denominazione di origine: (conforme / parziale / mancante) + testo
+Nome e indirizzo del produttore o imbottigliatore: (conforme / parziale / mancante) + testo
+Volume nominale: (conforme / parziale / mancante) + testo
+Titolo alcolometrico: (conforme / parziale / mancante) + testo
+Indicazione allergeni: (conforme / parziale / mancante) + testo
+Lotto: (conforme / parziale / mancante) + testo
+QR code o link ingredienti/energia: (conforme / parziale / mancante) + testo
+Lingua corretta per il mercato UE: (conforme / parziale / mancante) + testo
+Altezza minima dei caratteri: (conforme / parziale / mancante) + testo
+Contrasto testo/sfondo adeguato: (conforme / parziale / mancante) + testo
+**Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
+===============================
+Tieni la valutazione coerente con la presenza o assenza reale dei campi.`
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Analizza questa etichetta di vino e valuta solo la conformità legale." },
+            ...userContent
+          ]
+        }
+      ]
+    });
+
     let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
     analysis = normalizeAnalysis(analysis);
 
+    // === EMAIL ===
     if (fileBuffer && process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {
       try {
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -300,7 +328,6 @@ app.get("/test-vision", async (req, res) => {
   if (!visionClient) {
     return res.status(500).send("Google Vision non configurato. Controlla GOOGLE_APPLICATION_CREDENTIALS_JSON");
   }
-
   try {
     const testImage = Buffer.from(
       "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",

@@ -205,27 +205,48 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   try {
     fileBuffer = await fs.readFile(filePath);
 
-    if (req.file.mimetype === "application/pdf") {
-      console.log("PDF rilevato");
-      const { text } = await parsePdf(fileBuffer);
-      if (text?.trim().length > 50) {
-        extractedText = text;
-        isTextExtracted = true;
-        console.log("Testo nativo estratto");
-      } else {
-        console.log("Nessun testo nativo → OCR");
-        const imgBuffer = await pdfToFirstPageImage(fileBuffer);
-        if (imgBuffer) {
-          let ocrText = await ocrGoogle(imgBuffer);
-          if (!ocrText?.trim()) {
-            console.log("Google Vision fallito → Tesseract");
-            const { data: { text: tessText } } = await Tesseract.recognize(imgBuffer, "ita+eng");
-            ocrText = tessText || "";
-          }
-          extractedText = ocrText;
-          isTextExtracted = extractedText.trim().length > 30;
-        }
+  if (req.file.mimetype === "application/pdf") {
+  console.log("PDF rilevato");
+  const { text } = await parsePdf(fileBuffer);
+  const cleanText = text?.replace(/\s+/g, " ").trim() || "";
+
+  // FORZA OCR se:
+  // - testo nativo < 100 caratteri
+  // - oppure non contiene parole chiave come "MALVAZIJA", "vino", "vol."
+  const hasUsefulText = cleanText.length > 100 && /MALVAZIJA|vol\.?|l\s/i.test(cleanText);
+
+  if (hasUsefulText) {
+    extractedText = cleanText
+      .replace(/m\s*l/gi, "ml")
+      .replace(/c\s*l/gi, "cl")
+      .replace(/%[\s]*v[\s]*ol/gi, "% vol")
+      .trim();
+    isTextExtracted = true;
+    console.log("Testo nativo estratto (sufficiente)");
+  } else {
+    console.log("Testo nativo scarso o assente → OCR forzato");
+    const imgBuffer = await pdfToFirstPageImage(fileBuffer);
+    if (imgBuffer) {
+      let ocrText = await ocrGoogle(imgBuffer);
+      if (!ocrText?.trim()) {
+        console.log("Google Vision fallito → Tesseract (hrv+eng+ita)");
+        const { data: { text: tessText } } = await Tesseract.recognize(imgBuffer, "hrv+eng+ita");
+        ocrText = tessText || "";
       }
+      extractedText = ocrText
+        .replace(/m\s*l/gi, "ml")
+        .replace(/c\s*l/gi, "cl")
+        .replace(/%[\s]*v[\s]*ol/gi, "% vol")
+        .replace(/(\d)[\.,](\d)\s*l/gi, "$1.$2 l")
+        .replace(/\r\n/g, "\n")
+        .replace(/\s+/g, " ")
+        .trim();
+      isTextExtracted = extractedText.length > 30;
+    }
+  }
+
+  if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
+}
 
       if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
 

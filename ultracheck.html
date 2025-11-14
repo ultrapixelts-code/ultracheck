@@ -176,10 +176,61 @@
       background: #c6a450;
       color: #111;
     }
+
+    /* 🔵 Overlay Analysis in Progress */
+    #loadingOverlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      color: #333;
+      font-weight: 500;
+    }
+
+    /* CTA */
+    .cta-box {
+      margin-top: 60px;
+      padding: 25px;
+      border-top: 1px solid #ddd;
+      text-align: center;
+      max-width: 420px;
+    }
+    .cta-box a {
+      display: inline-block;
+      margin-top: 12px;
+      padding: 12px 22px;
+      background: #25D366;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-size: 17px;
+    }
+
+    #analyzeAnother {
+      margin-top: 20px;
+      padding: 12px 22px;
+      font-size: 16px;
+      background: #111;
+      color: #fff;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: none;
+    }
   </style>
 </head>
 
 <body>
+  <!-- 🔵 Overlay -->
+  <div id="loadingOverlay">Analysis in process…</div>
+
   <div class="lang-switcher">
     <button data-lang="it">🇮🇹 IT</button>
     <button data-lang="fr">🇫🇷 FR</button>
@@ -205,15 +256,6 @@
     <button type="submit" class="btn">Procedi all’analisi</button>
   </form>
 
-
-<style>
-@keyframes pulse {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
-}
-</style>
-
   <div class="upload-box" id="uploadSection" style="display:none">
     <p>Carica il tuo file immagine dell’etichetta</p>
     <input type="file" id="fileInput" accept=".jpg,.png,.jpeg,.pdf" />
@@ -228,146 +270,131 @@
     <div class="result-card">
       <h3 id="resultText"></h3>
       <div id="resultDetails"></div>
+
+      <button id="analyzeAnother">Analyze another label</button>
     </div>
   </div>
 
-  <script>
-    // 🔹 Riferimenti agli elementi
-    const form = document.getElementById("userForm");
-    const uploadSection = document.getElementById("uploadSection");
-    const fileInput = document.getElementById("fileInput");
-    const progress = document.getElementById("progress");
-    const progressBar = document.getElementById("progressBar");
-    const resultBox = document.getElementById("resultBox");
-    const resultText = document.getElementById("resultText");
-    const resultDetails = document.getElementById("resultDetails");
+  <div class="cta-box" id="ctaBox" style="display:none;">
+    <h3>Need compliant labels with QR code?</h3>
+    <p>We print fully compliant labels that meet all EU wine requirements.</p>
 
-    // 🌍 Selettore lingua
-    let selectedLang = "it"; // lingua predefinita
+    <a href="https://wa.me/393492792657" target="_blank">Contact us on WhatsApp</a>
 
-    const translations = {
-      it: {
-        title: "UltraCheck AI",
-        subtitle: "Analisi automatica etichette vino",
-        company: "Azienda *",
-        name: "Nome e Cognome *",
-        email: "Email *",
-        phone: "Telefono *",
-        analyze: "Procedi all’analisi",
-        upload: "Carica il tuo file immagine dell’etichetta",
-        choose: "Scegli file",
-        complete: "🧠 Analisi completata",
-        error: "❌ Errore nell’analisi",
-      },
-      fr: {
-        title: "UltraCheck AI",
-        subtitle: "Analyse automatique des étiquettes de vin",
-        company: "Entreprise *",
-        name: "Nom et prénom *",
-        email: "E-mail *",
-        phone: "Téléphone *",
-        analyze: "Lancer l’analyse",
-        upload: "Téléchargez l’image de votre étiquette",
-        choose: "Choisir un fichier",
-        complete: "🧠 Analyse terminée",
-        error: "❌ Erreur d’analyse",
-      },
-      en: {
-        title: "UltraCheck AI",
-        subtitle: "Automatic wine label analysis",
-        company: "Company *",
-        name: "Full name *",
-        email: "Email *",
-        phone: "Phone *",
-        analyze: "Start analysis",
-        upload: "Upload your label image",
-        choose: "Choose file",
-        complete: "🧠 Analysis complete",
-        error: "❌ Analysis error",
-      }
-    };
+    <p style="margin-top:20px;">
+      You can create a QR code for your label here:<br>
+      <a href="https://elbl.eu" target="_blank">ELBL – Create QR code</a>
+    </p>
+  </div>
 
-    // 🔄 Cambio lingua dinamico
-    document.querySelectorAll('.lang-switcher button').forEach(btn => {
-      btn.addEventListener('click', e => {
-        selectedLang = e.target.dataset.lang;
-        const t = translations[selectedLang];
 
-        document.querySelector('h1').textContent = t.title;
-        document.querySelector('h2').textContent = t.subtitle;
-        document.querySelector('label[for="company"]').textContent = t.company;
-        document.querySelector('label[for="name"]').textContent = t.name;
-        document.querySelector('label[for="email"]').textContent = t.email;
-        document.querySelector('label[for="phone"]').textContent = t.phone;
-        document.querySelector('#userForm .btn').textContent = t.analyze;
-        document.querySelector('#uploadSection p').textContent = t.upload;
-        document.querySelector('label[for="fileInput"]').textContent = t.choose;
-      });
-    });
+<script>
+  const form = document.getElementById("userForm");
+  const uploadSection = document.getElementById("uploadSection");
+  const fileInput = document.getElementById("fileInput");
+  const progress = document.getElementById("progress");
+  const progressBar = document.getElementById("progressBar");
+  const resultBox = document.getElementById("resultBox");
+  const resultText = document.getElementById("resultText");
+  const resultDetails = document.getElementById("resultDetails");
+  const loadingOverlay = document.getElementById("loadingOverlay");
+  const analyzeAnother = document.getElementById("analyzeAnother");
+  const ctaBox = document.getElementById("ctaBox");
 
-    // 🧾 Gestione form
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const data = new FormData(form);
-      console.log("✅ Dati raccolti:", Object.fromEntries(data.entries()));
+  let selectedLang = "it";
 
-      form.style.display = "none";
-      uploadSection.style.display = "block";
-    });
+  const translations = {
+    it: {
+      complete: "🧠 Analisi completata",
+      error: "❌ Errore nell’analisi",
+      loading: "Analisi in corso…",
+      analyzeAgain: "Analizza un'altra etichetta",
+    },
+    fr: {
+      complete: "🧠 Analyse terminée",
+      error: "❌ Erreur d’analyse",
+      loading: "Analyse en cours…",
+      analyzeAgain: "Analyser une autre étiquette",
+    },
+    en: {
+      complete: "🧠 Analysis complete",
+      error: "❌ Analysis error",
+      loading: "Analysis in process…",
+      analyzeAgain: "Analyze another label",
+    }
+  };
 
-    // 🧠 Analisi file etichetta
-    async function analyzeImageFile(file) {
-      progress.style.display = "block";
-      resultBox.style.display = "none";
-      progressBar.style.width = "0%";
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    form.style.display = "none";
+    uploadSection.style.display = "block";
+  });
 
-      let width = 0;
-      const interval = setInterval(() => {
-        width = Math.min(100, width + 8);
-        progressBar.style.width = width + "%";
-      }, 200);
+  async function analyzeImageFile(file) {
+    loadingOverlay.style.display = "flex";
+    ctaBox.style.display = "none";
 
-      try {
-        const formData = new FormData();
-        formData.append("label", file);
-        formData.append("azienda", document.getElementById("company").value);
-        formData.append("nome", document.getElementById("name").value);
-        formData.append("email", document.getElementById("email").value);
-        formData.append("telefono", document.getElementById("phone").value);
-        formData.append("lang", selectedLang);
+    progress.style.display = "block";
+    progressBar.style.width = "0%";
 
-        const res = await fetch("/analyze", { method: "POST", body: formData });
+    let w = 0;
+    const interval = setInterval(() => {
+      w = Math.min(100, w + 5);
+      progressBar.style.width = w + "%";
+    }, 180);
 
-        clearInterval(interval);
-        progress.style.display = "none";
-        resultBox.style.display = "block";
+    try {
+      const fd = new FormData();
+      fd.append("label", file);
+      fd.append("azienda", document.getElementById("company").value);
+      fd.append("nome", document.getElementById("name").value);
+      fd.append("email", document.getElementById("email").value);
+      fd.append("telefono", document.getElementById("phone").value);
+      fd.append("lang", selectedLang);
 
-        if (res.ok) {
-          const data = await res.json();
-          resultText.textContent = translations[selectedLang].complete;
-          resultText.className = "ok";
-          resultDetails.innerHTML = data.result.replace(/\n/g, "<br>");
-        } else {
-          const err = await res.json().catch(() => ({}));
-          resultText.textContent = translations[selectedLang].error;
-          resultText.className = "error";
-          resultDetails.textContent = err.error || "Impossibile analizzare il file.";
-        }
-      } catch (e) {
-        clearInterval(interval);
-        progress.style.display = "none";
-        resultBox.style.display = "block";
+      const res = await fetch("/analyze", { method: "POST", body: fd });
+
+      clearInterval(interval);
+      loadingOverlay.style.display = "none";
+      progress.style.display = "none";
+      resultBox.style.display = "block";
+
+      if (res.ok) {
+        const data = await res.json();
+        resultText.textContent = translations[selectedLang].complete;
+        resultText.className = "ok";
+        resultDetails.innerHTML = data.result.replace(/\n/g, "<br>");
+      } else {
+        const err = await res.json().catch(() => ({}));
         resultText.textContent = translations[selectedLang].error;
         resultText.className = "error";
-        resultDetails.textContent = "Controlla la connessione o riprova.";
+        resultDetails.textContent = err.error || "Impossibile analizzare il file.";
       }
-    }
 
-    // 📤 Caricamento file
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files?.[0];
-      if (file) analyzeImageFile(file);
-    });
-  </script>
+      analyzeAnother.style.display = "block";
+      analyzeAnother.textContent = translations[selectedLang].analyzeAgain;
+      ctaBox.style.display = "block";
+
+    } catch (e) {
+      clearInterval(interval);
+      loadingOverlay.style.display = "none";
+      progress.style.display = "none";
+      resultBox.style.display = "block";
+      resultText.textContent = translations[selectedLang].error;
+      resultText.className = "error";
+      resultDetails.textContent = "Errore di connessione.";
+    }
+  }
+
+  fileInput.addEventListener("change", () => {
+    const f = fileInput.files?.[0];
+    if (f) analyzeImageFile(f);
+  });
+
+  analyzeAnother.addEventListener("click", () => {
+    window.location.reload();
+  });
+</script>
+
 </body>
 </html>

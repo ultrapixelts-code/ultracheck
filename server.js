@@ -151,7 +151,8 @@ async function pdfToFirstPageImage(buffer) {
     await fs.writeFile(pdfPath, buffer);
     await new Promise((resolve, reject) => {
       const proc = spawn("pdftoppm", ["-png", "-singlefile", "-r", "300", pdfPath, prefix]);
-      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm code ${code}`));
+      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm code ${code}`)));
+proc.on("error", reject);
 
       proc.on("error", reject);
     });

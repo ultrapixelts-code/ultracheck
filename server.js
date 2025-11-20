@@ -186,6 +186,8 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   if (!filePath) return res.status(400).json({ error: "Nessun file." });
 
   const { azienda = "", nome = "", email = "", telefono = "", lang = "it" } = req.body;
+  console.log("Lingua richiesta:", lang);
+
 
   let fileBuffer = null;
   let extractedText = "";
@@ -272,7 +274,10 @@ const hasUsefulText = false; // <-- FORZA OCR
           content: `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
 Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
 Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
-Rispondi sempre nel formato markdown esatto qui sotto, in lingua: ${req.body.lang || "it"}.
+Devi rispondere esclusivamente nella lingua: ${req.body.lang || "it"}.
+Non usare mai altre lingue o traduzioni.
+Rispondi nel formato markdown esatto qui sotto:
+
 
 ===============================
 ### 🔎 Conformità normativa (Reg. UE 2021/2117)

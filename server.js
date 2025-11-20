@@ -309,6 +309,30 @@ Tieni la valutazione coerente con la presenza o assenza reale dei campi.`
 
     let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
     analysis = normalizeAnalysis(analysis);
+    // 🌍 Forza lingua di output se GPT risponde in italiano
+if (lang !== "it" && /Denominazione|Produttore|Volume nominale|Titolo alcolometrico/i.test(analysis)) {
+  console.log("Traduzione automatica forzata →", lang);
+
+  const translations = {
+    fr: "Traduis intégralement ce texte en français sans rien ajouter ni reformuler.",
+    en: "Translate this entire text into English without adding or rephrasing anything."
+  };
+
+  const translatePrompt = translations[lang] || null;
+
+  if (translatePrompt) {
+    const trRes = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0,
+      messages: [
+        { role: "system", content: "You are a precise translator preserving formatting and markdown." },
+        { role: "user", content: `${translatePrompt}\n\n${analysis}` }
+      ]
+    });
+    analysis = trRes.choices[0].message.content || analysis;
+  }
+}
+
 
 // === EMAIL ===
 if (fileBuffer && process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {

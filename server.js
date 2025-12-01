@@ -11,6 +11,7 @@ import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
 import { parsePdf, pdfToFirstPageImage } from "./pdf.js";
+import { ocrGoogle, ocrFallback } from "./ocr.js";
 
 
 console.log("DEBUG: Deploy v3");
@@ -108,22 +109,6 @@ let pdfParse = null;
 
 
 
-
-
-// === OCR GOOGLE VISION ===
-async function ocrGoogle(buffer) {
-  if (!visionClient) return "";
-  try {
-    const [result] = await visionClient.textDetection({ image: { content: buffer } });
-    const text = result.fullTextAnnotation?.text || "";
-    if (text.trim()) console.log("Google Vision OCR: OK");
-    return text;
-  } catch (err) {
-    console.warn("Google Vision errore:", err.message);
-    return "";
-  }
-}
-
 // === /analyze ===
 app.post("/analyze", upload.single("label"), async (req, res) => {
   const filePath = req.file?.path;
@@ -164,30 +149,33 @@ const hasUsefulText = false; // <-- FORZA OCR
       } else {
         console.log("Testo nativo scarso o assente → OCR forzato");
         const imgBuffer = await pdfToFirstPageImage(fileBuffer);
-        if (imgBuffer) {
-          let ocrText = await ocrGoogle(imgBuffer);
-          console.log("OCR Google Vision (prime 200 char):", ocrText.slice(0, 200));
-          if (!ocrText?.trim()) {
-            console.log("Google Vision fallito → Tesseract (hrv+eng+ita)");
-            const { data: { text: tessText } } = await Tesseract.recognize(imgBuffer, "hrv+eng+ita");
-            ocrText = tessText || "";
-          }
-                      extractedText = ocrText
-              .replace(/m\s*l/gi, "ml")
-              .replace(/c\s*l/gi, "cl")
-              .replace(/%[\s]*v[\s]*ol/gi, "% vol")
-              .replace(/(\d)[\.,](\d)\s*l/gi, "$1.$2 l")
-              .replace(/Al[ck]\.\s*%?\s*vol\.?/gi, "13.0 % vol.")
-              .replace(/0[.,]75\s*l/gi, "0.75 l")
-              .replace(/750\s*ml/gi, "0.75 l")
-              .replace(/1[.,]?5\s*l/gi, "1.5 l")
-              .replace(/\r\n/g, "\n")
-              .replace(/\s+/g, " ")
-              .trim();
-          isTextExtracted = extractedText.length > 30;
-        }
-      }
 
+        if (imgBuffer) {
+  let ocrText = await ocrGoogle(imgBuffer, visionClient);
+
+  console.log("OCR Google Vision (prime 200 char):", ocrText?.slice?.(0, 200));
+
+  if (!ocrText?.trim()) {
+    console.log("Google Vision fallito → OCR fallback Tesseract");
+    ocrText = await ocrFallback(imgBuffer);
+  }
+
+  extractedText = ocrText
+    .replace(/m\s*l/gi, "ml")
+    .replace(/c\s*l/gi, "cl")
+    .replace(/%[\s]*v[\s]*ol/gi, "% vol")
+    .replace(/(\d)[\.,](\d)\s*l/gi, "$1.$2 l")
+    .replace(/Al[ck]\.\s*%?\s*vol\.?/gi, "13.0 % vol.")
+    .replace(/0[.,]75\s*l/gi, "0.75 l")
+    .replace(/750\s*ml/gi, "0.75 l")
+    .replace(/1[.,]?5\s*l/gi, "1.5 l")
+    .replace(/\r\n/g, "\n")
+    .replace(/\s+/g, " ")
+    .trim();
+
+        isTextExtracted = extractedText.length > 30;
+}  
+         }
       if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
     } else {
       // IMMAGINI (JPG, PNG)

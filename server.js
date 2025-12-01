@@ -10,6 +10,8 @@ import sgMail from "@sendgrid/mail";
 import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
+import { parsePdf, pdfToFirstPageImage } from "./pdf.js";
+
 
 console.log("DEBUG: Deploy v3");
 
@@ -104,67 +106,9 @@ let pdfParse = null;
   }
 })();
 
-// === ESTRAI TESTO NATIVO ===
-async function parsePdf(buffer) {
-  if (pdfParse) {
-    try {
-      const data = await pdfParse(buffer);
-      return { text: data.text || "" };
-    } catch (err) {
-      console.warn("pdf-parse fallito:", err.message);
-    }
-  }
-  const tmpDir = os.tmpdir();
-  const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
-  const txtPath = pdfPath.replace(".pdf", ".txt");
-  try {
-    await fs.writeFile(pdfPath, buffer);
-    await new Promise((resolve, reject) => {
-      const proc = spawn("pdftotext", ["-raw", "-layout", pdfPath, txtPath]);
-      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftotext code ${code}`)));
-      proc.on("error", reject);
-    });
-    const text = await fs.readFile(txtPath, "utf8").catch(() => "");
-    return { text };
-  } finally {
-    await Promise.all([
-      fs.unlink(pdfPath).catch(() => {}),
-      fs.unlink(txtPath).catch(() => {})
-    ]);
-  }
-}
 
-// === PDF → IMMAGINE (prima pagina) ===
-async function pdfToFirstPageImage(buffer) {
-  const tmpDir = os.tmpdir();
-  const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
-  const prefix = path.join(tmpDir, `page-${Date.now()}`);
-  try {
-    await fs.writeFile(pdfPath, buffer);
-    await new Promise((resolve, reject) => {
-      const proc = spawn("pdftoppm", ["-png", "-singlefile", "-r", "300", pdfPath, prefix]);
-      proc.on("close", (code) => code === 0 ? resolve() : reject(new Error(`pdftoppm code ${code}`)));
-      proc.on("error", reject);
-    });
-    const imgPath = prefix + ".png";
-    const imgBuf = await fs.readFile(imgPath);
-        return await sharp(imgBuf)
-      .grayscale()
-      .normalize()
-      .threshold(150)  // era 180 → più aggressivo
-      .sharpen({ sigma: 1.5 })
-      .png({ quality: 100 })
-      .toBuffer();
-  } catch (err) {
-    console.warn("pdftoppm fallito:", err.message);
-    return null;
-  } finally {
-    await Promise.all([
-      fs.unlink(pdfPath).catch(() => {}),
-      fs.unlink(prefix + ".png").catch(() => {})
-    ]);
-  }
-}
+
+
 
 // === OCR GOOGLE VISION ===
 async function ocrGoogle(buffer) {

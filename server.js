@@ -235,6 +235,10 @@ Per il campo "QR code o link ingredienti/energia":
 - NON considerare QR: riquadri neri pieni, loghi, simboli stilizzati o figure con forme interne.
 - Considera QR solo se la struttura è inequivocabile e conforme ai QR standard.
 
+Per la lingua:
+- considera "conforme" se l’etichetta contiene almeno la lingua ufficiale
+  del paese di commercializzazione (se non è specificato, assumi Italia → italiano).
+- Non dire mai che mancano "lingue UE obbligatorie": non esistono lingue UE obbligatorie.
 
 
 

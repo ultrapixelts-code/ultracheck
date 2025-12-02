@@ -100,7 +100,6 @@ function normalizeAnalysis(md) {
     .join("\n");
 }
 
-// === /analyze ===
 app.post("/analyze", upload.single("label"), async (req, res) => {
   const filePath = req.file?.path;
   if (!filePath) return res.status(400).json({ error: "Nessun file." });
@@ -118,64 +117,64 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   try {
     fileBuffer = await fs.readFile(filePath);
 
-        // === PDF ===
+    // === PDF ===
     if (req.file.mimetype === "application/pdf") {
       console.log("PDF rilevato");
-      const { text } = await parsePdf(fileBuffer);
-  
 
-      // Forziamo SEMPRE OCR su immagine
+      // 1. Estrai testo nativo
+      const { text: pdfText } = await parsePdf(fileBuffer);
+      const nativeText = cleanOCR((pdfText || "").replace(/\s+/g, " ").trim());
+      const hasGoodNativeText =
+        nativeText.length > 100 &&
+        /(%|vol\.?|cl|ml|lotto|sulf|kj|kcal|vino|wine)/i.test(nativeText);
+
+      // 2. Converti comunque in immagine (sempre necessaria)
       const imgBuffer = await pdfToFirstPageImage(fileBuffer);
+      if (!imgBuffer) throw new Error("Impossibile convertire PDF in immagine");
 
-      if (imgBuffer) {
-        // PREPROCESSING PER ETICHETTE (anche scure)
-        const preProcessed = await sharp(imgBuffer)
-          .grayscale()
-          .normalise()
-          .sharpen()
-          .modulate({ brightness: 1.6, contrast: 1.4 })
-          .toBuffer();
+      base64Data = imgBuffer.toString("base64");
+      contentType = "image/png";
 
-        console.log("DEBUG: preprocessing applicato su immagine PDF");
+      // 3. Preprocessing per OCR
+      const preProcessed = await sharp(imgBuffer)
+        .grayscale()
+        .normalise()
+        .sharpen()
+        .modulate({ brightness: 1.6, contrast: 1.4 })
+        .toBuffer();
 
-        // immagine ORIGINALE (a colori) per GPT
-        base64Data = imgBuffer.toString("base64");
-        contentType = "image/png";
+      let ocrText = await ocrGoogle(preProcessed, visionClient);
+      if (!ocrText?.trim()) {
+        console.log("Google Vision fallito → fallback Tesseract");
+        ocrText = await ocrFallback(preProcessed);
+      }
+      const ocrClean = cleanOCR(ocrText || "");
 
-        // OCR Vision → fallback Tesseract
-        let ocrText = await ocrGoogle(preProcessed, visionClient);
-        console.log("OCR Google Vision (PDF – prime 200 char):", ocrText?.slice?.(0, 200));
-
-        if (!ocrText?.trim()) {
-          console.log("Vision fallito → fallback Tesseract");
-          ocrText = await ocrFallback(preProcessed);
-        }
-
-        extractedText = cleanOCR(ocrText || "");
-        isTextExtracted = extractedText.length > 30;
-
-        if (extractedText) {
-          const snippet = extractedText
-            .toLowerCase()
-            .replace(/\s+/g, " ")
-            .match(/.{0,40}75.{0,40}/g);
-          console.log("DEBUG VOLUME SNIPPET:", snippet);
-        }
+      // 4. Scegli il migliore / merge
+      if (hasGoodNativeText && nativeText.length > ocrClean.length * 0.7) {
+        console.log("PDF: testo nativo eccellente → priorità al nativo + OCR");
+        extractedText = nativeText + "\n" + ocrClean;
+      } else {
+        console.log("PDF: OCR migliore del testo nativo → uso OCR");
+        extractedText = ocrClean;
       }
 
-      if (!isTextExtracted) {
-        throw new Error("Nessun testo leggibile nel PDF");
-      }
+      isTextExtracted = extractedText.length > 30;
+      if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
 
-      // estrazione strutturata
       analysisData = analyzeText(extractedText);
-      console.log("DEBUG ANALYSIS VOLUME:", analysisData?.data?.volume);
+      console.log(
+        "ANALISI PDF → Volume:",
+        analysisData?.data?.volume,
+        "| QR:",
+        analysisData?.data?.qrDetected ? "Sì" : "No"
+      );
 
     // === IMMAGINI (JPG, PNG, ...) ===
     } else {
       console.log("Immagine etichetta rilevata:", req.file.mimetype);
 
-      // PREPROCESSING ANCHE PER LE IMMAGINI
+      // preprocessing
       const preProcessed = await sharp(fileBuffer)
         .grayscale()
         .normalise()
@@ -185,11 +184,9 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
 
       console.log("DEBUG: preprocessing applicato su immagine JPG/PNG");
 
-      // immagine ORIGINALE (a colori) per GPT
-      base64Data = fileBuffer.toString("base64");
+      base64Data = fileBuffer.toString("base64"); // immagine a colori per GPT
       contentType = req.file.mimetype;
 
-      // OCR Vision → fallback Tesseract
       let ocrText = await ocrGoogle(preProcessed, visionClient);
       console.log("OCR Google Vision (IMG – prime 200 char):", ocrText?.slice?.(0, 200));
 
@@ -200,16 +197,11 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
 
       extractedText = cleanOCR(ocrText || "");
       isTextExtracted = extractedText.length > 30;
+      if (!isTextExtracted) throw new Error("Nessun testo leggibile nell’immagine");
 
-      if (!isTextExtracted) {
-        throw new Error("Nessun testo leggibile nell’immagine");
-      }
-
-      // estrazione strutturata anche per le immagini
       analysisData = analyzeText(extractedText);
       console.log("DEBUG ANALYSIS (IMG) VOLUME:", analysisData?.data?.volume);
     }
-
 
     // === USER CONTENT PER GPT: testo + immagine (se presenti) ===
     const userContent = [];
@@ -225,7 +217,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       });
     }
 
-    // JSON extra solo se abbiamo analysisData (PDF con testo)
+    // JSON extra solo se abbiamo analysisData
     const extraContent = analysisData
       ? [
           {
@@ -273,8 +265,6 @@ Per la lingua:
 - considera "conforme" se l’etichetta contiene almeno la lingua ufficiale
   del paese di commercializzazione (se non è specificato, assumi Italia → italiano).
 - Non dire mai che mancano "lingue UE obbligatorie": non esistono lingue UE obbligatorie.
-
-
 
 Devi rispondere esclusivamente nella lingua: ${req.body.lang || "it"}.
 Non usare mai altre lingue o traduzioni.

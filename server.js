@@ -21,62 +21,55 @@ import jsQR from "jsqr";
 
 
 
-// === QR CODE DETECTION (jsQR) – VERSIONE DEFINITIVA ANTI-CROATI E ANTI-TUTTO ===
+// === QR CODE DETECTION (jsQR) – multi-scala + invertito + log ===
 async function detectQrCode(imgBuffer) {
   try {
-    // Normalizzo un po' la dimensione (max 1200 px lato lungo)
-    const { data, info } = await sharp(imgBuffer)
-      .resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: false })
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
+    console.log("DEBUG jsQR typeof:", typeof jsQR);
 
-    const rgba = new Uint8ClampedArray(data);
+    const sizes = [600, 900, 1200];
 
-    // 1. Prova normale (QR nero su bianco)
-    let qr = jsQR(rgba, info.width, info.height);
-    if (qr) {
-      console.log("jsQR: QR rilevato (normale)");
-      return true;
-    }
+    for (const width of sizes) {
+      const { data, info } = await sharp(imgBuffer)
+        .resize({ width, withoutEnlargement: false })
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
 
-    // 2. Prova invertita (QR bianco su nero – tipo Ravalico)
-    const inverted = new Uint8ClampedArray(rgba.length);
-    for (let i = 0; i < rgba.length; i += 4) {
-      inverted[i]     = 255 - rgba[i];     // R
-      inverted[i + 1] = 255 - rgba[i + 1]; // G
-      inverted[i + 2] = 255 - rgba[i + 2]; // B
-      inverted[i + 3] = rgba[i + 3];       // A
-    }
-    qr = jsQR(inverted, info.width, info.height);
-    if (qr) {
-      console.log("jsQR: QR rilevato (invertito)");
-      return true;
-    }
+      const rgba = new Uint8ClampedArray(data);
 
-    // 3. Fallback testuale (Vision) – opzionale, già ce l'hai
-    if (visionClient) {
-      try {
-        const [result] = await visionClient.textDetection({
-          image: { content: imgBuffer },
-        });
-        const text = result.fullTextAnnotation?.text || "";
-        if (/QR|scansiona|scan|ewine|ingredienti|nutrizionali|energia|calorie/i.test(text)) {
-          console.log("QR rilevato tramite testo Vision (fallback)");
-          return true;
-        }
-      } catch (err) {
-        // silenzioso
+      // 1) normale
+      console.log(`DEBUG jsQR: try size ${info.width}x${info.height} (normal)`);
+      let qr = jsQR(rgba, info.width, info.height);
+      if (qr) {
+        console.log("DEBUG jsQR: QR trovato (normal)", qr.location);
+        return true;
+      }
+
+      // 2) invertito
+      console.log(`DEBUG jsQR: try size ${info.width}x${info.height} (invert)`);
+      const inverted = new Uint8ClampedArray(rgba.length);
+      for (let i = 0; i < rgba.length; i += 4) {
+        inverted[i]     = 255 - rgba[i];
+        inverted[i + 1] = 255 - rgba[i + 1];
+        inverted[i + 2] = 255 - rgba[i + 2];
+        inverted[i + 3] = rgba[i + 3];
+      }
+      qr = jsQR(inverted, info.width, info.height);
+      if (qr) {
+        console.log("DEBUG jsQR: QR trovato (invert)", qr.location);
+        return true;
       }
     }
 
+    console.log("DEBUG jsQR: nessun QR rilevato da jsQR");
     return false;
 
   } catch (err) {
-    console.error("QR detect error:", err.message);
+    console.error("QR detect error:", err);
     return false;
   }
 }
+
 
 
 
@@ -236,13 +229,27 @@ contentType = "image/png";
       if (analysisData?.data) {
         analysisData.data.qrDetected = qrDetected;
       }
+      // Fallback: se jsQR non ha trovato QR ma nel testo vedo schema ingredienti/energia tipico
+if (analysisData?.data && !analysisData.data.qrDetected) {
+  const t = extractedText.toLowerCase();
+  if (
+    /kj/.test(t) &&
+    /kcal/.test(t) &&
+    /(ingredienti|ingredients|ingredienti nutrizionali|energia|energy)/.test(t)
+  ) {
+    console.log("DEBUG fallback QR: setto qrDetected = true da testo OCR");
+    analysisData.data.qrDetected = true;
+  }
+}
 
-      console.log(
-        "ANALISI PDF → Volume:",
-        analysisData?.data?.volume,
-        "| QR:",
-        qrDetected ? "Sì" : "No"
-      );
+
+    console.log(
+  "ANALISI PDF → Volume:",
+  analysisData?.data?.volume,
+  "| QR:",
+  analysisData?.data?.qrDetected ? "Sì" : "No"
+);
+
 
     // === IMMAGINI (JPG, PNG, ...) ===
     } else {
@@ -279,17 +286,30 @@ console.log("DEBUG QR (IMG):", qrDetected ? "trovato" : "non trovato");
       if (!isTextExtracted) throw new Error("Nessun testo leggibile nell’immagine");
 
       analysisData = analyzeText(extractedText);
-      if (analysisData?.data) {
-        analysisData.data.qrDetected = qrDetected;
-      }
+if (analysisData?.data) {
+  analysisData.data.qrDetected = qrDetected;
+}
+
+// 🔁 Fallback da testo OCR anche per le IMMAGINI
+if (analysisData?.data && !analysisData.data.qrDetected) {
+  const t = extractedText.toLowerCase();
+  if (
+    /kj/.test(t) &&
+    /kcal/.test(t) &&
+    /(ingredienti|ingredients|ingredienti nutrizionali|energia|energy)/.test(t)
+  ) {
+    console.log("DEBUG fallback QR (IMG): setto qrDetected = true da testo OCR");
+    analysisData.data.qrDetected = true;
+  }
+}
 
       console.log(
         "DEBUG ANALYSIS (IMG) VOLUME:",
         analysisData?.data?.volume,
         "| QR:",
-        qrDetected ? "Sì" : "No"
+        analysisData?.data?.qrDetected ? "Sì" : "No"
       );
-    }
+    }  // <--- chiude il ramo "else" (immagini)
 
     // === USER CONTENT PER GPT: testo + immagine (se presenti) ===
     const userContent = [];
@@ -322,6 +342,7 @@ console.log("DEBUG QR (IMG):", qrDetected ? "trovato" : "non trovato");
           },
         ]
       : [];
+
 
     // === ANALISI AI ===
     const response = await openai.chat.completions.create({

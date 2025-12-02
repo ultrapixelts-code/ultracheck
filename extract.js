@@ -48,9 +48,10 @@ function findAlcohol(text, original) {
 // 2. VOLUME → VERSIONE 100% BULLETPROOF (legge 75cl, 750ml, 0.75l, ecc.)
 // ==================================================================
 function findVolume(text, original) {
-  const s = (original || "").toLowerCase().replace(/\s+/g, " ");
+  // uso il testo normalizzato (spazi e minuscole) per evitare casini di OCR
+  const s = (text || original || "").toLowerCase().replace(/\s+/g, " ");
 
-  // Caso principale: numeri + unità (con spazio opzionale)
+  // 1) Caso principale: numero + unità (con spazio opzionale)
   let match = s.match(/(\d{1,4}[.,]?\d*)\s*(cl|ml|l|litro|litri|liters?|litres?)/i);
   if (match) {
     const num = parseFloat(match[1].replace(",", "."));
@@ -67,7 +68,17 @@ function findVolume(text, original) {
     }
   }
 
-  // Fallback se l’OCR fa casino
+  // 2) Secondo tentativo "sporco": numero 2-3 cifre vicino a qualcosa che pare "cl"
+  // (c, ç, c + l/1/I ecc.) — pensato proprio per casi OCR strani
+  let loose = s.match(/(\d{2,3})\s*[cç][l1i]/);
+  if (loose) {
+    const n = parseInt(loose[1], 10);
+    if (n >= 50 && n <= 200) {
+      return +(n / 100).toFixed(3);    // es: 75 → 0.75 L, 150 → 1.50 L
+    }
+  }
+
+  // 3) Fallback se l’OCR fa ancora più casino
   if (/\b75\s*cl\b/.test(s)) return 0.75;
   if (/\b0[.,]?75\b/.test(s)) return 0.75;
   if (/\b1[.,]?5\b|\b150\s*cl\b/.test(s)) return 1.5;

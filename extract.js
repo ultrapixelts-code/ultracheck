@@ -48,27 +48,37 @@ function findAlcohol(text, original) {
 // 2. VOLUME → VERSIONE 100% BULLETPROOF (legge 75cl, 750ml, 0.75l, ecc.)
 // ==================================================================
 function findVolume(text, original) {
-  const s = original.toLowerCase();
+  const s = (original || "").toLowerCase().replace(/\s+/g, " ");
 
-  // CERCA PRIMA IL CASO ATTACCATO (75cl, 750ml, 0.75l) ← il più comune con OCR!
-  let match = s.match(/(\d+[.,]?\d*)(l|cl|ml|litro|litri|litres|liter)/i);
+  // Caso principale: numeri + unità (con spazio opzionale)
+  let match = s.match(/(\d{1,4}[.,]?\d*)\s*(cl|ml|l|litro|litri|liters?|litres?)/i);
   if (match) {
     const num = parseFloat(match[1].replace(",", "."));
     const unit = match[2].toLowerCase();
-    if (unit.startsWith("l") && unit !== "cl" && unit !== "ml") return +num.toFixed(3);
-    if (unit.startsWith("cl")) return +(num / 100).toFixed(3);
-    if (unit.startsWith("ml")) return +(num / 1000).toFixed(3);
+
+    if (unit === "l" || unit.startsWith("lit")) {
+      return +num.toFixed(3);          // es: 0.75 l → 0.750
+    }
+    if (unit === "cl") {
+      return +(num / 100).toFixed(3);  // es: 75 cl → 0.750
+    }
+    if (unit === "ml") {
+      return +(num / 1000).toFixed(3); // es: 750 ml → 0.750
+    }
   }
 
-  // Fallback numeri nudi
+  // Fallback se l’OCR fa casino
+  if (/\b75\s*cl\b/.test(s)) return 0.75;
   if (/\b0[.,]?75\b/.test(s)) return 0.75;
-  if (/\b1[.,]?5\b|\b150\s?cl\b/.test(s)) return 1.5;
-  if (/\b0[.,]?5\b|\b50\s?cl\b/.test(s)) return 0.5;
-  if (/\b0[.,]?375\b|\b37[.,]?5\s?cl\b/.test(s)) return 0.375;
-  if (/\b1[.,]?0?\b.*l\b/.test(s)) return 1.0;
+  if (/\b1[.,]?5\b|\b150\s*cl\b/.test(s)) return 1.5;
+  if (/\b0[.,]?5\b|\b50\s*cl\b/.test(s)) return 0.5;
+  if (/\b0[.,]?375\b|\b37[.,]?5\s*cl\b/.test(s)) return 0.375;
+  if (/\b1[.,]?0?\b.*\bl\b/.test(s)) return 1.0;
 
   return null;
 }
+
+
 
 
 // ==================================================================

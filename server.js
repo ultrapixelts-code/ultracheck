@@ -223,7 +223,11 @@ Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verific
 
 Per il campo "QR code o link ingredienti/energia":
 - usa prima il dato strutturato che ti passo (qrDetected);
-- MA se guardando l'immagine vedi chiaramente un QR code, considera il campo come presente/conforme anche se i dati lo segnano mancante.
+- MA se guardando l'immagine vedi chiaramente un QR code, considera il campo come presente/conforme
+  anche se i dati lo segnano mancante.
+- Riconosci come QR code qualunque riquadro quadrato con pattern tipico a pixel (finder patterns).
+- Non richiedere alcun testo accanto al QR per considerarlo presente.
+
 
 Devi rispondere esclusivamente nella lingua: ${req.body.lang || "it"}.
 Non usare mai altre lingue o traduzioni.

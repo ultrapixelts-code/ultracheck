@@ -12,6 +12,11 @@ import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
 import { parsePdf, pdfToFirstPageImage } from "./pdf.js";
 import { ocrGoogle, ocrFallback } from "./ocr.js";
+import { cleanOCR } from "./cleanOCR.js";
+import { extractData } from "./extract.js";
+import { applyRules } from "./rules.js";
+import { analyzeText } from "./analyze.js";
+
 
 
 console.log("DEBUG: Deploy v3");
@@ -95,20 +100,6 @@ function normalizeAnalysis(md) {
     .join("\n");
 }
 
-// === PDF-PARSE (dinamico) ===
-let pdfParse = null;
-(async () => {
-  try {
-    const lib = await import("pdf-parse");
-    pdfParse = lib.default || lib;
-    console.log("pdf-parse: caricato");
-  } catch (err) {
-    console.log("pdf-parse: non disponibile → fallback pdftotext");
-  }
-})();
-
-
-
 // === /analyze ===
 app.post("/analyze", upload.single("label"), async (req, res) => {
   const filePath = req.file?.path;
@@ -117,12 +108,12 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   const { azienda = "", nome = "", email = "", telefono = "", lang = "it" } = req.body;
   console.log("Lingua richiesta:", lang);
 
-
   let fileBuffer = null;
   let extractedText = "";
   let isTextExtracted = false;
   let base64Data = "";
   let contentType = "";
+  let analysisData = null; // 👈 QUI: la useremo dopo per passare JSON a GPT
 
   try {
     fileBuffer = await fs.readFile(filePath);
@@ -132,18 +123,12 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       const { text } = await parsePdf(fileBuffer);
       const cleanText = text?.replace(/\s+/g, " ").trim() || "";
 
-      // FORZA OCR SEMPRE SU PDF (scansionati o con testo scarso)
-const hasUsefulText = false; // <-- FORZA OCR
+      // PER ORA FORZIAMO SEMPRE OCR
+      const hasUsefulText = false; // <-- FORZA OCR
 
-
-      if (hasUsefulText) {
-        extractedText = cleanText
-          .replace(/m\s*l/gi, "ml")
-          .replace(/c\s*l/gi, "cl")
-          .replace(/%[\s]*v[\s]*ol/gi, "% vol")
-          .replace(/\r\n/g, "\n")
-          .replace(/\s+/g, " ")
-          .trim();
+      if (hasUsefulText && cleanText.length > 30) {
+        // Caso futuro: quando vorrai usare il testo nativo del PDF
+        extractedText = cleanOCR(cleanText);
         isTextExtracted = true;
         console.log("Testo nativo estratto (sufficiente)");
       } else {
@@ -151,49 +136,64 @@ const hasUsefulText = false; // <-- FORZA OCR
         const imgBuffer = await pdfToFirstPageImage(fileBuffer);
 
         if (imgBuffer) {
-  let ocrText = await ocrGoogle(imgBuffer, visionClient);
+          let ocrText = await ocrGoogle(imgBuffer, visionClient);
+          console.log("OCR Google Vision (prime 200 char):", ocrText?.slice?.(0, 200));
 
-  console.log("OCR Google Vision (prime 200 char):", ocrText?.slice?.(0, 200));
+          if (!ocrText?.trim()) {
+            console.log("Google Vision fallito → OCR fallback Tesseract");
+            ocrText = await ocrFallback(imgBuffer);
+          }
 
-  if (!ocrText?.trim()) {
-    console.log("Google Vision fallito → OCR fallback Tesseract");
-    ocrText = await ocrFallback(imgBuffer);
-  }
+          extractedText = cleanOCR(ocrText || "");
+          isTextExtracted = extractedText.length > 30;
+        }
+      }
 
-  extractedText = ocrText
-    .replace(/m\s*l/gi, "ml")
-    .replace(/c\s*l/gi, "cl")
-    .replace(/%[\s]*v[\s]*ol/gi, "% vol")
-    .replace(/(\d)[\.,](\d)\s*l/gi, "$1.$2 l")
-    .replace(/Al[ck]\.\s*%?\s*vol\.?/gi, "13.0 % vol.")
-    .replace(/0[.,]75\s*l/gi, "0.75 l")
-    .replace(/750\s*ml/gi, "0.75 l")
-    .replace(/1[.,]?5\s*l/gi, "1.5 l")
-    .replace(/\r\n/g, "\n")
-    .replace(/\s+/g, " ")
-    .trim();
+      if (!isTextExtracted) {
+        throw new Error("Nessun testo leggibile nel PDF");
+      }
 
-        isTextExtracted = extractedText.length > 30;
-}  
-         }
-      if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
+      // 👇 SOLO SE ABBIAMO TESTO, facciamo estrazione + regole
+      analysisData = analyzeText(extractedText);
+
     } else {
-      // IMMAGINI (JPG, PNG)
+      // === IMMAGINI (JPG, PNG, ...) ===
       base64Data = fileBuffer.toString("base64");
       contentType = req.file.mimetype;
+
+      // Per ora sulle immagini lasciamo GPT puro con l'immagine,
+      // senza ancora usare analyzeText. Lo aggiungiamo in una fase dopo.
     }
 
-    // === USER CONTENT ===
+    // === USER CONTENT PER GPT ===
     const userContent = isTextExtracted
       ? [{ type: "text", text: extractedText }]
       : [
           {
             type: "image_url",
             image_url: {
-              url: `data:${contentType};base64,${base64Data}`
-            }
-          }
+              url: `data:${contentType};base64,${base64Data}`,
+            },
+          },
         ];
+
+    // Aggiungiamo JSON solo se abbiamo analysisData (quindi PDF con testo)
+    const extraContent = analysisData
+      ? [
+          {
+            type: "text",
+            text:
+              "Dati estratti automaticamente:\n" +
+              JSON.stringify(analysisData.data, null, 2),
+          },
+          {
+            type: "text",
+            text:
+              "Esito regole normative:\n" +
+              JSON.stringify(analysisData.rules, null, 2),
+          },
+        ]
+      : [];
 
     // === ANALISI AI ===
     const response = await openai.chat.completions.create({
@@ -227,55 +227,56 @@ Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo
 **Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
 ===============================
 
-Tieni la valutazione coerente con la presenza o assenza reale dei campi.`
+Tieni la valutazione coerente con la presenza o assenza reale dei campi.`,
         },
         {
           role: "user",
           content: [
             { type: "text", text: "Analizza questa etichetta di vino e valuta solo la conformità legale." },
-            ...userContent
-          ]
-        }
-      ]
+            ...userContent,
+            ...extraContent,
+          ],
+        },
+      ],
     });
 
     let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
     analysis = normalizeAnalysis(analysis);
-    // 🌍 Forza lingua di output se GPT risponde in italiano
-if (lang !== "it" && /Denominazione|Produttore|Volume nominale|Titolo alcolometrico/i.test(analysis)) {
-  console.log("Traduzione automatica forzata →", lang);
 
-  const translations = {
-    fr: "Traduis intégralement ce texte en français sans rien ajouter ni reformuler.",
-    en: "Translate this entire text into English without adding or rephrasing anything."
-  };
+    // 🌍 Traduzione se serve
+    if (lang !== "it" && /Denominazione|Produttore|Volume nominale|Titolo alcolometrico/i.test(analysis)) {
+      console.log("Traduzione automatica forzata →", lang);
 
-  const translatePrompt = translations[lang] || null;
+      const translations = {
+        fr: "Traduis intégralement ce texte en français sans rien ajouter ni reformuler.",
+        en: "Translate this entire text into English without adding or rephrasing anything.",
+      };
 
-  if (translatePrompt) {
-    const trRes = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0,
-      messages: [
-        { role: "system", content: "You are a precise translator preserving formatting and markdown." },
-        { role: "user", content: `${translatePrompt}\n\n${analysis}` }
-      ]
-    });
-    analysis = trRes.choices[0].message.content || analysis;
-  }
-}
+      const translatePrompt = translations[lang] || null;
 
+      if (translatePrompt) {
+        const trRes = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          temperature: 0,
+          messages: [
+            { role: "system", content: "You are a precise translator preserving formatting and markdown." },
+            { role: "user", content: `${translatePrompt}\n\n${analysis}` },
+          ],
+        });
+        analysis = trRes.choices[0].message.content || analysis;
+      }
+    }
 
-// === EMAIL ===
-if (fileBuffer && process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {
-  try {
-    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    // === EMAIL ===
+    if (fileBuffer && process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {
+      try {
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-    await sgMail.send({
-      to: process.env.MAIL_TO,
-      from: "gabriele.russian@ultrapixel.it",
-      subject: `UltraCheck: ${azienda || "Analisi etichetta"}`,
-      text: `
+        await sgMail.send({
+          to: process.env.MAIL_TO,
+          from: "gabriele.russian@ultrapixel.it",
+          subject: `UltraCheck: ${azienda || "Analisi etichetta"}`,
+          text: `
 Analisi completata per:
 
 • Nome: ${nome || "(non fornito)"}
@@ -288,24 +289,22 @@ RISULTATO ANALISI:
 -----------------------------
 
 ${analysis}
-      `,
-      attachments: [
-        {
-          content: fileBuffer.toString("base64"),
-          filename: req.file.originalname,
-          type: req.file.mimetype,
-          disposition: "attachment"
-        }
-      ]
-    });
+          `,
+          attachments: [
+            {
+              content: fileBuffer.toString("base64"),
+              filename: req.file.originalname,
+              type: req.file.mimetype,
+              disposition: "attachment",
+            },
+          ],
+        });
 
-    console.log("📧 Email inviata a", process.env.MAIL_TO);
-
-  } catch (err) {
-    console.warn("❌ Email fallita:", err.message);
-  }
-}
-
+        console.log("📧 Email inviata a", process.env.MAIL_TO);
+      } catch (err) {
+        console.warn("❌ Email fallita:", err.message);
+      }
+    }
 
     res.json({ result: analysis });
   } catch (error) {
@@ -315,6 +314,23 @@ ${analysis}
     await fs.unlink(filePath).catch(() => {});
   }
 });
+
+
+// === PDF-PARSE (dinamico) ===
+let pdfParse = null;
+(async () => {
+  try {
+    const lib = await import("pdf-parse");
+    pdfParse = lib.default || lib;
+    console.log("pdf-parse: caricato");
+  } catch (err) {
+    console.log("pdf-parse: non disponibile → fallback pdftotext");
+  }
+})();
+
+
+
+
 
 // === TEST GOOGLE VISION API ===
 app.get("/test-vision", async (req, res) => {

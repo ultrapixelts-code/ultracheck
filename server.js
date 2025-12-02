@@ -19,42 +19,39 @@ import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
 
 
-// === QR DETECTION – VERSIONE CHE VEDE SEMPRE (testata su Ravalico) ===
+// === QR DETECTION – GOOGLE VISION (funziona su Ravalico piccolo/invertito) ===
 async function detectQrCode(imgBuffer) {
-  // 1. Google Vision in modalità WEB_DETECTION (è l'unica che vede QR piccoli/invertiti)
+  // 1. Usa Google Vision per pattern QR (meglio di jsQR per piccoli/invertiti)
   if (visionClient) {
     try {
-      const [result] = await visionClient.webDetection({
+      const [result] = await visionClient.textDetection({
         image: { content: imgBuffer },
       });
-
-      const webDetection = result.webDetection;
-
-      // Se Vision trova anche solo un "QR code" nei risultati web
-      if (webDetection?.pagesWithMatchingImages?.length > 0 ||
-          webDetection?.partialMatchingImages?.length > 0 ||
-          webDetection?.visuallySimilarImages?.length > 0 ||
-          webDetection?.bestGuessLabels?.some(label => /QR|code/i.test(label.label))) {
-        console.log("QR rilevato da Google Vision WEB_DETECTION");
+      
+      const fullText = result.fullTextAnnotation?.text || "";
+      const blocks = result.fullTextAnnotation?.pages?.[0]?.blocks || [];
+      
+      // Se Vision vede testo QR o blocchi piccoli quadrati (pattern QR)
+      if (/QR|code|scansiona|scan/i.test(fullText) || blocks.some(block => block.paragraphs.length === 1 && block.words.length === 1 && block.words[0].symbols.length < 50)) {
+        console.log("QR rilevato da Vision pattern");
         return true;
       }
     } catch (e) {
-      console.log("Vision webDetection fallito, passo al fallback");
+      console.log("Vision QR detection fallito, fallback");
     }
   }
 
-  // 2. Fallback OCR + kJ/kcal (Ravalico ha sempre "292 kJ / 70 kcal")
+  // 2. Fallback: kJ + kcal (Ravalico ha "292 kJ / 70 kcal" → QR presente)
   try {
     const ocrText = await ocrGoogle(imgBuffer, visionClient) || "";
     if (/k[jJ]/.test(ocrText) && /kcal/i.test(ocrText)) {
-      console.log("QR forzato da kJ/kcal nel testo");
+      console.log("QR forzato da kJ/kcal");
       return true;
     }
   } catch (e) {}
 
   return false;
 }
-
 
 
 

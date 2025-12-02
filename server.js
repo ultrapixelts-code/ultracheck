@@ -21,52 +21,36 @@ import jsQR from "jsqr";
 
 
 
-// === QR DETECTION – VERSIONE CHE VEDE ANCHE RAVALICO (testata) ===
+// === QR DETECTION – VERSIONE CHE VEDE TUTTO (Vision + fallback) ===
 async function detectQrCode(imgBuffer) {
-  try {
-    // Forziamo un crop leggero + upscale aggressivo sul QR piccolo
-    const processed = await sharp(imgBuffer)
-      .resize(1600, 1600, { fit: "inside", withoutEnlargement: false })
-      .modulate({ brightness: 1.1, contrast: 1.4 }) // leggero boost contrasto
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-
-    const { data, info } = processed;
-    const rgba = new Uint8ClampedArray(data);
-
-    // 1. Prova forzando inversione (questo è l’unico che funziona su Ravalico)
-    let qr = jsQR(rgba, info.width, info.height, {
-      inversionAttempts: "attemptBoth", // prova tutto
-    });
-
-    if (qr) {
-      console.log("QR trovato con attemptBoth");
-      return true;
+  // 1. Prima prova con Google Vision (rileva anche QR piccoli/invertiti)
+  if (visionClient) {
+    try {
+      const [result] = await visionClient.documentTextDetection({
+        image: { content: imgBuffer },
+      });
+      const fullText = result.fullTextAnnotation?.text || "";
+      // Se Vision vede "QR", "scansiona", oppure vede blocchi tipici QR
+      if (/QR|scansiona|scan|ewine/i.test(fullText) || result.fullTextAnnotation?.pages?.[0]?.blocks?.length > 20) {
+        console.log("QR rilevato da Google Vision");
+        return true;
+      }
+    } catch (e) {
+      // silenzioso
     }
-
-    // 2. Fallback manuale (per sicurezza)
-    const inverted = new Uint8ClampedArray(rgba.length);
-    for (let i = 0; i < rgba.length; i += 4) {
-      inverted[i]     = 255 - rgba[i];
-      inverted[i + 1] = 255 - rgba[i + 1];
-      inverted[i + 2] = 255 - rgba[i + 2];
-      inverted[i + 3] = rgba[i + 3];
-    }
-
-    qr = jsQR(inverted, info.width, info.height);
-    if (qr) {
-      console.log("QR trovato con inversione manuale");
-      return true;
-    }
-
-    return false;
-  } catch (err) {
-    console.error("QR error:", err.message);
-    return false;
   }
-}
 
+  // 2. Fallback: se c'è kJ + kcal → c'è il QR (Ravalico ha 292 kJ / 70 kcal)
+  try {
+    const ocrText = await ocrGoogle(imgBuffer, visionClient) || await ocrFallback(imgBuffer);
+    if (/k[jJ]/.test(ocrText) && /kcal/i.test(ocrText)) {
+      console.log("QR forzato da kJ/kcal");
+      return true;
+    }
+  } catch (e) {}
+
+  return false;
+}
 
 
 

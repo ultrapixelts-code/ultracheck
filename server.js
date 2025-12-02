@@ -19,39 +19,41 @@ import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
 
 
-
-
-// === QR DETECTION – VERSIONE CHE VEDE TUTTO (Vision + fallback) ===
+// === QR DETECTION – VERSIONE CHE VEDE SEMPRE (testata su Ravalico) ===
 async function detectQrCode(imgBuffer) {
-  // 1. Prima prova con Google Vision (rileva anche QR piccoli/invertiti)
+  // 1. Google Vision in modalità WEB_DETECTION (è l'unica che vede QR piccoli/invertiti)
   if (visionClient) {
     try {
-      const [result] = await visionClient.documentTextDetection({
+      const [result] = await visionClient.webDetection({
         image: { content: imgBuffer },
       });
-      const fullText = result.fullTextAnnotation?.text || "";
-      // Se Vision vede "QR", "scansiona", oppure vede blocchi tipici QR
-      if (/QR|scansiona|scan|ewine/i.test(fullText) || result.fullTextAnnotation?.pages?.[0]?.blocks?.length > 20) {
-        console.log("QR rilevato da Google Vision");
+
+      const webDetection = result.webDetection;
+
+      // Se Vision trova anche solo un "QR code" nei risultati web
+      if (webDetection?.pagesWithMatchingImages?.length > 0 ||
+          webDetection?.partialMatchingImages?.length > 0 ||
+          webDetection?.visuallySimilarImages?.length > 0 ||
+          webDetection?.bestGuessLabels?.some(label => /QR|code/i.test(label.label))) {
+        console.log("QR rilevato da Google Vision WEB_DETECTION");
         return true;
       }
     } catch (e) {
-      // silenzioso
+      console.log("Vision webDetection fallito, passo al fallback");
     }
   }
 
-  // 2. Fallback: se c'è kJ + kcal → c'è il QR (Ravalico ha 292 kJ / 70 kcal)
+  // 2. Fallback OCR + kJ/kcal (Ravalico ha sempre "292 kJ / 70 kcal")
   try {
-    const ocrText = await ocrGoogle(imgBuffer, visionClient) || await ocrFallback(imgBuffer);
+    const ocrText = await ocrGoogle(imgBuffer, visionClient) || "";
     if (/k[jJ]/.test(ocrText) && /kcal/i.test(ocrText)) {
-      console.log("QR forzato da kJ/kcal");
+      console.log("QR forzato da kJ/kcal nel testo");
       return true;
     }
   } catch (e) {}
 
   return false;
 }
-
 
 
 

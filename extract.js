@@ -45,46 +45,44 @@ function findAlcohol(text, original) {
 }
 
 // ==================================================================
-// 2. VOLUME – 0.75 / 75 cl / 750 ml / 1,5 L / 150 cl / 1.500 ml
+// 2. VOLUME → VERSIONE 100% BULLETPROOF (legge 75cl, 750ml, 0.75l, ecc.)
 // ==================================================================
 function findVolume(text, original) {
-  const str = original.toLowerCase();
+  const s = original.toLowerCase();
 
-  // 1) Numero + unità (l, cl, ml): es. "75cl", "75 cl", "750 ml", "0,75 l", "1.5 l"
-  let m = str.match(/(\d{1,4}[.,]?\d{0,3})\s*(l|cl|ml)\b/);
-  if (m) {
-    const num = parseFloat(m[1].replace(",", "."));
-    const unit = m[2];
-
-    if (unit === "l")  return num;        // 0.75 l → 0.75
-    if (unit === "cl") return num / 100;  // 75 cl → 0.75
-    if (unit === "ml") return num / 1000; // 750 ml → 0.75
+  // CERCA PRIMA IL CASO ATTACCATO (75cl, 750ml, 0.75l) ← il più comune con OCR!
+  let match = s.match(/(\d+[.,]?\d*)(l|cl|ml|litro|litri|litres|liter)/i);
+  if (match) {
+    const num = parseFloat(match[1].replace(",", "."));
+    const unit = match[2].toLowerCase();
+    if (unit.startsWith("l") && unit !== "cl" && unit !== "ml") return +num.toFixed(3);
+    if (unit.startsWith("cl")) return +(num / 100).toFixed(3);
+    if (unit.startsWith("ml")) return +(num / 1000).toFixed(3);
   }
 
-  // 2) Fallback ai casi “nudi” senza unità, così non rompi vecchie etichette
-  if (/\b0[.,]?75\b/.test(str))   return 0.75;
-  if (/\b1[.,]?5\b/.test(str))    return 1.5;
-  if (/\b0[.,]?5\b/.test(str))    return 0.5;
-  if (/\b0[.,]?375\b/.test(str))  return 0.375;
-  if (/\b1\b/.test(str) && /l\b/.test(str)) return 1.0;
+  // Fallback numeri nudi
+  if (/\b0[.,]?75\b/.test(s)) return 0.75;
+  if (/\b1[.,]?5\b|\b150\s?cl\b/.test(s)) return 1.5;
+  if (/\b0[.,]?5\b|\b50\s?cl\b/.test(s)) return 0.5;
+  if (/\b0[.,]?375\b|\b37[.,]?5\s?cl\b/.test(s)) return 0.375;
+  if (/\b1[.,]?0?\b.*l\b/.test(s)) return 1.0;
 
   return null;
 }
 
 
 // ==================================================================
-// 3. LOTTO – L12345, L. 12345, Lotto L12345, Lot, Batch, L...
+// 3. LOTTO → ora legge anche "L 89-2025", "L-2025", "L2025"
 // ==================================================================
 function findLot(text, original) {
   const patterns = [
-    /(?:lotto|lote|batch|lot)\.?\s*:?\s*([A-Z0-9]{3,})/i,
-    /L\s*[:\-\.]?\s*([A-Z0-9]{3,})/i,
-    /L([A-Z0-9]{4,})/i,
+    /(?:lotto|lote|lot|batch)[\s\:]*([A-Z0-9\-]{4,})/i,
+    /L[\s\.\-:]*([A-Z0-9\-]{4,})/i,
+    /\bL([A-Z0-9\-]{5,})/i,
   ];
-
   for (const p of patterns) {
     const m = original.match(p);
-    if (m) return m[1].toUpperCase();
+    if (m && m[1].length >= 4) return m[1].toUpperCase();
   }
   return null;
 }

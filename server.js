@@ -18,10 +18,15 @@ import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
 
+
+
+
 // === QR CODE DETECTION (jsQR) – VERSIONE DEFINITIVA ANTI-CROATI E ANTI-TUTTO ===
 async function detectQrCode(imgBuffer) {
   try {
+    // Normalizzo un po' la dimensione (max 1200 px lato lungo)
     const { data, info } = await sharp(imgBuffer)
+      .resize({ width: 1200, height: 1200, fit: "inside", withoutEnlargement: false })
       .ensureAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true });
@@ -30,9 +35,12 @@ async function detectQrCode(imgBuffer) {
 
     // 1. Prova normale (QR nero su bianco)
     let qr = jsQR(rgba, info.width, info.height);
-    if (qr) return true;
+    if (qr) {
+      console.log("jsQR: QR rilevato (normale)");
+      return true;
+    }
 
-    // 2. Prova invertita (QR bianco su nero – come la tua etichetta croata)
+    // 2. Prova invertita (QR bianco su nero – tipo Ravalico)
     const inverted = new Uint8ClampedArray(rgba.length);
     for (let i = 0; i < rgba.length; i += 4) {
       inverted[i]     = 255 - rgba[i];     // R
@@ -41,9 +49,12 @@ async function detectQrCode(imgBuffer) {
       inverted[i + 3] = rgba[i + 3];       // A
     }
     qr = jsQR(inverted, info.width, info.height);
-    if (qr) return true;
+    if (qr) {
+      console.log("jsQR: QR rilevato (invertito)");
+      return true;
+    }
 
-    // 3. Fallback estremo: se Vision è attivo e vede testo "QR", "scansiona", ecc.
+    // 3. Fallback testuale (Vision) – opzionale, già ce l'hai
     if (visionClient) {
       try {
         const [result] = await visionClient.textDetection({
@@ -66,6 +77,7 @@ async function detectQrCode(imgBuffer) {
     return false;
   }
 }
+
 
 
 
@@ -186,10 +198,12 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       if (!imgBuffer) throw new Error("Impossibile convertire PDF in immagine");
 
       // 🔍 QR detection sulla prima pagina
-      qrDetected = await detectQrCode(imgBuffer);
+qrDetected = await detectQrCode(imgBuffer);
+console.log("DEBUG QR (PDF):", qrDetected ? "trovato" : "non trovato");
 
-      base64Data = imgBuffer.toString("base64");
-      contentType = "image/png";
+base64Data = imgBuffer.toString("base64");
+contentType = "image/png";
+
 
       // 3. Preprocessing per OCR
       const preProcessed = await sharp(imgBuffer)
@@ -234,8 +248,10 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
     } else {
       console.log("Immagine etichetta rilevata:", req.file.mimetype);
 
-      // 🔍 QR detection sull'immagine originale a colori
-      qrDetected = await detectQrCode(fileBuffer);
+      /// 🔍 QR detection sull'immagine originale a colori
+qrDetected = await detectQrCode(fileBuffer);
+console.log("DEBUG QR (IMG):", qrDetected ? "trovato" : "non trovato");
+
 
       // preprocessing per OCR
       const preProcessed = await sharp(fileBuffer)

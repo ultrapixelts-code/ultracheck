@@ -113,21 +113,21 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   let isTextExtracted = false;
   let base64Data = "";
   let contentType = "";
-  let analysisData = null; // 👈 QUI: la useremo dopo per passare JSON a GPT
+  let analysisData = null;
 
   try {
     fileBuffer = await fs.readFile(filePath);
 
+    // === PDF ===
     if (req.file.mimetype === "application/pdf") {
       console.log("PDF rilevato");
       const { text } = await parsePdf(fileBuffer);
       const cleanText = text?.replace(/\s+/g, " ").trim() || "";
 
-      // PER ORA FORZIAMO SEMPRE OCR
-      const hasUsefulText = false; // <-- FORZA OCR
+      // per ora forziamo SEMPRE OCR
+      const hasUsefulText = false;
 
       if (hasUsefulText && cleanText.length > 30) {
-        // Caso futuro: quando vorrai usare il testo nativo del PDF
         extractedText = cleanOCR(cleanText);
         isTextExtracted = true;
         console.log("Testo nativo estratto (sufficiente)");
@@ -136,6 +136,10 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
         const imgBuffer = await pdfToFirstPageImage(fileBuffer);
 
         if (imgBuffer) {
+          // salviamo anche l’immagine per GPT
+          base64Data = imgBuffer.toString("base64");
+          contentType = "image/png"; // pdfToFirstPageImage di solito genera PNG
+
           let ocrText = await ocrGoogle(imgBuffer, visionClient);
           console.log("OCR Google Vision (prime 200 char):", ocrText?.slice?.(0, 200));
 
@@ -146,15 +150,14 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
 
           extractedText = cleanOCR(ocrText || "");
           isTextExtracted = extractedText.length > 30;
+
           if (extractedText) {
-  const snippet = extractedText
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .match(/.{0,40}75.{0,40}/g);
-
-  console.log("DEBUG VOLUME SNIPPET:", snippet);
-}
-
+            const snippet = extractedText
+              .toLowerCase()
+              .replace(/\s+/g, " ")
+              .match(/.{0,40}75.{0,40}/g);
+            console.log("DEBUG VOLUME SNIPPET:", snippet);
+          }
         }
       }
 
@@ -162,31 +165,33 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
         throw new Error("Nessun testo leggibile nel PDF");
       }
 
-      // 👇 SOLO SE ABBIAMO TESTO, facciamo estrazione + regole
+      // estrazione strutturata (volume, lotto, ecc.)
       analysisData = analyzeText(extractedText);
+      console.log("DEBUG ANALYSIS VOLUME:", analysisData?.data?.volume);
 
+    // === IMMAGINI (JPG, PNG, ...) ===
     } else {
-      // === IMMAGINI (JPG, PNG, ...) ===
       base64Data = fileBuffer.toString("base64");
       contentType = req.file.mimetype;
-
-      // Per ora sulle immagini lasciamo GPT puro con l'immagine,
-      // senza ancora usare analyzeText. Lo aggiungiamo in una fase dopo.
+      // per ora sulle immagini lasciamo GPT fare tutto con immagine+testo grezzo,
+      // se vuoi puoi aggiungere anche qui analyzeText in futuro
     }
 
-    // === USER CONTENT PER GPT ===
-    const userContent = isTextExtracted
-      ? [{ type: "text", text: extractedText }]
-      : [
-          {
-            type: "image_url",
-            image_url: {
-              url: `data:${contentType};base64,${base64Data}`,
-            },
-          },
-        ];
+    // === USER CONTENT PER GPT: testo + immagine (se presenti) ===
+    const userContent = [];
+    if (isTextExtracted && extractedText) {
+      userContent.push({ type: "text", text: extractedText });
+    }
+    if (base64Data && contentType) {
+      userContent.push({
+        type: "image_url",
+        image_url: {
+          url: `data:${contentType};base64,${base64Data}`,
+        },
+      });
+    }
 
-    // Aggiungiamo JSON solo se abbiamo analysisData (quindi PDF con testo)
+    // JSON extra solo se abbiamo analysisData (PDF con testo)
     const extraContent = analysisData
       ? [
           {
@@ -215,10 +220,15 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
           content: `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
 Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
 Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
+
+Per il campo "QR code o link ingredienti/energia":
+- usa prima il dato strutturato che ti passo (qrDetected);
+- MA se guardando l'immagine vedi chiaramente un QR code, considera il campo come presente/conforme anche se i dati lo segnano mancante.
+
 Devi rispondere esclusivamente nella lingua: ${req.body.lang || "it"}.
 Non usare mai altre lingue o traduzioni.
-Rispondi nel formato markdown esatto qui sotto:
 
+Rispondi nel formato markdown esatto qui sotto:
 
 ===============================
 ### 🔎 Conformità normativa (Reg. UE 2021/2117)

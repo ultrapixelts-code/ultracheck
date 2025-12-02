@@ -223,19 +223,18 @@ Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verific
 
 Per il campo "QR code o link ingredienti/energia":
 
-1. Usa prima il dato strutturato (qrDetected).
-   - Se qrDetected = true ⇒ considera il QR presente.
+- Usa prima il valore qrDetected che ti passo.
+- Se qrDetected = false, puoi considerare un QR presente SOLO se:
+  • individui chiaramente i tre “finder pattern” tipici dei QR (tre quadrati neri negli angoli),
+  • e puoi descrivere esattamente la posizione del QR (es: "in basso a destra").
 
-2. Se qrDetected = false, puoi considerare un QR presente SOLO se:
-   - nell’immagine individui chiaramente il tipico pattern dei QR code
-     (i tre grandi quadrati di allineamento + la matrice).
-   - e DEVI specificare nel risultato cosa vedi (es: "quadrato con finder pattern nell’angolo inferiore").
+- Se vedi un quadrato nero o un simbolo grafico che NON presenta i tre finder pattern,
+  NON considerarlo un QR.
+  Esempi da NON considerare QR: loghi, icone, simboli, forme geometriche, pattern decorativi.
 
-3. Se non puoi descrivere ciò che vedi o se il pattern non è evidente,
-   allora considera il QR come non presente.
+- NON considerare QR: riquadri neri pieni, loghi, simboli stilizzati o figure con forme interne.
+- Considera QR solo se la struttura è inequivocabile e conforme ai QR standard.
 
-Non basta un riquadro o un quadrato generico: deve essere chiaramente un QR.
-Non richiedere testo vicino al QR per considerarlo presente.
 
 
 

@@ -22,7 +22,7 @@ export function extractData(rawText) {
     denomination: findDenomination(text, rawText),
 
     // QR: testi classici + URL generici
-    qrDetected: /qr.{0,20}code|qrcode|qr\-code|scansiona|scan|ewine|vivino|https?:\/\/|www\./i.test(rawText),
+    qrDetected: /qr.{0,20}code|qrcode|qr\-code|scansiona|scansionare|inquadra|scan|ewine|vivino|etichetta\s+digitale|e\-label/i.test(rawText),
 
     languages:    detectLanguages(rawText),
   };

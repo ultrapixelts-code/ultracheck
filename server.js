@@ -146,6 +146,15 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
 
           extractedText = cleanOCR(ocrText || "");
           isTextExtracted = extractedText.length > 30;
+          if (extractedText) {
+  const snippet = extractedText
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .match(/.{0,40}75.{0,40}/g);
+
+  console.log("DEBUG VOLUME SNIPPET:", snippet);
+}
+
         }
       }
 

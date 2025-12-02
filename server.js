@@ -118,46 +118,48 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   try {
     fileBuffer = await fs.readFile(filePath);
 
-    // === PDF ===
+        // === PDF ===
     if (req.file.mimetype === "application/pdf") {
       console.log("PDF rilevato");
       const { text } = await parsePdf(fileBuffer);
-      const cleanText = text?.replace(/\s+/g, " ").trim() || "";
+  
 
-      // per ora forziamo SEMPRE OCR
-      const hasUsefulText = false;
+      // Forziamo SEMPRE OCR su immagine
+      const imgBuffer = await pdfToFirstPageImage(fileBuffer);
 
-      if (hasUsefulText && cleanText.length > 30) {
-        extractedText = cleanOCR(cleanText);
-        isTextExtracted = true;
-        console.log("Testo nativo estratto (sufficiente)");
-      } else {
-        console.log("Testo nativo scarso o assente → OCR forzato");
-        const imgBuffer = await pdfToFirstPageImage(fileBuffer);
+      if (imgBuffer) {
+        // PREPROCESSING PER ETICHETTE (anche scure)
+        const preProcessed = await sharp(imgBuffer)
+          .grayscale()
+          .normalise()
+          .sharpen()
+          .modulate({ brightness: 1.6, contrast: 1.4 })
+          .toBuffer();
 
-        if (imgBuffer) {
-          // salviamo anche l’immagine per GPT
-          base64Data = imgBuffer.toString("base64");
-          contentType = "image/png"; // pdfToFirstPageImage di solito genera PNG
+        console.log("DEBUG: preprocessing applicato su immagine PDF");
 
-          let ocrText = await ocrGoogle(imgBuffer, visionClient);
-          console.log("OCR Google Vision (prime 200 char):", ocrText?.slice?.(0, 200));
+        // immagine ORIGINALE (a colori) per GPT
+        base64Data = imgBuffer.toString("base64");
+        contentType = "image/png";
 
-          if (!ocrText?.trim()) {
-            console.log("Google Vision fallito → OCR fallback Tesseract");
-            ocrText = await ocrFallback(imgBuffer);
-          }
+        // OCR Vision → fallback Tesseract
+        let ocrText = await ocrGoogle(preProcessed, visionClient);
+        console.log("OCR Google Vision (PDF – prime 200 char):", ocrText?.slice?.(0, 200));
 
-          extractedText = cleanOCR(ocrText || "");
-          isTextExtracted = extractedText.length > 30;
+        if (!ocrText?.trim()) {
+          console.log("Vision fallito → fallback Tesseract");
+          ocrText = await ocrFallback(preProcessed);
+        }
 
-          if (extractedText) {
-            const snippet = extractedText
-              .toLowerCase()
-              .replace(/\s+/g, " ")
-              .match(/.{0,40}75.{0,40}/g);
-            console.log("DEBUG VOLUME SNIPPET:", snippet);
-          }
+        extractedText = cleanOCR(ocrText || "");
+        isTextExtracted = extractedText.length > 30;
+
+        if (extractedText) {
+          const snippet = extractedText
+            .toLowerCase()
+            .replace(/\s+/g, " ")
+            .match(/.{0,40}75.{0,40}/g);
+          console.log("DEBUG VOLUME SNIPPET:", snippet);
         }
       }
 
@@ -165,17 +167,49 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
         throw new Error("Nessun testo leggibile nel PDF");
       }
 
-      // estrazione strutturata (volume, lotto, ecc.)
+      // estrazione strutturata
       analysisData = analyzeText(extractedText);
       console.log("DEBUG ANALYSIS VOLUME:", analysisData?.data?.volume);
 
     // === IMMAGINI (JPG, PNG, ...) ===
     } else {
+      console.log("Immagine etichetta rilevata:", req.file.mimetype);
+
+      // PREPROCESSING ANCHE PER LE IMMAGINI
+      const preProcessed = await sharp(fileBuffer)
+        .grayscale()
+        .normalise()
+        .sharpen()
+        .modulate({ brightness: 1.6, contrast: 1.4 })
+        .toBuffer();
+
+      console.log("DEBUG: preprocessing applicato su immagine JPG/PNG");
+
+      // immagine ORIGINALE (a colori) per GPT
       base64Data = fileBuffer.toString("base64");
       contentType = req.file.mimetype;
-      // per ora sulle immagini lasciamo GPT fare tutto con immagine+testo grezzo,
-      // se vuoi puoi aggiungere anche qui analyzeText in futuro
+
+      // OCR Vision → fallback Tesseract
+      let ocrText = await ocrGoogle(preProcessed, visionClient);
+      console.log("OCR Google Vision (IMG – prime 200 char):", ocrText?.slice?.(0, 200));
+
+      if (!ocrText?.trim()) {
+        console.log("Vision fallito (IMG) → fallback Tesseract");
+        ocrText = await ocrFallback(preProcessed);
+      }
+
+      extractedText = cleanOCR(ocrText || "");
+      isTextExtracted = extractedText.length > 30;
+
+      if (!isTextExtracted) {
+        throw new Error("Nessun testo leggibile nell’immagine");
+      }
+
+      // estrazione strutturata anche per le immagini
+      analysisData = analyzeText(extractedText);
+      console.log("DEBUG ANALYSIS (IMG) VOLUME:", analysisData?.data?.volume);
     }
+
 
     // === USER CONTENT PER GPT: testo + immagine (se presenti) ===
     const userContent = [];

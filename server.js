@@ -222,11 +222,21 @@ Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/21
 Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
 
 Per il campo "QR code o link ingredienti/energia":
-- usa prima il dato strutturato che ti passo (qrDetected);
-- MA se guardando l'immagine vedi chiaramente un QR code, considera il campo come presente/conforme
-  anche se i dati lo segnano mancante.
-- Riconosci come QR code qualunque riquadro quadrato con pattern tipico a pixel (finder patterns).
-- Non richiedere alcun testo accanto al QR per considerarlo presente.
+
+1. Usa prima il dato strutturato (qrDetected).
+   - Se qrDetected = true ⇒ considera il QR presente.
+
+2. Se qrDetected = false, puoi considerare un QR presente SOLO se:
+   - nell’immagine individui chiaramente il tipico pattern dei QR code
+     (i tre grandi quadrati di allineamento + la matrice).
+   - e DEVI specificare nel risultato cosa vedi (es: "quadrato con finder pattern nell’angolo inferiore").
+
+3. Se non puoi descrivere ciò che vedi o se il pattern non è evidente,
+   allora considera il QR come non presente.
+
+Non basta un riquadro o un quadrato generico: deve essere chiaramente un QR.
+Non richiedere testo vicino al QR per considerarlo presente.
+
 
 
 Devi rispondere esclusivamente nella lingua: ${req.body.lang || "it"}.

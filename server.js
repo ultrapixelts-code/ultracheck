@@ -316,19 +316,6 @@ ${analysis}
 });
 
 
-// === PDF-PARSE (dinamico) ===
-let pdfParse = null;
-(async () => {
-  try {
-    const lib = await import("pdf-parse");
-    pdfParse = lib.default || lib;
-    console.log("pdf-parse: caricato");
-  } catch (err) {
-    console.log("pdf-parse: non disponibile → fallback pdftotext");
-  }
-})();
-
-
 
 
 

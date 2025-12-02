@@ -48,27 +48,29 @@ function findAlcohol(text, original) {
 // 2. VOLUME – 0.75 / 75 cl / 750 ml / 1,5 L / 150 cl / 1.500 ml
 // ==================================================================
 function findVolume(text, original) {
-  const patterns = [
-    /(?:^|\s)(0[.,]75|0\.75|75\s?cl|750\s?ml|0,75\s?[lL])\b/i,
-    /(?:^|\s)(1[.,]5|1\.5|1,5|150\s?cl|1\.5\s?[lL]|1\.500\s?ml)\b/i,
-    /(?:^|\s)(0[.,]5|0\.5|50\s?cl|500\s?ml)\b/i,
-    /(?:^|\s)(0[.,]375|0\.375|37\.5\s?cl|375\s?ml)\b/i,
-    /(?:^|\s)(1[.,]0|1\.0|100\s?cl|1\s?[lL])\b/i,
-  ];
+  const str = original.toLowerCase();
 
-  for (const p of patterns) {
-    const m = original.match(p);
-    if (m) {
-      const found = m[0].toLowerCase();
-      if (found.includes("1.5") || found.includes("1,5") || found.includes("150")) return 1.5;
-      if (found.includes("0.75") || found.includes("0,75") || found.includes("75 cl") || found.includes("750 ml")) return 0.75;
-      if (found.includes("0.5") || found.includes("50 cl") || found.includes("500 ml")) return 0.5;
-      if (found.includes("0.375") || found.includes("37.5 cl") || found.includes("375 ml")) return 0.375;
-      if (found.includes("1") && found.includes("l")) return 1.0;
-    }
+  // 1) Numero + unità (l, cl, ml): es. "75cl", "75 cl", "750 ml", "0,75 l", "1.5 l"
+  let m = str.match(/(\d{1,4}[.,]?\d{0,3})\s*(l|cl|ml)\b/);
+  if (m) {
+    const num = parseFloat(m[1].replace(",", "."));
+    const unit = m[2];
+
+    if (unit === "l")  return num;        // 0.75 l → 0.75
+    if (unit === "cl") return num / 100;  // 75 cl → 0.75
+    if (unit === "ml") return num / 1000; // 750 ml → 0.75
   }
+
+  // 2) Fallback ai casi “nudi” senza unità, così non rompi vecchie etichette
+  if (/\b0[.,]?75\b/.test(str))   return 0.75;
+  if (/\b1[.,]?5\b/.test(str))    return 1.5;
+  if (/\b0[.,]?5\b/.test(str))    return 0.5;
+  if (/\b0[.,]?375\b/.test(str))  return 0.375;
+  if (/\b1\b/.test(str) && /l\b/.test(str)) return 1.0;
+
   return null;
 }
+
 
 // ==================================================================
 // 3. LOTTO – L12345, L. 12345, Lotto L12345, Lot, Batch, L...

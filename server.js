@@ -21,86 +21,48 @@ import jsQR from "jsqr";
 
 
 
-// === QR CODE DETECTION – VERSIONE ULTRA-AGGRESSIVA (Ravalico & co.) ===
+// === QR DETECTION – VERSIONE CHE VEDE ANCHE RAVALICO (testata) ===
 async function detectQrCode(imgBuffer) {
   try {
-    const sizes = [400, 600, 800, 1000, 1200, 1500];
+    // Forziamo un crop leggero + upscale aggressivo sul QR piccolo
+    const processed = await sharp(imgBuffer)
+      .resize(1600, 1600, { fit: "inside", withoutEnlargement: false })
+      .modulate({ brightness: 1.1, contrast: 1.4 }) // leggero boost contrasto
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
 
-    for (const size of sizes) {
-      const { data, info } = await sharp(imgBuffer)
-        .resize({
-          width: size,
-          height: size,
-          fit: "inside",
-          withoutEnlargement: false,
-        })
-        .ensureAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+    const { data, info } = processed;
+    const rgba = new Uint8ClampedArray(data);
 
-      const rgba = new Uint8ClampedArray(data);
+    // 1. Prova forzando inversione (questo è l’unico che funziona su Ravalico)
+    let qr = jsQR(rgba, info.width, info.height, {
+      inversionAttempts: "attemptBoth", // prova tutto
+    });
 
-      // 1. Prova normale (no invert)
-      let qr = jsQR(rgba, info.width, info.height, {
-        inversionAttempts: "dontInvert",
-      });
-      if (qr) {
-        console.log(
-          `DEBUG jsQR: QR trovato (normal) a ${info.width}x${info.height}`
-        );
-        return true;
-      }
-
-      // 2. Prova forzando inversione (trucco per QR chiari su sfondo scuro)
-      qr = jsQR(rgba, info.width, info.height, {
-        inversionAttempts: "invertFirst",
-      });
-      if (qr) {
-        console.log(
-          `DEBUG jsQR: QR trovato (invertFirst) a ${info.width}x${info.height}`
-        );
-        return true;
-      }
-
-      // 3. Inversione manuale + jsQR
-      const inverted = new Uint8ClampedArray(rgba.length);
-      for (let i = 0; i < rgba.length; i += 4) {
-        inverted[i] = 255 - rgba[i];       // R
-        inverted[i + 1] = 255 - rgba[i+1]; // G
-        inverted[i + 2] = 255 - rgba[i+2]; // B
-        inverted[i + 3] = rgba[i + 3];     // A
-      }
-      qr = jsQR(inverted, info.width, info.height, {
-        inversionAttempts: "dontInvert",
-      });
-      if (qr) {
-        console.log(
-          `DEBUG jsQR: QR trovato (manual invert) a ${info.width}x${info.height}`
-        );
-        return true;
-      }
+    if (qr) {
+      console.log("QR trovato con attemptBoth");
+      return true;
     }
 
-    // 🔁 FALLBACK FINALE: se Vision trova kJ + kcal → forzo QR presente
-    if (visionClient) {
-      try {
-        const [result] = await visionClient.textDetection({
-          image: { content: imgBuffer },
-        });
-        const text = (result.fullTextAnnotation?.text || "").toLowerCase();
-        if (/k[jJ]/.test(text) && /kcal/.test(text)) {
-          console.log("DEBUG QR fallback Vision: kJ + kcal → QR forzato = true");
-          return true;
-        }
-      } catch (e) {
-        // non bloccare tutto se Vision fallisce qui
-      }
+    // 2. Fallback manuale (per sicurezza)
+    const inverted = new Uint8ClampedArray(rgba.length);
+    for (let i = 0; i < rgba.length; i += 4) {
+      inverted[i]     = 255 - rgba[i];
+      inverted[i + 1] = 255 - rgba[i + 1];
+      inverted[i + 2] = 255 - rgba[i + 2];
+      inverted[i + 3] = rgba[i + 3];
     }
 
-    console.log("DEBUG jsQR: nessun QR rilevato");
+    qr = jsQR(inverted, info.width, info.height);
+    if (qr) {
+      console.log("QR trovato con inversione manuale");
+      return true;
+    }
+
     return false;
   } catch (err) {
-    console.error("QR detect error:", err.message);
+    console.error("QR error:", err.message);
     return false;
   }
 }

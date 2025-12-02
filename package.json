@@ -12,6 +12,7 @@
     "@sendgrid/mail": "^8.1.6",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "jsqr": "^1.4.0",
     "multer": "^2.0.2",
     "openai": "^6.8.1",
     "pdf-parse": "^1.1.1",

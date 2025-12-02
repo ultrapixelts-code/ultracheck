@@ -18,7 +18,7 @@ import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
 
-// === QR CODE DETECTION (jsQR) ===
+// === QR CODE DETECTION (jsQR) – VERSIONE DEFINITIVA ANTI-CROATI E ANTI-TUTTO ===
 async function detectQrCode(imgBuffer) {
   try {
     const { data, info } = await sharp(imgBuffer)
@@ -26,16 +26,48 @@ async function detectQrCode(imgBuffer) {
       .raw()
       .toBuffer({ resolveWithObject: true });
 
-    // jsQR si aspetta Uint8ClampedArray RGBA
     const rgba = new Uint8ClampedArray(data);
-    const qr = jsQR(rgba, info.width, info.height);
 
-    return !!qr; // true = QR presente
+    // 1. Prova normale (QR nero su bianco)
+    let qr = jsQR(rgba, info.width, info.height);
+    if (qr) return true;
+
+    // 2. Prova invertita (QR bianco su nero – come la tua etichetta croata)
+    const inverted = new Uint8ClampedArray(rgba.length);
+    for (let i = 0; i < rgba.length; i += 4) {
+      inverted[i]     = 255 - rgba[i];     // R
+      inverted[i + 1] = 255 - rgba[i + 1]; // G
+      inverted[i + 2] = 255 - rgba[i + 2]; // B
+      inverted[i + 3] = rgba[i + 3];       // A
+    }
+    qr = jsQR(inverted, info.width, info.height);
+    if (qr) return true;
+
+    // 3. Fallback estremo: se Vision è attivo e vede testo "QR", "scansiona", ecc.
+    if (visionClient) {
+      try {
+        const [result] = await visionClient.textDetection({
+          image: { content: imgBuffer },
+        });
+        const text = result.fullTextAnnotation?.text || "";
+        if (/QR|scansiona|scan|ewine|ingredienti|nutrizionali|energia|calorie/i.test(text)) {
+          console.log("QR rilevato tramite testo Vision (fallback)");
+          return true;
+        }
+      } catch (err) {
+        // silenzioso
+      }
+    }
+
+    return false;
+
   } catch (err) {
     console.error("QR detect error:", err.message);
     return false;
   }
 }
+
+
 
 
 

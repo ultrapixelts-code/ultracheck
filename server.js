@@ -16,6 +16,26 @@ import { cleanOCR } from "./cleanOCR.js";
 import { extractData } from "./extract.js";
 import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
+import jsQR from "jsqr";
+
+// === QR CODE DETECTION (jsQR) ===
+async function detectQrCode(imgBuffer) {
+  try {
+    const { data, info } = await sharp(imgBuffer)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    // jsQR si aspetta Uint8ClampedArray RGBA
+    const rgba = new Uint8ClampedArray(data);
+    const qr = jsQR(rgba, info.width, info.height);
+
+    return !!qr; // true = QR presente
+  } catch (err) {
+    console.error("QR detect error:", err.message);
+    return false;
+  }
+}
 
 
 
@@ -113,6 +133,7 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   let base64Data = "";
   let contentType = "";
   let analysisData = null;
+  let qrDetected = false; // ← qui memorizziamo il risultato QR
 
   try {
     fileBuffer = await fs.readFile(filePath);
@@ -131,6 +152,9 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       // 2. Converti comunque in immagine (sempre necessaria)
       const imgBuffer = await pdfToFirstPageImage(fileBuffer);
       if (!imgBuffer) throw new Error("Impossibile convertire PDF in immagine");
+
+      // 🔍 QR detection sulla prima pagina
+      qrDetected = await detectQrCode(imgBuffer);
 
       base64Data = imgBuffer.toString("base64");
       contentType = "image/png";
@@ -163,18 +187,25 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
 
       analysisData = analyzeText(extractedText);
+      if (analysisData?.data) {
+        analysisData.data.qrDetected = qrDetected;
+      }
+
       console.log(
         "ANALISI PDF → Volume:",
         analysisData?.data?.volume,
         "| QR:",
-        analysisData?.data?.qrDetected ? "Sì" : "No"
+        qrDetected ? "Sì" : "No"
       );
 
     // === IMMAGINI (JPG, PNG, ...) ===
     } else {
       console.log("Immagine etichetta rilevata:", req.file.mimetype);
 
-      // preprocessing
+      // 🔍 QR detection sull'immagine originale a colori
+      qrDetected = await detectQrCode(fileBuffer);
+
+      // preprocessing per OCR
       const preProcessed = await sharp(fileBuffer)
         .grayscale()
         .normalise()
@@ -200,7 +231,16 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
       if (!isTextExtracted) throw new Error("Nessun testo leggibile nell’immagine");
 
       analysisData = analyzeText(extractedText);
-      console.log("DEBUG ANALYSIS (IMG) VOLUME:", analysisData?.data?.volume);
+      if (analysisData?.data) {
+        analysisData.data.qrDetected = qrDetected;
+      }
+
+      console.log(
+        "DEBUG ANALYSIS (IMG) VOLUME:",
+        analysisData?.data?.volume,
+        "| QR:",
+        qrDetected ? "Sì" : "No"
+      );
     }
 
     // === USER CONTENT PER GPT: testo + immagine (se presenti) ===

@@ -12,16 +12,19 @@ export function extractData(rawText) {
   const text = " " + normalize(rawText) + " "; // padding per regex più sicuri
 
   return {
-    alcohol:        findAlcohol(text, rawText),
-    volume:         findVolume(text, rawText),
-    lot:            findLot(text, rawText),
-    allergens:      findAllergens(text, rawText),
-    producer:       findProducer(text, rawText),
-    contains:       findContains(text),           // "contiene" / "contient" / "enthält"
-    energy:         findEnergy(text),             // kJ + kcal
-    denomination:   findDenomination(text, rawText),
-    qrDetected:     /qr.{0,20}code|scansiona|scan|ewine|vivino|https?:\/\//i.test(rawText),
-    languages:      detectLanguages(rawText),
+    alcohol:      findAlcohol(text, rawText),
+    volume:       findVolume(text, rawText),
+    lot:          findLot(text, rawText),
+    allergens:    findAllergens(text, rawText),
+    producer:     findProducer(text, rawText),
+    contains:     findContains(text),           // "contiene" / "contient" / "enthält"
+    energy:       findEnergy(text),             // kJ + kcal
+    denomination: findDenomination(text, rawText),
+
+    // QR: testi classici + URL generici
+    qrDetected: /qr.{0,20}code|qrcode|qr\-code|scansiona|scan|ewine|vivino|https?:\/\/|www\./i.test(rawText),
+
+    languages:    detectLanguages(rawText),
   };
 }
 
@@ -33,7 +36,7 @@ function findAlcohol(text, original) {
     new RegExp(`alc(?:ool|ohol)?[\\.\\s]*${SP}(${NUM})${SP}%`, "i"),
     new RegExp(`(${NUM})${SP}%${SP}(?:vol|alc|by\\s*vol)`, "i"),
     new RegExp(`titre\\s*alcoolique?[\\.\\s]*${SP}(${NUM})${SP}%`, "i"),     // FR
-    new RegExp(`alkoholgehalt[\\.\\s]*${SP}(${NUM})${SP}%`, "i"),          // DE
+    new RegExp(`alkoholgehalt[\\.\\s]*${SP}(${NUM})${SP}%`, "i"),            // DE
     new RegExp(`gradazione\\s*alcolica[\\.\\s]*${SP}(${NUM})${SP}%`, "i"),
   ];
 
@@ -45,7 +48,7 @@ function findAlcohol(text, original) {
 }
 
 // ==================================================================
-// 2. VOLUME → VERSIONE 100% BULLETPROOF (legge 75cl, 750ml, 0.75l, ecc.)
+// 2. VOLUME → VERSIONE 100% BULLETPROOF (75cl, 750ml, 0.75l, 75de, ecc.)
 // ==================================================================
 function findVolume(text, original) {
   // uso il testo normalizzato (spazi e minuscole) per evitare casini di OCR
@@ -81,6 +84,7 @@ function findVolume(text, original) {
   // 3) Fallback se l’OCR fa ancora più casino
   if (/\b75\s*cl\b/.test(s)) return 0.75;
   if (/\b0[.,]?75\b/.test(s)) return 0.75;
+  if (/\b75\s*d[eé]\b/.test(s)) return 0.75;    // 👈 per "75de 13% vol"
   if (/\b1[.,]?5\b|\b150\s*cl\b/.test(s)) return 1.5;
   if (/\b0[.,]?5\b|\b50\s*cl\b/.test(s)) return 0.5;
   if (/\b0[.,]?375\b|\b37[.,]?5\s*cl\b/.test(s)) return 0.375;
@@ -88,9 +92,6 @@ function findVolume(text, original) {
 
   return null;
 }
-
-
-
 
 // ==================================================================
 // 3. LOTTO → ora legge anche "L 89-2025", "L-2025", "L2025"
@@ -113,11 +114,11 @@ function findLot(text, original) {
 // ==================================================================
 function findAllergens(text, original) {
   const map = {
-    solfiti:       [/solfiti|sulphites|sulfites|dioxyde|sulfit|so2|anidride\s*solforosa|e220|so₂/i, "solfiti"],
-    uova:          [/uova|eggs|œufs|oeufs|huevos/i, "uova"],
-    latte:         [/latte|milk|lait|leche|milch/i, "latte"],
-    pesce:         [/pesce|fish|poisson|fisch/i, "pesce"],
-    crostacei:     [/crostacei|crustacés|shellfish/i, "crostacei"],
+    solfiti:   [/solfiti|sulphites|sulfites|dioxyde|sulfit|so2|anidride\s*solforosa|e220|so₂/i, "solfiti"],
+    uova:      [/uova|eggs|œufs|oeufs|huevos/i, "uova"],
+    latte:     [/latte|milk|lait|leche|milch/i, "latte"],
+    pesce:     [/pesce|fish|poisson|fisch/i, "pesce"],
+    crostacei: [/crostacei|crustacés|shellfish/i, "crostacei"],
   };
 
   const found = [];

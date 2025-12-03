@@ -333,6 +333,16 @@ Per la lingua:
   del paese di commercializzazione (se non è specificato, assumi Italia → italiano).
 - Non dire mai che mancano "lingue UE obbligatorie": non esistono lingue UE obbligatorie.
 
+Per il campo "Titolo alcolometrico":
+
+- Considera "conforme" se trovi un valore tipo "12% vol", "13.5% vol", "11 % vol" ecc.
+- Puoi indicarlo come "parziale" solo se il valore è poco leggibile o ambiguo.
+- NON usare mai "❌ mancante" se dopo il segno "+" riporti un valore numerico con "%" e "vol".
+  Se scrivi qualcosa dopo il "+", lo stato non può essere "mancante".
+Regola generale: se dopo il segno "+" inserisci un testo specifico (es. "13.5% vol", un indirizzo, un lotto, ecc.),
+non puoi usare lo stato "❌ mancante", ma solo "✅ conforme" o "⚠️ parziale".
+
+
 Devi rispondere esclusivamente nella lingua: ${req.body.lang || "it"}.
 Non usare mai altre lingue o traduzioni.
 

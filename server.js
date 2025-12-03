@@ -17,52 +17,92 @@ import { extractData } from "./extract.js";
 import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
+import { BrowserQRCodeReader } from '@zxing/library';
+
+// === FUNZIONE OBBLIGATORIA PER ZXING SU NODE ===
+async function zxingDecode(buffer) {
+  const tmpPath = `/tmp/zxing-${Date.now()}.png`;
+  await fs.writeFile(tmpPath, buffer);
+
+  try {
+    const reader = new BrowserQRCodeReader();
+    const result = await reader.decodeFromImage(undefined, tmpPath);
+    await fs.unlink(tmpPath).catch(() => {});
+    return result?.text || null;
+  } catch {
+    await fs.unlink(tmpPath).catch(() => {});
+    return null;
+  }
+}
 
 
 // === QR DETECTION – VERSIONE DEFINITIVA E IMBATTIBILE (testata su >1000 etichette reali) ===
 async function detectQrCode(imgBuffer) {
-  const attempts = [
+  // --- 1) TENTATIVO JSQR ---
+  const jsqrAttempts = [
     { label: "originale", resize: null },
-    { label: "1500px", resize: { width: 1500, withoutEnlargement: true } },
-    { label: "upscale2200", resize: { width: 2200 } },
+    { label: "1500px", resize: { width: 1500, withoutEnlargement: true }},
+    { label: "800px", resize: { width: 800, withoutEnlargement: false }},
   ];
 
-  for (const attempt of attempts) {
+  for (const attempt of jsqrAttempts) {
     try {
       let pipeline = sharp(imgBuffer)
-        .rotate()                                   // corregge EXIF
-        .linear(1.4, -(128 * 1.4) + 128)            // contrasto aggressivo
-        .modulate({ brightness: 1.1, contrast: 1.5 })
+        .rotate()
+        .linear(1.4, -(128 * 1.4) + 128)
+        .modulate({ brightness: 1.15, contrast: 1.6 })
         .normalise();
 
-      if (attempt.resize) {
-        pipeline = pipeline.resize(attempt.resize);
-      }
+      if (attempt.resize) pipeline = pipeline.resize(attempt.resize);
 
-      const { data, info } = await pipeline
-        .ensureAlpha()
-        .raw()
-        .toBuffer({ resolveWithObject: true });
+      const { data, info } = await pipeline.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
       const code = jsQR(new Uint8ClampedArray(data), info.width, info.height, {
-        inversionAttempts: "attemptBoth"   // ← LA RIGA CHE MANCAVA: rileva anche QR bianchi su nero!
+        inversionAttempts: "attemptBoth"
       });
 
       if (code?.data) {
-        console.log(`QR rilevato (${attempt.label}, ${info.width}x${info.height}): ${code.data.substring(0, 60)}...`);
+        console.log(`QR (jsQR) rilevato → ${attempt.label}`);
         return true;
       }
-    } catch (e) {
-      console.log(`Tentativo ${attempt.label} fallito:`, e.message);
-    }
+    } catch {}
   }
 
-  console.log("Nessun QR rilevato dopo tutti i tentativi → corretto");
+  console.log("jsQR non ha trovato nulla → provo ZXing...");
+
+  // --- 2) ZXING (immagine naturale) ---
+  try {
+    const zxImg = await sharp(imgBuffer).rotate().toBuffer();
+    const result = await zxingDecode(zxImg);
+    if (result) {
+      console.log("QR rilevato da ZXing!");
+      return true;
+    }
+  } catch {
+    console.log("ZXing: nessun QR nella modalità naturale");
+  }
+
+  // --- 3) ZXING (immagine binarizzata) ---
+  try {
+    const binaryImg = await sharp(imgBuffer)
+      .rotate()
+      .threshold(140)
+      .sharpen({ sigma: 1.8 })
+      .toBuffer();
+
+    const result2 = await zxingDecode(binaryImg);
+    if (result2) {
+      console.log("QR rilevato da ZXing (binarizzato)!");
+      return true;
+    }
+  } catch {
+    console.log("ZXing binarizzato: nessun QR trovato");
+  }
+
+  console.log("Nessun QR rilevato → corretto");
   return false;
 }
 
-
-console.log("DEBUG: Deploy v3");
 
 // === CONFIG ===
 if (process.env.NODE_ENV !== "production") {

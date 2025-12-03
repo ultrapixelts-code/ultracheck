@@ -413,13 +413,6 @@ Per il campo "Titolo alcolometrico":
 Regola generale: se dopo il segno "+" inserisci un testo specifico (es. "13.5% vol", un indirizzo, un lotto, ecc.),
 non puoi usare lo stato "❌ mancante", ma solo "✅ conforme" o "⚠️ parziale".
 
-Per la "Denominazione di origine":
-- È obbligatoria solo per vini con indicazioni come DOP/DOC/DOCG/IGP, 
-  o "Appellation d'Origine Contrôlée", "Protected Designation of Origin", ecc.
-- Se l’etichetta sembra un vino generico (senza alcuna indicazione geografica particolare),
-  NON usare mai "❌ mancante".
-  In questo caso usa "⚠️ parziale" e specifica che "non è indicata (e può non essere obbligatoria per vini generici)".
-  - È presente se c'è scritto DOP/DOC/DOCG/IGP o per esteso Denominazione di Origine Protetta/Denominazione di Origine Controllata/Denominazione di Origine Controllata e Garantita/Indicazione Geografica Protetta
 
   Per il campo "Lotto":
 

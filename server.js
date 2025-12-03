@@ -10,47 +10,54 @@ import sgMail from "@sendgrid/mail";
 import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
+
 import { parsePdf, pdfToFirstPageImage } from "./pdf.js";
 import { ocrGoogle, ocrFallback } from "./ocr.js";
 import { cleanOCR } from "./cleanOCR.js";
 import { extractData } from "./extract.js";
 import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
+
 import jsQR from "jsqr";
-import { BrowserQRCodeReader } from '@zxing/library';
-import { RGBLuminanceSource, HybridBinarizer, BinaryBitmap, DecodeHintType, QRCodeReader } from '@zxing/library';
+
+// ===== ZXING (VERSIONE NODE, QUELLA GIUSTA) =====
+import {
+  RGBLuminanceSource,
+  HybridBinarizer,
+  BinaryBitmap,
+  DecodeHintType,
+  QRCodeReader
+} from "@zxing/library";
+
 
 // === FUNZIONE OBBLIGATORIA PER ZXING SU NODE ===
 async function zxingDecode(buffer) {
   try {
-    // 1) Sharp → immagine RGB lineare
-    const { data, info } = await sharp(buffer)
+    const sharpImg = await sharp(buffer)
       .rotate()
       .ensureAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true });
 
-    const luminanceSource = new RGBLuminanceSource(
-      new Uint8ClampedArray(data),
-      info.width,
-      info.height
+    const luminance = new RGBLuminanceSource(
+      new Uint8ClampedArray(sharpImg.data),
+      sharpImg.info.width,
+      sharpImg.info.height
     );
 
-    const bitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
-
-    const reader = new QRCodeReader();
+    const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminance));
 
     const hints = new Map();
     hints.set(DecodeHintType.TRY_HARDER, true);
 
-    const result = reader.decode(bitmap, hints);
+    const reader = new QRCodeReader();
+    const result = reader.decode(binaryBitmap, hints);
 
     return result?.getText() || null;
   } catch (err) {
     return null;
   }
 }
-
 
 
 // === QR DETECTION – VERSIONE DEFINITIVA E IMBATTIBILE (testata su >1000 etichette reali) ===

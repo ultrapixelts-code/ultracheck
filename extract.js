@@ -56,13 +56,11 @@ function findAlcohol(text, original) {
 function findVolume(text, original) {
   const s = (original || "").replace(/\s+/g, " ").toLowerCase();
 
-  // 0) Caso più comune nelle foto: “75de”, “75 d℮”, “75dE”
-  if (/\b75\s*d[e℮]\b/.test(s) || /\b75d[e℮]\b/.test(s)) {
-    return 0.75;
-  }
+  // --- 0) Formati più comuni distrutti da OCR (75de / 75 d℮ / 75dE)
+  if (/\b75\s*d[e℮]\b/.test(s) || /\b75d[e℮]\b/.test(s)) return 0.75;
 
-  // 1) Caso standard: "75 cl", "750 ml", "0.75 l"
-  let match = s.match(/(\d{1,4}[.,]?\d*)\s*(cl|ml|l|litri?|liters?|litres?)/i);
+  // --- 1) Formati standard: 75 cl, 750 ml, 0.75 l, litres
+  let match = s.match(/(\d{1,4}[.,]?\d*)\s*(cl|ml|l|litro|litri|liters?|litres?)/i);
   if (match) {
     const num = parseFloat(match[1].replace(",", "."));
     const unit = match[2].toLowerCase();
@@ -72,20 +70,51 @@ function findVolume(text, original) {
     if (unit === "ml") return +(num / 1000).toFixed(3);
   }
 
-  // 2) Fallback OCR sporchi tipo “75c1”, “75cI”, “75ci”
+  // --- 2) OCR sporchi tipo 75c1 / 75cI / 75ci
   match = s.match(/(\d{2,3})\s*[cç][l1i]/i);
   if (match) {
     const num = parseInt(match[1], 10);
     if (num >= 50 && num <= 200) return +(num / 100).toFixed(3);
   }
 
-  // 3) Fallback robusti
+  // --- 3) Fallback robusti diretti
   if (/\b75\s*cl\b/.test(s)) return 0.75;
-  if (/\b0[.,]?75\b/.test(s)) return 0.75;
   if (/\b750\s*ml\b/.test(s)) return 0.75;
+  if (/\b0[.,]?75\b/.test(s)) return 0.75;
 
+  if (/\b37[.,]?5\s*cl\b/.test(s)) return 0.375;
+  if (/\b375\s*ml\b/.test(s)) return 0.375;
+  if (/\b0[.,]?375\b/.test(s)) return 0.375;
+
+  if (/\b50\s*cl\b/.test(s)) return 0.5;
+  if (/\b0[.,]?5\b/.test(s)) return 0.5;
+
+  if (/\b1[.,]?0?\b.*\bl\b/.test(s)) return 1.0;
+  if (/\b100\s*cl\b/.test(s)) return 1.0;
+
+  if (/\b1[.,]?5\b|\b150\s*cl\b/.test(s)) return 1.5;
+
+  // --- 4) Se OCR ha diviso tutto in blocchi → ricostruzione cifre
+  if (/\b75\b/.test(s) && /\bcl\b/.test(s)) return 0.75;
+  if (/\b750\b/.test(s) && /\bml\b/.test(s)) return 0.75;
+  if (/\b37\b/.test(s) && /5\b/.test(s) && /\bcl\b/.test(s)) return 0.375;
+
+  // --- 5) Fallback AI-driven usando contesto vini
+  const hasAlcohol = /\b\d{1,2}[.,]?\d?\s*%/.test(s);
+
+  // Bottle standard 0.75
+  if (hasAlcohol) return 0.75;
+
+  // fallback su cifre isolate
+  if (/375\b/.test(s) || /37[.,]?5\b/.test(s)) return 0.375;
+  if (/50\b/.test(s)) return 0.5;
+  if (/100\b/.test(s)) return 1.0;
+  if (/150\b/.test(s)) return 1.5;
+
+  // --- Nulla trovato
   return null;
 }
+
 
 // ==================================================================
 // 3. LOTTO → ora legge anche "L 89-2025", "L-2025", "L2025"

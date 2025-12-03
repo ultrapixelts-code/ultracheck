@@ -19,72 +19,35 @@ import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
 
 
-// === QR DETECTION – VERSIONE DEFINITIVA (zero falsi positivi su vini italiani) ===
-
+// === QR DETECTION – versione hard: solo QR REALI letti da jsQR ===
 async function detectQrCode(imgBuffer) {
-  // 1. Prova prima jsQR (il più affidabile in assoluto per QR veri)
   try {
-    const image = await sharp(imgBuffer)
+    // Ridimensiono un po' per aiutare jsQR (se l'immagine è gigantesca)
+    const { data, info } = await sharp(imgBuffer)
+      .resize({ width: 1500, withoutEnlargement: true }) // puoi cambiare 1500 se vuoi
       .ensureAlpha()
       .raw()
       .toBuffer({ resolveWithObject: true });
 
     const code = jsQR(
-      Uint8ClampedArray.from(image.data),
-      image.info.width,
-      image.info.height
+      new Uint8ClampedArray(data),
+      info.width,
+      info.height
     );
 
     if (code && code.data) {
-      console.log("QR rilevato con jsQR (perfetto):", code.data);
+      console.log("QR rilevato con jsQR:", code.data);
       return true;
     }
+
+    console.log("DEBUG QR: jsQR non ha trovato nulla → nessun QR");
+    return false;
   } catch (e) {
-    console.log("jsQR fallito (normale su immagini grandi)", e.message);
+    console.log("DEBUG QR: errore jsQR:", e.message);
+    return false;
   }
-
-  // 2. Se jsQR non trova niente → usa Google Vision SOLO per parole esplicite
-  if (visionClient) {
-    try {
-      const [result] = await visionClient.textDetection({
-        image: { content: imgBuffer },
-      });
-
-      const fullText = (result.fullTextAnnotation?.text || "").toLowerCase();
-
-      // Parole che indicano chiaramente la presenza di un QR
-      if (
-        /qr|code|scansiona|scan.?iona|e-?label|digitale|informazioni\s+nutrizionali|ingredienti.*qr/i.test(
-          fullText
-        )
-      ) {
-        console.log("QR rilevato da testo esplicito (Vision):", fullText);
-        return true;
-      }
-    } catch (e) {
-      console.log("Vision fallito nel QR check");
-    }
-  }
-
-  // 3. Fallback kJ/kcal SOLO se c’è anche una parola che indica l’e-label
-  try {
-    const ocrText = await ocrGoogle(imgBuffer, visionClient) || "";
-    const lower = ocrText.toLowerCase();
-
-    if (
-      /kj/.test(lower) &&
-      /kcal|cal/.test(lower) &&
-      /(e-?label|scansiona|qr|digitale|informazioni\s+nutrizionali|energia.*qr)/i.test(lower)
-    ) {
-      console.log("QR forzato da kJ/kcal + parola e-label");
-      return true;
-    }
-  } catch (e) {}
-
-  // Se arriva qui → NESSUN QR reale
-  console.log("Nessun QR rilevato (corretto)");
-  return false;
 }
+
 
 
 
@@ -347,17 +310,12 @@ Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verific
 
 Per il campo "QR code o link ingredienti/energia":
 
-- Usa prima il valore qrDetected che ti passo.
-- Se qrDetected = false, puoi considerare un QR presente SOLO se:
-  • individui chiaramente i tre “finder pattern” tipici dei QR (tre quadrati neri negli angoli),
-  • e puoi descrivere esattamente la posizione del QR (es: "in basso a destra").
+- DEVI usare il valore qrDetected che ti passo.
+- Se qrDetected = true → considera il QR PRESENTE e scrivi che è presente.
+- Se qrDetected = false → considera il QR ASSENTE.
+  Non puoi mai contraddire qrDetected, anche se ti sembra di vedere forme simili a un QR.
+  Ignora completamente loghi, icone, quadrati decorativi, ecc.
 
-- Se vedi un quadrato nero o un simbolo grafico che NON presenta i tre finder pattern,
-  NON considerarlo un QR.
-  Esempi da NON considerare QR: loghi, icone, simboli, forme geometriche, pattern decorativi.
-
-- NON considerare QR: riquadri neri pieni, loghi, simboli stilizzati o figure con forme interne.
-- Considera QR solo se la struttura è inequivocabile e conforme ai QR standard.
 
 Per la lingua:
 - considera "conforme" se l’etichetta contiene almeno la lingua ufficiale

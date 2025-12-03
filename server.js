@@ -369,7 +369,7 @@ Per la "Denominazione di origine":
   • usa "❌ mancante" oppure "⚠️ non verificabile",
   • e NON inventare codici (non proporre stringhe che non vedi chiaramente marcate come lotto).
 
-
+Se c'è anche un solo "❌" l'etichetta diventa non conforme.
 
 
 Devi rispondere esclusivamente nella lingua: ${req.body.lang || "it"}.

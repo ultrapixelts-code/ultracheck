@@ -54,44 +54,35 @@ function findAlcohol(text, original) {
 // 2. VOLUME → VERSIONE 100% BULLETPROOF (75cl, 750ml, 0.75l, 75de, ecc.)
 // ==================================================================
 function findVolume(text, original) {
-  // uso il testo normalizzato (spazi e minuscole) per evitare casini di OCR
-  const s = (text || original || "").toLowerCase().replace(/\s+/g, " ");
+  const s = (original || "").replace(/\s+/g, " ").toLowerCase();
 
-  // 1) Caso principale: numero + unità (con spazio opzionale)
-  let match = s.match(/(\d{1,4}[.,]?\d*)\s*(cl|ml|l|litro|litri|liters?|litres?)/i);
+  // 0) Caso più comune nelle foto: “75de”, “75 d℮”, “75dE”
+  if (/\b75\s*d[e℮]\b/.test(s) || /\b75d[e℮]\b/.test(s)) {
+    return 0.75;
+  }
+
+  // 1) Caso standard: "75 cl", "750 ml", "0.75 l"
+  let match = s.match(/(\d{1,4}[.,]?\d*)\s*(cl|ml|l|litri?|liters?|litres?)/i);
   if (match) {
     const num = parseFloat(match[1].replace(",", "."));
     const unit = match[2].toLowerCase();
 
-    if (unit === "l" || unit.startsWith("lit")) {
-      return +num.toFixed(3);          // es: 0.75 l → 0.750
-    }
-    if (unit === "cl") {
-      return +(num / 100).toFixed(3);  // es: 75 cl → 0.750
-    }
-    if (unit === "ml") {
-      return +(num / 1000).toFixed(3); // es: 750 ml → 0.750
-    }
+    if (unit === "l" || unit.startsWith("lit")) return +num.toFixed(3);
+    if (unit === "cl") return +(num / 100).toFixed(3);
+    if (unit === "ml") return +(num / 1000).toFixed(3);
   }
 
-  // 2) Secondo tentativo "sporco": numero 2-3 cifre vicino a qualcosa che pare "cl"
-  // (c, ç, c + l/1/I ecc.) — pensato proprio per casi OCR strani
-  let loose = s.match(/(\d{2,3})\s*[cç][l1i]/);
-  if (loose) {
-    const n = parseInt(loose[1], 10);
-    if (n >= 50 && n <= 200) {
-      return +(n / 100).toFixed(3);    // es: 75 → 0.75 L, 150 → 1.50 L
-    }
+  // 2) Fallback OCR sporchi tipo “75c1”, “75cI”, “75ci”
+  match = s.match(/(\d{2,3})\s*[cç][l1i]/i);
+  if (match) {
+    const num = parseInt(match[1], 10);
+    if (num >= 50 && num <= 200) return +(num / 100).toFixed(3);
   }
 
-  // 3) Fallback se l’OCR fa ancora più casino
+  // 3) Fallback robusti
   if (/\b75\s*cl\b/.test(s)) return 0.75;
   if (/\b0[.,]?75\b/.test(s)) return 0.75;
-  if (/\b75\s*d[eé]\b/.test(s)) return 0.75;    // 👈 per "75de 13% vol"
-  if (/\b1[.,]?5\b|\b150\s*cl\b/.test(s)) return 1.5;
-  if (/\b0[.,]?5\b|\b50\s*cl\b/.test(s)) return 0.5;
-  if (/\b0[.,]?375\b|\b37[.,]?5\s*cl\b/.test(s)) return 0.375;
-  if (/\b1[.,]?0?\b.*\bl\b/.test(s)) return 1.0;
+  if (/\b750\s*ml\b/.test(s)) return 0.75;
 
   return null;
 }

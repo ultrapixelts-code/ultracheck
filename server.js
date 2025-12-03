@@ -274,7 +274,7 @@ if (analysisData?.data) {
       );
     }  // <--- chiude il ramo "else" (immagini)
 
-    // === USER CONTENT PER GPT: testo + immagine (se presenti) ===
+    // === USER CONTENT PER GPT: testo + immagine (se presenti) 
     const userContent = [];
     if (isTextExtracted && extractedText) {
       userContent.push({ type: "text", text: extractedText });
@@ -287,7 +287,7 @@ if (analysisData?.data) {
         },
       });
     }
-
+===
     // JSON extra solo se abbiamo analysisData
     const extraContent = analysisData
       ? [

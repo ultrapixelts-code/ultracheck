@@ -100,17 +100,26 @@ function findVolume(text, original) {
 // 3. LOTTO → ora legge anche "L 89-2025", "L-2025", "L2025"
 // ==================================================================
 function findLot(text, original) {
-  const patterns = [
-    /(?:lotto|lote|lot|batch)[\s\:]*([A-Z0-9\-]{4,})/i,
-    /L[\s\.\-:]*([A-Z0-9\-]{4,})/i,
-    /\bL([A-Z0-9\-]{5,})/i,
-  ];
-  for (const p of patterns) {
-    const m = original.match(p);
-    if (m && m[1].length >= 4) return m[1].toUpperCase();
+  const s = (original || "").replace(/\s+/g, " ").trim();
+
+  // 1) Formati standard: “L25272”, “L 25272”, “L-25272”, “L:25272”
+  let m = s.match(/\bL[\s\-.:]*([0-9A-Z]{3,10})\b/i);
+  if (m) {
+    const code = m[1].toUpperCase();
+    // Evita falsi positivi tipo LESIMATO (ha troppe lettere)
+    if (/^\d+[A-Z0-9]*$/.test(code) || /^[A-Z0-9]+$/.test(code)) {
+      return code;
+    }
   }
+
+  // 2) Formato europeo: “Lotto 25272”, “Lot 25272”
+  m = s.match(/\b(?:lotto|lot|lote|batch)[\s:]*([0-9A-Z]{3,10})\b/i);
+  if (m) return m[1].toUpperCase();
+
+  // Nessun lotto valido
   return null;
 }
+
 
 // ==================================================================
 // 4. ALLERGENI – multilingua + varianti

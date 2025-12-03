@@ -274,20 +274,15 @@ if (analysisData?.data) {
       );
     }  // <--- chiude il ramo "else" (immagini)
 
-    // === USER CONTENT PER GPT: testo + immagine (se presenti) 
-    const userContent = [];
-    if (isTextExtracted && extractedText) {
-      userContent.push({ type: "text", text: extractedText });
-    }
-    if (base64Data && contentType) {
-      userContent.push({
-        type: "image_url",
-        image_url: {
-          url: `data:${contentType};base64,${base64Data}`,
-        },
-      });
-    }
-===
+// === USER CONTENT PER GPT: SOLO TESTO (niente immagine) ===
+const userContent = [];
+if (isTextExtracted && extractedText) {
+  userContent.push({ type: "text", text: extractedText });
+}
+
+// NIENTE image_url per GPT → è inutile e rallenta
+
+
     // JSON extra solo se abbiamo analysisData
     const extraContent = analysisData
       ? [

@@ -332,6 +332,18 @@ Per la lingua:
 - considera "conforme" se l’etichetta contiene almeno la lingua ufficiale
   del paese di commercializzazione (se non è specificato, assumi Italia → italiano).
 - Non dire mai che mancano "lingue UE obbligatorie": non esistono lingue UE obbligatorie.
+- Se è indicato chiaramente un paese nell’indirizzo del produttore/imbottigliatore
+  (es: "France", "Italia", "Hrvatska", "España"...),
+  considera come lingua principale ammessa la lingua ufficiale di quel paese
+  (francese per France, croato per Hrvatska, italiano per Italia, ecc.).
+
+- Se l’etichetta è interamente in quella lingua ufficiale, considera il campo "Lingua corretta per il mercato UE" come (✅ conforme).
+
+- Usa l’assunzione "Italia → italiano" SOLO se:
+  • non riesci a capire da dove viene il vino,
+  • oppure non è riportato chiaramente alcun paese nell’indirizzo.
+
+- Evita di mettere "❌" sulla lingua se almeno una lingua ufficiale del paese di produzione è presente; in caso di dubbio, usa al massimo "⚠️ parziale".
 
 Per il campo "Titolo alcolometrico":
 
@@ -341,6 +353,28 @@ Per il campo "Titolo alcolometrico":
   Se scrivi qualcosa dopo il "+", lo stato non può essere "mancante".
 Regola generale: se dopo il segno "+" inserisci un testo specifico (es. "13.5% vol", un indirizzo, un lotto, ecc.),
 non puoi usare lo stato "❌ mancante", ma solo "✅ conforme" o "⚠️ parziale".
+
+Per la "Denominazione di origine":
+- È obbligatoria solo per vini con indicazioni come DOP/DOC/DOCG/IGP, 
+  o "Appellation d'Origine Contrôlée", "Protected Designation of Origin", ecc.
+- Se l’etichetta sembra un vino generico (senza alcuna indicazione geografica particolare),
+  NON usare mai "❌ mancante".
+  In questo caso usa "⚠️ parziale" e specifica che "non è indicata (e può non essere obbligatoria per vini generici)".
+
+  Per il campo "Lotto":
+
+- Considera lotto solo stringhe chiaramente marcate da:
+  • "L" o "Lot" o "Lotto" seguite da numeri/lettere (es: "L25-02", "Lot L2502", "L1234").
+- NON interpretare come lotto:
+  • codici casuali senza prefisso (es. "ITETNO", "AB123" senza "L"),
+  • sigle di certificazioni, codici interni o altre scritte ambigue.
+
+- Se trovi un candidato lotto, riportalo ESATTAMENTE (es: "L25-02").
+- Se non trovi nulla che rispetta questi criteri:
+  • usa "❌ mancante" oppure "⚠️ non verificabile",
+  • e NON inventare codici (non proporre stringhe che non vedi chiaramente marcate come lotto).
+
+
 
 
 Devi rispondere esclusivamente nella lingua: ${req.body.lang || "it"}.

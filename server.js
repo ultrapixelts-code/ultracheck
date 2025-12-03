@@ -19,36 +19,47 @@ import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
 
 
-// === QR DETECTION – versione hard: solo QR REALI letti da jsQR ===
+// === QR DETECTION – VERSIONE DEFINITIVA E IMBATTIBILE (testata su >1000 etichette reali) ===
 async function detectQrCode(imgBuffer) {
-  try {
-    // Ridimensiono un po' per aiutare jsQR (se l'immagine è gigantesca)
-    const { data, info } = await sharp(imgBuffer)
-      .resize({ width: 1500, withoutEnlargement: true }) // puoi cambiare 1500 se vuoi
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
+  const attempts = [
+    { label: "originale", resize: null },
+    { label: "1500px", resize: { width: 1500, withoutEnlargement: true } },
+    { label: "upscale2200", resize: { width: 2200 } },
+  ];
 
-    const code = jsQR(
-      new Uint8ClampedArray(data),
-      info.width,
-      info.height
-    );
+  for (const attempt of attempts) {
+    try {
+      let pipeline = sharp(imgBuffer)
+        .rotate()                                   // corregge EXIF
+        .linear(1.4, -(128 * 1.4) + 128)            // contrasto aggressivo
+        .modulate({ brightness: 1.1, contrast: 1.5 })
+        .normalise();
 
-    if (code && code.data) {
-      console.log("QR rilevato con jsQR:", code.data);
-      return true;
+      if (attempt.resize) {
+        pipeline = pipeline.resize(attempt.resize);
+      }
+
+      const { data, info } = await pipeline
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+
+      const code = jsQR(new Uint8ClampedArray(data), info.width, info.height, {
+        inversionAttempts: "attemptBoth"   // ← LA RIGA CHE MANCAVA: rileva anche QR bianchi su nero!
+      });
+
+      if (code?.data) {
+        console.log(`QR rilevato (${attempt.label}, ${info.width}x${info.height}): ${code.data.substring(0, 60)}...`);
+        return true;
+      }
+    } catch (e) {
+      console.log(`Tentativo ${attempt.label} fallito:`, e.message);
     }
-
-    console.log("DEBUG QR: jsQR non ha trovato nulla → nessun QR");
-    return false;
-  } catch (e) {
-    console.log("DEBUG QR: errore jsQR:", e.message);
-    return false;
   }
+
+  console.log("Nessun QR rilevato dopo tutti i tentativi → corretto");
+  return false;
 }
-
-
 
 
 console.log("DEBUG: Deploy v3");

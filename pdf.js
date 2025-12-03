@@ -3,7 +3,7 @@ import fs from "fs/promises";
 import os from "os";
 import path from "path";
 import { spawn } from "child_process";
-import { convert } from "pdf-poppler";
+import sharp from "sharp";
 
 let pdfParse = null;
 
@@ -57,50 +57,55 @@ export async function parsePdf(buffer) {
 }
 
 /**
- * Converte la prima pagina di un PDF in immagine PNG ad alta risoluzione
+ * Converte la prima pagina di un PDF in immagine PNG ad alta risoluzione (via pdftoppm)
  */
-export async function pdfToFirstPageImage(pdfBuffer) {
-  const ts = Date.now();
-  const tmpPdf = `/tmp/ultracheck-${ts}.pdf`;
-  const outDir = "/tmp";
-  const outPrefix = `ultra_page_${ts}`;
+export async function pdfToFirstPageImage(buffer) {
+  const tmpDir = os.tmpdir();
+  const pdfPath = path.join(tmpDir, `pdf-${Date.now()}.pdf`);
+  const prefix = path.join(tmpDir, `page-${Date.now()}`);
 
   try {
-    // 1. Salva PDF temporaneo
-    await fs.writeFile(tmpPdf, pdfBuffer);
+    await fs.writeFile(pdfPath, buffer);
 
-    // 2. Converti con pdf-poppler a 400 DPI (ottimo per QR piccoli)
-    await convert(tmpPdf, {
-      format: "png",
-      out_dir: outDir,
-      out_prefix: outPrefix,
-      page: 1,
-      dpi: 400,  // ← se non basta, porta a 500/600
+    // -r 400 = PNG a 400 dpi (ottimo per QR piccoli)
+    await new Promise((resolve, reject) => {
+      const proc = spawn("pdftoppm", [
+        "-png",
+        "-singlefile",
+        "-r",
+        "400",
+        pdfPath,
+        prefix,
+      ]);
+      proc.on("close", (code) =>
+        code === 0 ? resolve() : reject(new Error(`pdftoppm code ${code}`))
+      );
+      proc.on("error", reject);
     });
 
-    const pngPath = path.join(outDir, `${outPrefix}-1.png`);
-    const imgBuffer = await fs.readFile(pngPath);
+    const imgPath = prefix + ".png";
+    const imgBuffer = await fs.readFile(imgPath);
 
-    // 3. Pulizia file temporanei (best effort)
-    await Promise.allSettled([
-      fs.unlink(tmpPdf),
-      fs.unlink(pngPath),
-    ]);
+    // 🔍 LOG risoluzione PNG generato
+    try {
+      const metadata = await sharp(imgBuffer).metadata();
+      console.log(
+        `PDF → PNG generato: ${metadata.width} x ${metadata.height} px (dpi: ${
+          metadata.density || "?"
+        })`
+      );
+    } catch (err) {
+      console.log("Impossibile leggere metadata PNG:", err.message);
+    }
 
-    // Torna il PNG "grezzo" → poi lo sistemi in detectQrCode con sharp
     return imgBuffer;
-
   } catch (err) {
-    console.warn("pdfToFirstPageImage fallito:", err.message);
-
-    // Pulizia di emergenza
-    await Promise.allSettled([
-      fs.unlink(tmpPdf).catch(() => {}),
-      fs
-        .unlink(path.join(outDir, `${outPrefix}-1.png`))
-        .catch(() => {}),
-    ]);
-
+    console.warn("pdftoppm fallito:", err.message);
     return null;
+  } finally {
+    await Promise.all([
+      fs.unlink(pdfPath).catch(() => {}),
+      fs.unlink(prefix + ".png").catch(() => {}),
+    ]);
   }
 }

@@ -10,12 +10,15 @@
   "dependencies": {
     "@google-cloud/vision": "^5.3.4",
     "@sendgrid/mail": "^8.1.6",
+    "@zxing/library": "^0.21.3",
+    "canvas": "^3.2.0",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "jsqr": "^1.4.0",
     "multer": "^2.0.2",
     "openai": "^6.8.1",
     "pdf-parse": "^1.1.1",
+    "pdfjs-dist": "^5.4.449",
     "sharp": "^0.33.5",
     "tesseract.js": "^5.1.1"
   },

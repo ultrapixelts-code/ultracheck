@@ -18,22 +18,39 @@ import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
 import { BrowserQRCodeReader } from '@zxing/library';
+import { RGBLuminanceSource, HybridBinarizer, BinaryBitmap, DecodeHintType, QRCodeReader } from '@zxing/library';
 
 // === FUNZIONE OBBLIGATORIA PER ZXING SU NODE ===
 async function zxingDecode(buffer) {
-  const tmpPath = `/tmp/zxing-${Date.now()}.png`;
-  await fs.writeFile(tmpPath, buffer);
-
   try {
-    const reader = new BrowserQRCodeReader();
-    const result = await reader.decodeFromImage(undefined, tmpPath);
-    await fs.unlink(tmpPath).catch(() => {});
-    return result?.text || null;
-  } catch {
-    await fs.unlink(tmpPath).catch(() => {});
+    // 1) Sharp → immagine RGB lineare
+    const { data, info } = await sharp(buffer)
+      .rotate()
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const luminanceSource = new RGBLuminanceSource(
+      new Uint8ClampedArray(data),
+      info.width,
+      info.height
+    );
+
+    const bitmap = new BinaryBitmap(new HybridBinarizer(luminanceSource));
+
+    const reader = new QRCodeReader();
+
+    const hints = new Map();
+    hints.set(DecodeHintType.TRY_HARDER, true);
+
+    const result = reader.decode(bitmap, hints);
+
+    return result?.getText() || null;
+  } catch (err) {
     return null;
   }
 }
+
 
 
 // === QR DETECTION – VERSIONE DEFINITIVA E IMBATTIBILE (testata su >1000 etichette reali) ===

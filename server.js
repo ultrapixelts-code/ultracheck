@@ -355,6 +355,7 @@ Per la "Denominazione di origine":
 - Se l’etichetta sembra un vino generico (senza alcuna indicazione geografica particolare),
   NON usare mai "❌ mancante".
   In questo caso usa "⚠️ parziale" e specifica che "non è indicata (e può non essere obbligatoria per vini generici)".
+  - È presente se c'è scritto DOP/DOC/DOCG/IGP o per esteso Denominazione di Origine Protetta/Denominazione di Origine Controllata/Denominazione di Origine Controllata e Garantita/Indicazione Geografica Protetta
 
   Per il campo "Lotto":
 

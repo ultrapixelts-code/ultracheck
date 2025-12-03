@@ -363,6 +363,7 @@ Per la "Denominazione di origine":
 - NON interpretare come lotto:
   • codici casuali senza prefisso (es. "ITETNO", "AB123" senza "L"),
   • sigle di certificazioni, codici interni o altre scritte ambigue.
+  • scritte che hanno la lettera L e poi altre lettere. Ad esempio FILTERED, il lotto non è TERED. Deve esserci solamente una L e basta.
 
 - Se trovi un candidato lotto, riportalo ESATTAMENTE (es: "L25-02").
 - Se non trovi nulla che rispetta questi criteri:

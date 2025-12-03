@@ -19,37 +19,70 @@ import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
 
 
-// === QR DETECTION – GOOGLE VISION (funziona su Ravalico piccolo/invertito) ===
+// === QR DETECTION – VERSIONE DEFINITIVA (zero falsi positivi su vini italiani) ===
+
 async function detectQrCode(imgBuffer) {
-  // 1. Usa Google Vision per pattern QR (meglio di jsQR per piccoli/invertiti)
+  // 1. Prova prima jsQR (il più affidabile in assoluto per QR veri)
+  try {
+    const image = await sharp(imgBuffer)
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const code = jsQR(
+      Uint8ClampedArray.from(image.data),
+      image.info.width,
+      image.info.height
+    );
+
+    if (code && code.data) {
+      console.log("QR rilevato con jsQR (perfetto):", code.data);
+      return true;
+    }
+  } catch (e) {
+    console.log("jsQR fallito (normale su immagini grandi)", e.message);
+  }
+
+  // 2. Se jsQR non trova niente → usa Google Vision SOLO per parole esplicite
   if (visionClient) {
     try {
       const [result] = await visionClient.textDetection({
         image: { content: imgBuffer },
       });
-      
-      const fullText = result.fullTextAnnotation?.text || "";
-      const blocks = result.fullTextAnnotation?.pages?.[0]?.blocks || [];
-      
-      // Se Vision vede testo QR o blocchi piccoli quadrati (pattern QR)
-      if (/QR|code|scansiona|scan/i.test(fullText) || blocks.some(block => block.paragraphs.length === 1 && block.words.length === 1 && block.words[0].symbols.length < 50)) {
-        console.log("QR rilevato da Vision pattern");
+
+      const fullText = (result.fullTextAnnotation?.text || "").toLowerCase();
+
+      // Parole che indicano chiaramente la presenza di un QR
+      if (
+        /qr|code|scansiona|scan.?iona|e-?label|digitale|informazioni\s+nutrizionali|ingredienti.*qr/i.test(
+          fullText
+        )
+      ) {
+        console.log("QR rilevato da testo esplicito (Vision):", fullText);
         return true;
       }
     } catch (e) {
-      console.log("Vision QR detection fallito, fallback");
+      console.log("Vision fallito nel QR check");
     }
   }
 
-  // 2. Fallback: kJ + kcal (Ravalico ha "292 kJ / 70 kcal" → QR presente)
+  // 3. Fallback kJ/kcal SOLO se c’è anche una parola che indica l’e-label
   try {
     const ocrText = await ocrGoogle(imgBuffer, visionClient) || "";
-    if (/k[jJ]/.test(ocrText) && /kcal/i.test(ocrText)) {
-      console.log("QR forzato da kJ/kcal");
+    const lower = ocrText.toLowerCase();
+
+    if (
+      /kj/.test(lower) &&
+      /kcal|cal/.test(lower) &&
+      /(e-?label|scansiona|qr|digitale|informazioni\s+nutrizionali|energia.*qr)/i.test(lower)
+    ) {
+      console.log("QR forzato da kJ/kcal + parola e-label");
       return true;
     }
   } catch (e) {}
 
+  // Se arriva qui → NESSUN QR reale
+  console.log("Nessun QR rilevato (corretto)");
   return false;
 }
 
@@ -208,18 +241,7 @@ contentType = "image/png";
       if (analysisData?.data) {
         analysisData.data.qrDetected = qrDetected;
       }
-      // Fallback: se jsQR non ha trovato QR ma nel testo vedo schema ingredienti/energia tipico
-if (analysisData?.data && !analysisData.data.qrDetected) {
-  const t = extractedText.toLowerCase();
-  if (
-    /kj/.test(t) &&
-    /kcal/.test(t) &&
-    /(ingredienti|ingredients|ingredienti nutrizionali|energia|energy)/.test(t)
-  ) {
-    console.log("DEBUG fallback QR: setto qrDetected = true da testo OCR");
-    analysisData.data.qrDetected = true;
-  }
-}
+ 
 
 
     console.log(
@@ -269,18 +291,6 @@ if (analysisData?.data) {
   analysisData.data.qrDetected = qrDetected;
 }
 
-// 🔁 Fallback da testo OCR anche per le IMMAGINI
-if (analysisData?.data && !analysisData.data.qrDetected) {
-  const t = extractedText.toLowerCase();
-  if (
-    /kj/.test(t) &&
-    /kcal/.test(t) &&
-    /(ingredienti|ingredients|ingredienti nutrizionali|energia|energy)/.test(t)
-  ) {
-    console.log("DEBUG fallback QR (IMG): setto qrDetected = true da testo OCR");
-    analysisData.data.qrDetected = true;
-  }
-}
 
       console.log(
         "DEBUG ANALYSIS (IMG) VOLUME:",

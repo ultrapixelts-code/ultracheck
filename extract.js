@@ -32,20 +32,23 @@ export function extractData(rawText) {
 // 1. ALCOOL – gestisce tutti i formati reali
 // ==================================================================
 function findAlcohol(text, original) {
-  const patterns = [
-    new RegExp(`alc(?:ool|ohol)?[\\.\\s]*${SP}(${NUM})${SP}%`, "i"),
-    new RegExp(`(${NUM})${SP}%${SP}(?:vol|alc|by\\s*vol)`, "i"),
-    new RegExp(`titre\\s*alcoolique?[\\.\\s]*${SP}(${NUM})${SP}%`, "i"),     // FR
-    new RegExp(`alkoholgehalt[\\.\\s]*${SP}(${NUM})${SP}%`, "i"),            // DE
-    new RegExp(`gradazione\\s*alcolica[\\.\\s]*${SP}(${NUM})${SP}%`, "i"),
-  ];
+  // Normalizzo per regex più efficaci
+  const s = (original || "").replace(/\s+/g, " ").toLowerCase();
 
-  for (const p of patterns) {
-    const m = original.match(p);
-    if (m) return parseFloat(m[1].replace(",", "."));
+  // Regex universale: cattura TUTTE le forme reali
+  const match = s.match(
+    /\b(\d{1,2}(?:[.,]\d{1,2})?)\s*(?:%|°)\s*(?:vol\.?|vol|alc(?:\/vol)?|alcohol|alcool)?\b/i
+  );
+
+  if (match) {
+    const value = match[1].replace(",", ".");
+    return `${value}% vol`;  // normalizzato
   }
+
   return null;
 }
+
+
 
 // ==================================================================
 // 2. VOLUME → VERSIONE 100% BULLETPROOF (75cl, 750ml, 0.75l, 75de, ecc.)

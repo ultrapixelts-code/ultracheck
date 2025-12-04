@@ -156,6 +156,8 @@ const port = process.env.PORT || 8080;
 app.use(express.static("."));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // AGGIUNTA
+
+// monta le route del dealer
 app.use(dealerRouter);
 
 // Homepage → index.html

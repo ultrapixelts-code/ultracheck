@@ -10,27 +10,54 @@ import sgMail from "@sendgrid/mail";
 import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
+
 import { parsePdf, pdfToFirstPageImage } from "./pdf.js";
 import { ocrGoogle, ocrFallback } from "./ocr.js";
 import { cleanOCR } from "./cleanOCR.js";
 import { extractData } from "./extract.js";
 import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
+import dealerRouter from "./dealer.js";
+app.use(dealerRouter);
+
+
 import jsQR from "jsqr";
-import { BrowserQRCodeReader } from '@zxing/library';
+
+// ===== ZXING (VERSIONE NODE, QUELLA GIUSTA) =====
+import {
+  RGBLuminanceSource,
+  HybridBinarizer,
+  BinaryBitmap,
+  DecodeHintType,
+  QRCodeReader
+} from "@zxing/library";
+
 
 // === FUNZIONE OBBLIGATORIA PER ZXING SU NODE ===
 async function zxingDecode(buffer) {
-  const tmpPath = `/tmp/zxing-${Date.now()}.png`;
-  await fs.writeFile(tmpPath, buffer);
-
   try {
-    const reader = new BrowserQRCodeReader();
-    const result = await reader.decodeFromImage(undefined, tmpPath);
-    await fs.unlink(tmpPath).catch(() => {});
-    return result?.text || null;
-  } catch {
-    await fs.unlink(tmpPath).catch(() => {});
+    const sharpImg = await sharp(buffer)
+      .rotate()
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+
+    const luminance = new RGBLuminanceSource(
+      new Uint8ClampedArray(sharpImg.data),
+      sharpImg.info.width,
+      sharpImg.info.height
+    );
+
+    const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminance));
+
+    const hints = new Map();
+    hints.set(DecodeHintType.TRY_HARDER, true);
+
+    const reader = new QRCodeReader();
+    const result = reader.decode(binaryBitmap, hints);
+
+    return result?.getText() || null;
+  } catch (err) {
     return null;
   }
 }
@@ -319,27 +346,14 @@ const userContent = [];
 if (isTextExtracted && extractedText) {
   userContent.push({ type: "text", text: extractedText });
 }
+userContent.push({ type: "text", text: `QR_DETECTED: ${qrDetected}` });
 
 // NIENTE image_url per GPT → è inutile e rallenta
 
 
     // JSON extra solo se abbiamo analysisData
-    const extraContent = analysisData
-      ? [
-          {
-            type: "text",
-            text:
-              "Dati estratti automaticamente:\n" +
-              JSON.stringify(analysisData.data, null, 2),
-          },
-          {
-            type: "text",
-            text:
-              "Esito regole normative:\n" +
-              JSON.stringify(analysisData.rules, null, 2),
-          },
-        ]
-      : [];
+    const extraContent = [];
+
 
 
     // === ANALISI AI ===
@@ -350,66 +364,47 @@ if (isTextExtracted && extractedText) {
       messages: [
         {
           role: "system",
-          content: `Agisci come un ispettore tecnico *UltraCheck AI* specializzato nella conformità legale delle etichette vino.
-Analizza SOLO le informazioni obbligatorie secondo il **Regolamento (UE) 2021/2117**.
-Non inventare mai dati visivi: se qualcosa non è leggibile, scrivi "non verificabile".
+          content: `Agisci come un ispettore tecnico UltraCheck AI. 
+Analizza SOLO i dati presenti nel testo. Non inventare mai.
 
-Per il campo "QR code o link ingredienti/energia":
+Usa il seguente principio fondamentale:
+- Se un dato c'è → è "conforme".
+- Se il dato è ambiguo → è "parziale".
+- Se il dato non c'è → è "mancante".
 
-- DEVI usare il valore qrDetected che ti passo.
-- Se qrDetected = true → considera il QR PRESENTE e scrivi che è presente.
-- Se qrDetected = false → considera il QR ASSENTE.
-  Non puoi mai contraddire qrDetected, anche se ti sembra di vedere forme simili a un QR.
-  Ignora completamente loghi, icone, quadrati decorativi, ecc.
+Per il QR code:
+Nel messaggio dell’utente ricevi una riga del tipo:
+QR_DETECTED: true
+oppure:
+QR_DETECTED: false
+
+Devi usare ESATTAMENTE quel valore come verità assoluta:
+- Se QR_DETECTED: true → considera il QR presente
+- Se QR_DETECTED: false → considera il QR assente
+
+Non devi mai usare logiche tue né interpretare il testo OCR.
+Questo valore ha la precedenza totale.
 
 
-Per la lingua:
-- considera "conforme" se l’etichetta contiene almeno la lingua ufficiale
-  del paese di commercializzazione (se non è specificato, assumi Italia → italiano).
-- Non dire mai che mancano "lingue UE obbligatorie": non esistono lingue UE obbligatorie.
-- Se è indicato chiaramente un paese nell’indirizzo del produttore/imbottigliatore
-  (es: "France", "Italia", "Hrvatska", "España"...),
-  considera come lingua principale ammessa la lingua ufficiale di quel paese
-  (francese per France, croato per Hrvatska, italiano per Italia, ecc.).
+Regole rapide:
+- Denominazione: se esiste un nome vino o tipologia (es. Merlot, Collio, Ribolla, ecc.) → conforme. 
+- AllergenI: cerca "solfiti", "contiene solfiti" ecc.
+- Alcol: valuta come conforme se c’è un valore tipo "12% vol".
+- Volume: cerca "75 cl", "0,75 l" ecc.
+- Lotto: accetta solo stringhe che iniziano con "L" seguita da numeri/lettere (es: L123, L25-02). 
+  Non considerare altre parole con L come lotto.
+- Lingua: se il testo è in italiano → conforme (default Italia).
+- Altezza/contrasto: sempre "non verificabile" (non hai visione grafica).
 
-- Se l’etichetta è interamente in quella lingua ufficiale, considera il campo "Lingua corretta per il mercato UE" come (✅ conforme).
+- Lotto:
+  • considera LOTTO solo stringhe che iniziano con "L" SEGUITA SUBITO da almeno una cifra (0–9),
+    ad esempio: "L123", "L25-02", "L24334", "L2025A".
+  • dopo le cifre possono esserci lettere o trattini, ma la PRIMA cosa dopo la "L" deve essere un numero.
+  • NON considerare come lotto:
+    - stringhe dove dopo la "L" c'è un punto, uno spazio o una lettera (es: "L.PRINTED", "L PRINTED", "Lotto printed"),
+    - scritte generiche tipo "Lotto da stampare", "Lotto printed", "L. DA DEFINIRE", ecc.
+  • Se non trovi nessuna stringa che rispetta questa regola → usa "❌ mancante" per il lotto.
 
-- Usa l’assunzione "Italia → italiano" SOLO se:
-  • non riesci a capire da dove viene il vino,
-  • oppure non è riportato chiaramente alcun paese nell’indirizzo.
-
-- Evita di mettere "❌" sulla lingua se almeno una lingua ufficiale del paese di produzione è presente; in caso di dubbio, usa al massimo "⚠️ parziale".
-
-Per il campo "Titolo alcolometrico":
-
-- Considera "conforme" se trovi un valore tipo "12% vol", "13.5% vol", "11 % vol" ecc.
-- Puoi indicarlo come "parziale" solo se il valore è poco leggibile o ambiguo.
-- NON usare mai "❌ mancante" se dopo il segno "+" riporti un valore numerico con "%" e "vol".
-  Se scrivi qualcosa dopo il "+", lo stato non può essere "mancante".
-Regola generale: se dopo il segno "+" inserisci un testo specifico (es. "13.5% vol", un indirizzo, un lotto, ecc.),
-non puoi usare lo stato "❌ mancante", ma solo "✅ conforme" o "⚠️ parziale".
-
-Per la "Denominazione di origine":
-- È obbligatoria solo per vini con indicazioni come DOP/DOC/DOCG/IGP, 
-  o "Appellation d'Origine Contrôlée", "Protected Designation of Origin", ecc.
-- Se l’etichetta sembra un vino generico (senza alcuna indicazione geografica particolare),
-  NON usare mai "❌ mancante".
-  In questo caso usa "⚠️ parziale" e specifica che "non è indicata (e può non essere obbligatoria per vini generici)".
-  - È presente se c'è scritto DOP/DOC/DOCG/IGP o per esteso Denominazione di Origine Protetta/Denominazione di Origine Controllata/Denominazione di Origine Controllata e Garantita/Indicazione Geografica Protetta
-
-  Per il campo "Lotto":
-
-- Considera lotto solo stringhe chiaramente marcate da:
-  • "L" o "Lot" o "Lotto" seguite da numeri/lettere (es: "L25-02", "Lot L2502", "L1234").
-- NON interpretare come lotto:
-  • codici casuali senza prefisso (es. "ITETNO", "AB123" senza "L"),
-  • sigle di certificazioni, codici interni o altre scritte ambigue.
-  • scritte che hanno la lettera L e poi altre lettere. Ad esempio FILTERED, il lotto non è TERED. Deve esserci solamente una L e basta.
-
-- Se trovi un candidato lotto, riportalo ESATTAMENTE (es: "L25-02").
-- Se non trovi nulla che rispetta questi criteri:
-  • usa "❌ mancante" oppure "⚠️ non verificabile",
-  • e NON inventare codici (non proporre stringhe che non vedi chiaramente marcate come lotto).
 
 Se c'è anche un solo "❌" l'etichetta diventa non conforme.
 

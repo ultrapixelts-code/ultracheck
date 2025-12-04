@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dealer PDF Branding</title>
+
+  <!-- Dropzone CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" />
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f8f8;
+      padding: 40px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 25px;
+    }
+    .preview-block {
+      margin-top: 15px;
+      text-align: center;
+    }
+    .preview-block img {
+      max-width: 150px;
+      display: none;
+      margin-top: 10px;
+    }
+    .input-group {
+      margin-top: 20px;
+    }
+    label {
+      font-weight: bold;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+    #generateBtn {
+      margin-top: 30px;
+      width: 100%;
+      padding: 14px;
+      font-size: 18px;
+      background: #0066ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    #generateBtn:hover {
+      background: #0050c9;
+    }
+    #resultMessage {
+      margin-top: 20px;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>Carica PDF + Logo del Distributore</h2>
+
+    <!-- PDF DROPZONE -->
+    <h4>Carica la bozza PDF UltraPixel</h4>
+    <form id="pdf-dropzone" class="dropzone"></form>
+
+    <div class="preview-block">
+      <img id="pdfPreview" src="" alt="Anteprima PDF" />
+    </div>
+
+    <!-- LOGO DROPZONE -->
+    <h4>Carica il logo del distributore</h4>
+    <form id="logo-dropzone" class="dropzone"></form>
+
+    <div class="preview-block">
+      <img id="logoPreview" src="" alt="Anteprima Logo" />
+    </div>
+
+    <!-- DATI DISTRIBUTORE -->
+    <div class="input-group">
+      <label>Nome azienda</label>
+      <input id="dealerName" type="text" />
+    </div>
+
+    <div class="input-group">
+      <label>Indirizzo</label>
+      <input id="dealerAddress" type="text" />
+    </div>
+
+    <div class="input-group">
+      <label>Telefono</label>
+      <input id="dealerPhone" type="text" />
+    </div>
+
+    <button id="generateBtn">Genera PDF brandizzato</button>
+
+    <div id="resultMessage"></div>
+  </div>
+
+  <!-- Dropzone JS -->
+  <script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
+
+  <script>
+    Dropzone.autoDiscover = false;
+
+    let pdfFile = null;
+    let logoFile = null;
+
+    // ---------------- PDF DROPZONE ----------------
+    const pdfDropzone = new Dropzone("#pdf-dropzone", {
+      url: "/noop",
+      autoProcessQueue: false,
+      maxFiles: 1,
+      acceptedFiles: ".pdf",
+    });
+
+    pdfDropzone.on("addedfile", (file) => {
+      pdfFile = file;
+      document.getElementById("pdfPreview").src = "/pdf-icon.png";
+      document.getElementById("pdfPreview").style.display = "block";
+    });
+
+    // ---------------- LOGO DROPZONE ----------------
+    const logoDropzone = new Dropzone("#logo-dropzone", {
+      url: "/noop",
+      autoProcessQueue: false,
+      maxFiles: 1,
+      acceptedFiles: "image/*",
+    });
+
+    logoDropzone.on("addedfile", (file) => {
+      logoFile = file;
+      const url = URL.createObjectURL(file);
+      const img = document.getElementById("logoPreview");
+      img.src = url;
+      img.style.display = "block";
+    });
+
+    // ---------------- GENERA PDF ----------------
+    document.getElementById("generateBtn").addEventListener("click", async () => {
+      if (!pdfFile || !logoFile) {
+        alert("Carica sia il PDF che il logo.");
+        return;
+      }
+
+      const name = document.getElementById("dealerName").value;
+      const address = document.getElementById("dealerAddress").value;
+      const phone = document.getElementById("dealerPhone").value;
+
+      const formData = new FormData();
+      formData.append("file", pdfFile);
+      formData.append("logo", logoFile);
+      formData.append("name", name);
+      formData.append("address", address);
+      formData.append("phone", phone);
+
+      const response = await fetch("/dealer/brand-pdf", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        document.getElementById("resultMessage").textContent = "Errore nella generazione.";
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "dealer_branded.pdf";
+      a.click();
+
+      document.getElementById("resultMessage").textContent = "PDF generato con successo!";
+    });
+  </script>
+</body>
+</html>

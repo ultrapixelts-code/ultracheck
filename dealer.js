@@ -2,6 +2,8 @@ import express from "express";
 import multer from "multer";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import fs from "fs/promises";
+import sharp from "sharp";
+
 
 const router = express.Router();
 const upload = multer({ dest: "/tmp" });
@@ -31,11 +33,15 @@ router.post(
       const pdfDoc = await PDFDocument.load(pdfBytes);
       const page = pdfDoc.getPages()[0];
 
-      // Carica logo distributore
-      const logoBytes = await fs.readFile(req.files.logo[0].path);
-      const logoImage = req.files.logo[0].mimetype.includes("png")
-        ? await pdfDoc.embedPng(logoBytes)
-        : await pdfDoc.embedJpg(logoBytes);
+      // Carica logo distributore e normalizza in PNG (così vanno bene AVIF, WEBP, JPG, ecc.)
+const rawLogoBytes = await fs.readFile(req.files.logo[0].path);
+
+const logoPngBytes = await sharp(rawLogoBytes)
+  .png()          // qualunque formato in ingresso → PNG
+  .toBuffer();
+
+const logoImage = await pdfDoc.embedPng(logoPngBytes);
+
 
       const dims = logoImage.scale(1);
       const scale = Math.min(

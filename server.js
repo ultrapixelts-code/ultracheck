@@ -17,7 +17,7 @@ import { cleanOCR } from "./cleanOCR.js";
 import { extractData } from "./extract.js";
 import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
-import dealerRouter from "./routes/dealer.js";
+import dealerRouter from "./dealer.js";
 app.use(dealerRouter);
 
 

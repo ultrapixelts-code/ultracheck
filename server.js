@@ -10,19 +10,14 @@ import sgMail from "@sendgrid/mail";
 import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
-
 import { parsePdf, pdfToFirstPageImage } from "./pdf.js";
 import { ocrGoogle, ocrFallback } from "./ocr.js";
 import { cleanOCR } from "./cleanOCR.js";
 import { extractData } from "./extract.js";
 import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
-
 import jsQR from "jsqr";
-
-const app = express();
-import dealerRouter from "./dealer.js";
-app.use(dealerRouter);
+import dealerRouter from "./dealer.js";  
 
 
 // ===== ZXING (VERSIONE NODE, QUELLA GIUSTA) =====
@@ -161,6 +156,7 @@ const port = process.env.PORT || 8080;
 app.use(express.static("."));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // AGGIUNTA
+app.use(dealerRouter);
 
 // Homepage → index.html
 app.get("/", (req, res) => {

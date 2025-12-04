@@ -17,10 +17,10 @@ const logoBox = {
 
 // BOX DEL TESTO DISTRIBUTORE
 const addressBox = {
-  x: 255.53,
-  y: 515.66,
-  width: 226.77,
-  height: 85.04,
+  x: 180,
+  y: 460,
+  width: 350,
+  height: 85,
 };
 
 router.post(

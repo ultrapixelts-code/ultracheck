@@ -343,27 +343,14 @@ const userContent = [];
 if (isTextExtracted && extractedText) {
   userContent.push({ type: "text", text: extractedText });
 }
+userContent.push({ type: "text", text: `QR_DETECTED: ${qrDetected}` });
 
 // NIENTE image_url per GPT → è inutile e rallenta
 
 
     // JSON extra solo se abbiamo analysisData
-    const extraContent = analysisData
-      ? [
-          {
-            type: "text",
-            text:
-              "Dati estratti automaticamente:\n" +
-              JSON.stringify(analysisData.data, null, 2),
-          },
-          {
-            type: "text",
-            text:
-              "Esito regole normative:\n" +
-              JSON.stringify(analysisData.rules, null, 2),
-          },
-        ]
-      : [];
+    const extraContent = [];
+
 
 
     // === ANALISI AI ===
@@ -382,10 +369,19 @@ Usa il seguente principio fondamentale:
 - Se il dato è ambiguo → è "parziale".
 - Se il dato non c'è → è "mancante".
 
-Usa il valore qrDetected passato dal server:
-- qrDetected = true  → QR presente
-- qrDetected = false → QR assente
-Non contraddire mai questo valore.
+Per il QR code:
+Nel messaggio dell’utente ricevi una riga del tipo:
+QR_DETECTED: true
+oppure:
+QR_DETECTED: false
+
+Devi usare ESATTAMENTE quel valore come verità assoluta:
+- Se QR_DETECTED: true → considera il QR presente
+- Se QR_DETECTED: false → considera il QR assente
+
+Non devi mai usare logiche tue né interpretare il testo OCR.
+Questo valore ha la precedenza totale.
+
 
 Regole rapide:
 - Denominazione: se esiste un nome vino o tipologia (es. Merlot, Collio, Ribolla, ecc.) → conforme. 

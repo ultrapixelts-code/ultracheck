@@ -10,7 +10,7 @@ const upload = multer({ dest: "/tmp" });
 // BOX DEL LOGO (coordinate in punti – pt)
 const logoBox = {
   x: 21.13,
-  y: 780.49,
+  y: 760,
   width: 113.39,
   height: 46.77,
 };

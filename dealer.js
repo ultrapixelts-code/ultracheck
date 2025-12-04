@@ -124,15 +124,25 @@ router.post(
         currentY -= size + 5;
       });
 
-      // 10) Output finale
-      const finalPDF = await pdfDoc.save();
+     // 10) Output finale
+const finalPDF = await pdfDoc.save();
 
-      res.setHeader("Content-Type", "application/pdf");
-      res.setHeader(
-        "Content-Disposition",
-        "attachment; filename=dealer_branded.pdf"
-      );
-      return res.send(Buffer.from(finalPDF));
+// Usa lo stesso nome del PDF caricato (oppure aggiungi un suffisso se vuoi)
+const originalName = req.files.file[0].originalname || "dealer_branded.pdf";
+
+// 👉 se vuoi proprio lo stesso nome:
+const downloadName = originalName;
+
+// 👉 se preferisci aggiungere un suffisso tipo "_dealer":
+// const downloadName = originalName.replace(/\.pdf$/i, "_dealer.pdf");
+
+res.setHeader("Content-Type", "application/pdf");
+res.setHeader(
+  "Content-Disposition",
+  `attachment; filename="${downloadName}"`
+);
+
+return res.send(Buffer.from(finalPDF));
     } catch (e) {
       console.error("ERRORE DEALER /brand-pdf:", e);
       res.status(500).json({

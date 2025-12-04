@@ -393,6 +393,16 @@ Regole rapide:
 - Lingua: se il testo è in italiano → conforme (default Italia).
 - Altezza/contrasto: sempre "non verificabile" (non hai visione grafica).
 
+- Lotto:
+  • considera LOTTO solo stringhe che iniziano con "L" SEGUITA SUBITO da almeno una cifra (0–9),
+    ad esempio: "L123", "L25-02", "L24334", "L2025A".
+  • dopo le cifre possono esserci lettere o trattini, ma la PRIMA cosa dopo la "L" deve essere un numero.
+  • NON considerare come lotto:
+    - stringhe dove dopo la "L" c'è un punto, uno spazio o una lettera (es: "L.PRINTED", "L PRINTED", "Lotto printed"),
+    - scritte generiche tipo "Lotto da stampare", "Lotto printed", "L. DA DEFINIRE", ecc.
+  • Se non trovi nessuna stringa che rispetta questa regola → usa "❌ mancante" per il lotto.
+
+
 Se c'è anche un solo "❌" l'etichetta diventa non conforme.
 
 

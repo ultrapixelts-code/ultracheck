@@ -17,11 +17,13 @@ import { cleanOCR } from "./cleanOCR.js";
 import { extractData } from "./extract.js";
 import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
+
+import jsQR from "jsqr";
+
+const app = express();
 import dealerRouter from "./dealer.js";
 app.use(dealerRouter);
 
-
-import jsQR from "jsqr";
 
 // ===== ZXING (VERSIONE NODE, QUELLA GIUSTA) =====
 import {

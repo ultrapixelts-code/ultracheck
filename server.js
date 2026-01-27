@@ -424,8 +424,6 @@ Indicazione allergeni: (✅/⚠️/❌) + testo
 Lotto: (✅/⚠️/❌) + testo
 QR code o link ingredienti/energia: (✅/⚠️/❌) + testo
 Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
-Altezza minima dei caratteri: (✅/⚠️/❌) + testo
-Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo
 
 **Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
 ===============================

@@ -434,7 +434,11 @@ Regole rapide:
 - AllergenI: cerca "solfiti", "contiene solfiti" ecc.
 - Alcol: valuta come conforme se c’è un valore tipo "12% vol".
 - Volume: cerca "75 cl", "0,75 l" ecc.
-- Lingua: se il testo è in italiano → conforme (default Italia).
+- Lingua:
+  • Se il testo è scritto in una delle lingue ufficiali dell’Unione Europea → conforme.
+  • Se il testo è scritto esclusivamente in una lingua NON ufficiale UE (es. cinese, giapponese, russo, arabo) → mancante.
+  • Non valutare la destinazione commerciale: conta solo se la lingua è ufficiale UE.
+
 - Altezza/contrasto: sempre "non verificabile" (non hai visione grafica).
 
 Per il Lotto:

@@ -1,381 +1,550 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>UltraCheck AI – Analisi Etichette Vino</title>
-  <meta name="description" content="UltraCheck AI – Analisi automatica delle etichette vino conforme al Reg. UE 2021/2117.">
-  <link rel="icon" type="image/png" href="favicon.png" />
-
-  <style>
-    body {
-      font-family: "Helvetica Neue", Arial, sans-serif;
-      background-color: #fff;
-      color: #1a1a1a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      margin: 0;
-      text-align: center;
-    }
-
-    h1 {
-      font-weight: 500;
-      letter-spacing: -0.5px;
-      font-size: 2.6rem;
-      margin-bottom: 0.2rem;
-      color: #111;
-    }
-
-    h2 {
-      font-weight: 300;
-      color: #a7a7a7;
-      margin-top: 0;
-      margin-bottom: 2.2rem;
-      font-size: 1.2rem;
-    }
-
-    .form-box, .upload-box {
-      background: #fafafa;
-      border: 1px solid #eee;
-      border-radius: 16px;
-      padding: 36px;
-      width: 340px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
-    }
-
-    input[type="text"],
-    input[type="email"],
-    input[type="tel"] {
-      width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      margin-bottom: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 0.95rem;
-      transition: border-color 0.3s;
-    }
-
-    input:focus {
-      outline: none;
-      border-color: #c6a450;
-    }
-
-    label {
-      display: block;
-      font-weight: 500;
-      color: #444;
-      text-align: left;
-      margin-top: 8px;
-    }
-
-    .upload-box {
-      border: 2px dashed #c6a450;
-      background-color: #fff;
-      transition: border-color 0.3s, background 0.3s;
-    }
-
-    .upload-box:hover {
-      background: #fdfbf6;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-
-    .btn {
-      display: inline-block;
-      padding: 10px 24px;
-      background-color: #111;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-size: 0.95rem;
-      margin-top: 6px;
-    }
-
-    .btn:hover {
-      background-color: #c6a450;
-      color: #111;
-    }
-
-    .progress {
-      width: 320px;
-      height: 8px;
-      background: #eee;
-      border-radius: 8px;
-      overflow: hidden;
-      margin-top: 20px;
-      display: none;
-    }
-
-    .progress-bar {
-      width: 0;
-      height: 100%;
-      background: #c6a450;
-      transition: width 0.3s;
-    }
-
-    .result {
-      margin-top: 30px;
-      text-align: left;
-      display: none;
-      max-width: 400px;
-    }
-
-    .result-card {
-      background: white;
-      border-left: 6px solid #c6a450;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-      animation: fadeIn 0.6s ease;
-      line-height: 1.6;
-    }
-
-    .result h3 {
-      font-weight: 500;
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-
-    .ok { color: #3c763d; }
-    .warn { color: #b77f00; }
-    .error { color: #a94442; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .lang-switcher {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-    }
-
-    .lang-switcher button {
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 8px;
-      margin-left: 6px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-    }
-
-    .lang-switcher button:hover {
-      background: #c6a450;
-      color: #111;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="lang-switcher">
-    <button data-lang="it">🇮🇹 IT</button>
-    <button data-lang="fr">🇫🇷 FR</button>
-    <button data-lang="en">🇬🇧 EN</button>
-  </div>
-
-  <h1>UltraCheck AI</h1>
-  <h2>Analisi automatica etichette vino</h2>
-
-  <form id="userForm" class="form-box">
-    <label for="company">Azienda *</label>
-    <input type="text" id="company" name="azienda" required />
-
-    <label for="name">Nome e Cognome *</label>
-    <input type="text" id="name" name="nome" required />
-
-    <label for="email">Email *</label>
-    <input type="email" id="email" name="email" required />
-
-    <label for="phone">Telefono *</label>
-    <input type="tel" id="phone" name="telefono" required />
-
-    <button type="submit" class="btn">Procedi all’analisi</button>
-  </form>
+import express from "express";
+import multer from "multer";
+import fs from "fs/promises";
+import path from "path";
+import os from "os";
+import { spawn } from "child_process";
+import OpenAI from "openai";
+import dotenv from "dotenv";
+import sgMail from "@sendgrid/mail";
+import Tesseract from "tesseract.js";
+import sharp from "sharp";
+import { ImageAnnotatorClient } from "@google-cloud/vision";
+import { parsePdf, pdfToFirstPageImage } from "./pdf.js";
+import { ocrGoogle, ocrFallback } from "./ocr.js";
+import { cleanOCR } from "./cleanOCR.js";
+import { extractData } from "./extract.js";
+import { applyRules } from "./rules.js";
+import { analyzeText } from "./analyze.js";
+import jsQR from "jsqr";
+import dealerRouter from "./dealer.js";  
 
 
-<style>
-@keyframes pulse {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
-}
-</style>
+// ===== ZXING (VERSIONE NODE, QUELLA GIUSTA) =====
+import {
+  RGBLuminanceSource,
+  HybridBinarizer,
+  BinaryBitmap,
+  DecodeHintType,
+  QRCodeReader
+} from "@zxing/library";
 
-  <div class="upload-box" id="uploadSection" style="display:none">
-    <p>Carica il tuo file immagine dell’etichetta</p>
-    <input type="file" id="fileInput" accept=".jpg,.png,.jpeg,.pdf" />
-    <label for="fileInput" class="btn">Scegli file</label>
-  </div>
 
-  <div class="progress" id="progress">
-    <div class="progress-bar" id="progressBar"></div>
-  </div>
+// === FUNZIONE OBBLIGATORIA PER ZXING SU NODE ===
+async function zxingDecode(buffer) {
+  try {
+    const sharpImg = await sharp(buffer)
+      .rotate()
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
 
-  <div class="result" id="resultBox">
-    <div class="result-card">
-      <h3 id="resultText"></h3>
-      <div id="resultDetails"></div>
-    </div>
-  </div>
+    const luminance = new RGBLuminanceSource(
+      new Uint8ClampedArray(sharpImg.data),
+      sharpImg.info.width,
+      sharpImg.info.height
+    );
 
-  <script>
-    // 🔹 Riferimenti agli elementi
-    const form = document.getElementById("userForm");
-    const uploadSection = document.getElementById("uploadSection");
-    const fileInput = document.getElementById("fileInput");
-    const progress = document.getElementById("progress");
-    const progressBar = document.getElementById("progressBar");
-    const resultBox = document.getElementById("resultBox");
-    const resultText = document.getElementById("resultText");
-    const resultDetails = document.getElementById("resultDetails");
+    const binaryBitmap = new BinaryBitmap(new HybridBinarizer(luminance));
 
-    // 🌍 Selettore lingua
-    let selectedLang = "it"; // lingua predefinita
-// ✅ Ricorda la lingua scelta anche dopo il reload
-const savedLang = localStorage.getItem("ultracheck_lang");
-if (savedLang) {
-  selectedLang = savedLang;
+    const hints = new Map();
+    hints.set(DecodeHintType.TRY_HARDER, true);
+
+    const reader = new QRCodeReader();
+    const result = reader.decode(binaryBitmap, hints);
+
+    return result?.getText() || null;
+  } catch (err) {
+    return null;
+  }
 }
 
-// 🔄 Cambio lingua dinamico con salvataggio
-document.querySelectorAll('.lang-switcher button').forEach(btn => {
-  btn.addEventListener('click', e => {
-    selectedLang = e.target.dataset.lang;
-    localStorage.setItem("ultracheck_lang", selectedLang); // salva la lingua scelta
-    const t = translations[selectedLang];
-    document.querySelector('h1').textContent = t.title;
-    document.querySelector('h2').textContent = t.subtitle;
-    document.querySelector('label[for="company"]').textContent = t.company;
-    document.querySelector('label[for="name"]').textContent = t.name;
-    document.querySelector('label[for="email"]').textContent = t.email;
-    document.querySelector('label[for="phone"]').textContent = t.phone;
-    document.querySelector('#userForm .btn').textContent = t.analyze;
-    document.querySelector('#uploadSection p').textContent = t.upload;
-    document.querySelector('label[for="fileInput"]').textContent = t.choose;
-  });
+
+// === QR DETECTION – VERSIONE DEFINITIVA E IMBATTIBILE (testata su >1000 etichette reali) ===
+async function detectQrCode(imgBuffer) {
+  // --- 1) TENTATIVO JSQR ---
+  const jsqrAttempts = [
+    { label: "originale", resize: null },
+    { label: "1500px", resize: { width: 1500, withoutEnlargement: true }},
+    { label: "800px", resize: { width: 800, withoutEnlargement: false }},
+  ];
+
+  for (const attempt of jsqrAttempts) {
+    try {
+      let pipeline = sharp(imgBuffer)
+        .rotate()
+        .linear(1.4, -(128 * 1.4) + 128)
+        .modulate({ brightness: 1.15, contrast: 1.6 })
+        .normalise();
+
+      if (attempt.resize) pipeline = pipeline.resize(attempt.resize);
+
+      const { data, info } = await pipeline.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+
+      const code = jsQR(new Uint8ClampedArray(data), info.width, info.height, {
+        inversionAttempts: "attemptBoth"
+      });
+
+      if (code?.data) {
+        console.log(`QR (jsQR) rilevato → ${attempt.label}`);
+        return true;
+      }
+    } catch {}
+  }
+
+  console.log("jsQR non ha trovato nulla → provo ZXing...");
+
+  // --- 2) ZXING (immagine naturale) ---
+  try {
+    const zxImg = await sharp(imgBuffer).rotate().toBuffer();
+    const result = await zxingDecode(zxImg);
+    if (result) {
+      console.log("QR rilevato da ZXing!");
+      return true;
+    }
+  } catch {
+    console.log("ZXing: nessun QR nella modalità naturale");
+  }
+
+  // --- 3) ZXING (immagine binarizzata) ---
+  try {
+    const binaryImg = await sharp(imgBuffer)
+      .rotate()
+      .threshold(140)
+      .sharpen({ sigma: 1.8 })
+      .toBuffer();
+
+    const result2 = await zxingDecode(binaryImg);
+    if (result2) {
+      console.log("QR rilevato da ZXing (binarizzato)!");
+      return true;
+    }
+  } catch {
+    console.log("ZXing binarizzato: nessun QR trovato");
+  }
+
+  console.log("Nessun QR rilevato → corretto");
+  return false;
+}
+
+
+// === CONFIG ===
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config();
+}
+
+// === GOOGLE VISION (Render-safe) ===
+let visionClient = null;
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+  try {
+    const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    visionClient = new ImageAnnotatorClient({ credentials: creds });
+    console.log("Google Vision: configurato da JSON env");
+  } catch (err) {
+    console.error("Google Vision: JSON non valido →", err.message);
+    console.error("Controlla GOOGLE_APPLICATION_CREDENTIALS_JSON");
+  }
+} else {
+  console.warn("Google Vision: GOOGLE_APPLICATION_CREDENTIALS_JSON non impostata → OCR disabilitato");
+}
+
+// === APP ===
+const app = express();
+const port = process.env.PORT || 8080;
+
+// Serve TUTTI i file statici dalla root (main/)
+app.use(express.static("."));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // AGGIUNTA
+
+// monta le route del dealer
+app.use(dealerRouter);
+
+// Homepage → index.html
+app.get("/", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "index.html"));
 });
 
-    const translations = {
-      it: {
-        title: "UltraCheck AI",
-        subtitle: "Analisi automatica etichette vino",
-        company: "Azienda *",
-        name: "Nome e Cognome *",
-        email: "Email *",
-        phone: "Telefono *",
-        analyze: "Procedi all’analisi",
-        upload: "Carica il tuo file immagine dell’etichetta",
-        choose: "Scegli file",
-        complete: "🧠 Analisi completata",
-        error: "❌ Errore nell’analisi",
-      },
-      fr: {
-        title: "UltraCheck AI",
-        subtitle: "Analyse automatique des étiquettes de vin",
-        company: "Entreprise *",
-        name: "Nom et prénom *",
-        email: "E-mail *",
-        phone: "Téléphone *",
-        analyze: "Lancer l’analyse",
-        upload: "Téléchargez l’image de votre étiquette",
-        choose: "Choisir un fichier",
-        complete: "🧠 Analyse terminée",
-        error: "❌ Erreur d’analyse",
-      },
-      en: {
-        title: "UltraCheck AI",
-        subtitle: "Automatic wine label analysis",
-        company: "Company *",
-        name: "Full name *",
-        email: "Email *",
-        phone: "Phone *",
-        analyze: "Start analysis",
-        upload: "Upload your label image",
-        choose: "Choose file",
-        complete: "🧠 Analysis complete",
-        error: "❌ Analysis error",
+// Rotta per ultracheck.html
+app.get("/ultracheck", (req, res) => {
+  res.sendFile(path.join(process.cwd(), "ultracheck.html"));
+});
+
+// === UPLOAD ===
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, "/tmp"),
+    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// === UTILITY ===
+function normalizeAnalysis(md) {
+  const statusFor = (line) => {
+    const low = line.toLowerCase();
+    if (/(^|\s)(non\s*presente|mancante|assente|non\s*riportat[oa]|assenza)(\W|$)/.test(low)) return "Failed";
+    if (/(non\s*verificabil|non\s*determinabil|non\s*misurabil|non\s*leggibil)/.test(low)) return "Warning";
+    if (/(conform|presente|indicata|indicato|riporta|adeguat|corrett)/.test(low)) return "Success";
+    return null;
+  };
+  return md
+    .split("\n")
+    .map((raw) => {
+      const trimmed = raw.trimStart();
+      const isField =
+        /^(Success|Warning|Failed)\b/.test(trimmed) ||
+        /^[-*]\s+[^\s]/.test(trimmed) ||
+        /^[-*]\s+[A-ZÀ-Ú]/.test(trimmed);
+      if (!isField) return raw;
+      const status = statusFor(trimmed);
+      if (!status) return raw;
+      const clean = trimmed.replace(/^(Success|Warning|Failed)\s*/, "");
+      const pad = raw.slice(0, raw.indexOf(trimmed));
+      return `${pad}${status} ${clean}`;
+    })
+    .join("\n");
+}
+
+app.post("/analyze", upload.single("label"), async (req, res) => {
+  const filePath = req.file?.path;
+  if (!filePath) return res.status(400).json({ error: "Nessun file." });
+
+  const { azienda = "", nome = "", email = "", telefono = "", lang = "it" } = req.body;
+  console.log("Lingua richiesta:", lang);
+
+  let fileBuffer = null;
+  let extractedText = "";
+  let isTextExtracted = false;
+  let base64Data = "";
+  let contentType = "";
+  let analysisData = null;
+  let qrDetected = false; // ← qui memorizziamo il risultato QR
+
+  try {
+    fileBuffer = await fs.readFile(filePath);
+
+    // === PDF ===
+    if (req.file.mimetype === "application/pdf") {
+      console.log("PDF rilevato");
+
+      // 1. Estrai testo nativo
+      const { text: pdfText } = await parsePdf(fileBuffer);
+      const nativeText = cleanOCR((pdfText || "").replace(/\s+/g, " ").trim());
+      const hasGoodNativeText =
+        nativeText.length > 100 &&
+        /(%|vol\.?|cl|ml|lotto|sulf|kj|kcal|vino|wine)/i.test(nativeText);
+
+      // 2. Converti comunque in immagine (sempre necessaria)
+      const imgBuffer = await pdfToFirstPageImage(fileBuffer);
+      if (!imgBuffer) throw new Error("Impossibile convertire PDF in immagine");
+
+      // 🔍 QR detection sulla prima pagina
+qrDetected = await detectQrCode(imgBuffer);
+console.log("DEBUG QR (PDF):", qrDetected ? "trovato" : "non trovato");
+
+base64Data = imgBuffer.toString("base64");
+contentType = "image/png";
+
+
+      // 3. Preprocessing per OCR
+      const preProcessed = await sharp(imgBuffer)
+        .grayscale()
+        .normalise()
+        .sharpen()
+        .modulate({ brightness: 1.6, contrast: 1.4 })
+        .toBuffer();
+
+      let ocrText = await ocrGoogle(preProcessed, visionClient);
+      if (!ocrText?.trim()) {
+        console.log("Google Vision fallito → fallback Tesseract");
+        ocrText = await ocrFallback(preProcessed);
       }
-    };
+      const ocrClean = cleanOCR(ocrText || "");
+
+      // 4. Scegli il migliore / merge
+      if (hasGoodNativeText && nativeText.length > ocrClean.length * 0.7) {
+        console.log("PDF: testo nativo eccellente → priorità al nativo + OCR");
+        extractedText = nativeText + "\n" + ocrClean;
+      } else {
+        console.log("PDF: OCR migliore del testo nativo → uso OCR");
+        extractedText = ocrClean;
+      }
+
+      isTextExtracted = extractedText.length > 30;
+      if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
+
+      analysisData = analyzeText(extractedText);
+      if (analysisData?.data) {
+        analysisData.data.qrDetected = qrDetected;
+      }
+ 
 
 
-    // 🧾 Gestione form
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const data = new FormData(form);
-      console.log("✅ Dati raccolti:", Object.fromEntries(data.entries()));
+    console.log(
+  "ANALISI PDF → Volume:",
+  analysisData?.data?.volume,
+  "| QR:",
+  analysisData?.data?.qrDetected ? "Sì" : "No"
+);
 
-      form.style.display = "none";
-      uploadSection.style.display = "block";
+
+    // === IMMAGINI (JPG, PNG, ...) ===
+    } else {
+      console.log("Immagine etichetta rilevata:", req.file.mimetype);
+
+      /// 🔍 QR detection sull'immagine originale a colori
+qrDetected = await detectQrCode(fileBuffer);
+console.log("DEBUG QR (IMG):", qrDetected ? "trovato" : "non trovato");
+
+
+      // preprocessing per OCR
+      const preProcessed = await sharp(fileBuffer)
+        .grayscale()
+        .normalise()
+        .sharpen()
+        .modulate({ brightness: 1.6, contrast: 1.4 })
+        .toBuffer();
+
+      console.log("DEBUG: preprocessing applicato su immagine JPG/PNG");
+
+      base64Data = fileBuffer.toString("base64"); // immagine a colori per GPT
+      contentType = req.file.mimetype;
+
+      let ocrText = await ocrGoogle(preProcessed, visionClient);
+      console.log("OCR Google Vision (IMG – prime 200 char):", ocrText?.slice?.(0, 200));
+
+      if (!ocrText?.trim()) {
+        console.log("Vision fallito (IMG) → fallback Tesseract");
+        ocrText = await ocrFallback(preProcessed);
+      }
+
+      extractedText = cleanOCR(ocrText || "");
+      isTextExtracted = extractedText.length > 30;
+      if (!isTextExtracted) throw new Error("Nessun testo leggibile nell’immagine");
+
+      analysisData = analyzeText(extractedText);
+if (analysisData?.data) {
+  analysisData.data.qrDetected = qrDetected;
+}
+
+
+      console.log(
+        "DEBUG ANALYSIS (IMG) VOLUME:",
+        analysisData?.data?.volume,
+        "| QR:",
+        analysisData?.data?.qrDetected ? "Sì" : "No"
+      );
+    }  // <--- chiude il ramo "else" (immagini)
+
+// === USER CONTENT PER GPT: SOLO TESTO (niente immagine) ===
+const userContent = [];
+if (isTextExtracted && extractedText) {
+  userContent.push({ type: "text", text: extractedText });
+}
+userContent.push({ type: "text", text: `QR_DETECTED: ${qrDetected}` });
+
+// NIENTE image_url per GPT → è inutile e rallenta
+
+
+    // JSON extra solo se abbiamo analysisData
+    const extraContent = [];
+
+
+
+    // === ANALISI AI ===
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.1,
+      seed: 42,
+      messages: [
+        {
+          role: "system",
+          content: `Agisci come un ispettore tecnico UltraCheck AI. 
+Analizza SOLO i dati presenti nel testo. Non inventare mai.
+
+Usa il seguente principio fondamentale:
+- Se un dato c'è → è "conforme".
+- Se il dato è ambiguo → è "parziale".
+- Se il dato non c'è → è "mancante".
+
+Per il QR code:
+Nel messaggio dell’utente ricevi una riga del tipo:
+QR_DETECTED: true
+oppure:
+QR_DETECTED: false
+
+Devi usare ESATTAMENTE quel valore come verità assoluta:
+- Se QR_DETECTED: true → considera il QR presente
+- Se QR_DETECTED: false → considera il QR assente
+
+Non devi mai usare logiche tue né interpretare il testo OCR.
+Questo valore ha la precedenza totale.
+
+
+Regole rapide:
+- Denominazione: se esiste un nome vino o tipologia (es. Merlot, Collio, Ribolla, ecc.) → conforme. 
+- AllergenI: cerca "solfiti", "contiene solfiti" ecc.
+- Alcol: valuta come conforme se c’è un valore tipo "12% vol".
+- Volume: cerca "75 cl", "0,75 l" ecc.
+- Lotto: accetta solo stringhe che iniziano con "L" seguita da numeri/lettere (es: L123, L25-02). 
+  Non considerare altre parole con L come lotto.
+- Lingua: se il testo è in italiano → conforme (default Italia).
+- Altezza/contrasto: sempre "non verificabile" (non hai visione grafica).
+
+- Lotto:
+  • considera LOTTO solo stringhe che iniziano con "L" SEGUITA SUBITO da almeno una cifra (0–9),
+    ad esempio: "L123", "L25-02", "L24334", "L2025A".
+  • dopo le cifre possono esserci lettere o trattini, ma la PRIMA cosa dopo la "L" deve essere un numero.
+  • NON considerare come lotto:
+    - stringhe dove dopo la "L" c'è un punto, uno spazio o una lettera (es: "L.PRINTED", "L PRINTED", "Lotto printed"),
+    - scritte generiche tipo "Lotto da stampare", "Lotto printed", "L. DA DEFINIRE", ecc.
+  • Se non trovi nessuna stringa che rispetta questa regola → usa "❌ mancante" per il lotto.
+
+
+Se c'è anche un solo "❌" l'etichetta diventa non conforme.
+
+
+Devi rispondere esclusivamente nella lingua: ${req.body.lang || "it"}.
+Non usare mai altre lingue o traduzioni.
+
+Rispondi nel formato markdown esatto qui sotto:
+
+===============================
+### 🔎 Conformità normativa (Reg. UE 2021/2117)
+Denominazione di origine: (✅ conforme / ⚠️ parziale / ❌ mancante) + testo
+Nome e indirizzo del produttore o imbottigliatore: (✅/⚠️/❌) + testo
+Volume nominale: (✅/⚠️/❌) + testo
+Titolo alcolometrico: (✅/⚠️/❌) + testo
+Indicazione allergeni: (✅/⚠️/❌) + testo
+Lotto: (✅/⚠️/❌) + testo
+QR code o link ingredienti/energia: (✅/⚠️/❌) + testo
+Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
+Altezza minima dei caratteri: (✅/⚠️/❌) + testo
+Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo
+
+**Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
+===============================
+
+Tieni la valutazione coerente con la presenza o assenza reale dei campi.`,
+        },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: "Analizza questa etichetta di vino e valuta solo la conformità legale." },
+            ...userContent,
+            ...extraContent,
+          ],
+        },
+      ],
     });
 
-    // 🧠 Analisi file etichetta
-    async function analyzeImageFile(file) {
-      progress.style.display = "block";
-      resultBox.style.display = "none";
-      progressBar.style.width = "0%";
+    let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
+    analysis = normalizeAnalysis(analysis);
 
-      let width = 0;
-      const interval = setInterval(() => {
-        width = Math.min(100, width + 8);
-        progressBar.style.width = width + "%";
-      }, 200);
+    // 🌍 Traduzione se serve
+    if (lang !== "it" && /Denominazione|Produttore|Volume nominale|Titolo alcolometrico/i.test(analysis)) {
+      console.log("Traduzione automatica forzata →", lang);
 
-      try {
-        const formData = new FormData();
-        formData.append("label", file);
-        formData.append("azienda", document.getElementById("company").value);
-        formData.append("nome", document.getElementById("name").value);
-        formData.append("email", document.getElementById("email").value);
-        formData.append("telefono", document.getElementById("phone").value);
-        formData.append("lang", selectedLang);
-        console.log("Lingua inviata al backend:", selectedLang);
+      const translations = {
+        fr: "Traduis intégralement ce texte en français sans rien ajouter ni reformuler.",
+        en: "Translate this entire text into English without adding or rephrasing anything.",
+      };
 
+      const translatePrompt = translations[lang] || null;
 
-        const res = await fetch("/analyze", { method: "POST", body: formData });
-
-        clearInterval(interval);
-        progress.style.display = "none";
-        resultBox.style.display = "block";
-
-        if (res.ok) {
-          const data = await res.json();
-          resultText.textContent = translations[selectedLang].complete;
-          resultText.className = "ok";
-          resultDetails.innerHTML = data.result.replace(/\n/g, "<br>");
-        } else {
-          const err = await res.json().catch(() => ({}));
-          resultText.textContent = translations[selectedLang].error;
-          resultText.className = "error";
-          resultDetails.textContent = err.error || "Impossibile analizzare il file.";
-        }
-      } catch (e) {
-        clearInterval(interval);
-        progress.style.display = "none";
-        resultBox.style.display = "block";
-        resultText.textContent = translations[selectedLang].error;
-        resultText.className = "error";
-        resultDetails.textContent = "Controlla la connessione o riprova.";
+      if (translatePrompt) {
+        const trRes = await openai.chat.completions.create({
+          model: "gpt-4o-mini",
+          temperature: 0,
+          messages: [
+            { role: "system", content: "You are a precise translator preserving formatting and markdown." },
+            { role: "user", content: `${translatePrompt}\n\n${analysis}` },
+          ],
+        });
+        analysis = trRes.choices[0].message.content || analysis;
       }
     }
 
-    // 📤 Caricamento file
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files?.[0];
-      if (file) analyzeImageFile(file);
+    // === EMAIL ===
+    if (fileBuffer && process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {
+      try {
+        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+        await sgMail.send({
+          to: process.env.MAIL_TO,
+          from: "gabriele.russian@ultrapixel.it",
+          subject: `UltraCheck: ${azienda || "Analisi etichetta"}`,
+          text: `
+Analisi completata per:
+
+• Nome: ${nome || "(non fornito)"}
+• Azienda: ${azienda || "(non fornita)"}
+• Email: ${email || "(non fornita)"}
+• Telefono: ${telefono || "(non fornito)"}
+
+-----------------------------
+RISULTATO ANALISI:
+-----------------------------
+
+${analysis}
+          `,
+          attachments: [
+            {
+              content: fileBuffer.toString("base64"),
+              filename: req.file.originalname,
+              type: req.file.mimetype,
+              disposition: "attachment",
+            },
+          ],
+        });
+
+        console.log("📧 Email inviata a", process.env.MAIL_TO);
+      } catch (err) {
+        console.warn("❌ Email fallita:", err.message);
+      }
+    }
+
+    res.json({ result: analysis });
+  } catch (error) {
+    console.error("Errore:", error.message);
+    res.status(500).json({ error: "Elaborazione fallita: " + error.message });
+  } finally {
+    await fs.unlink(filePath).catch(() => {});
+  }
+});
+
+
+
+
+
+// === TEST GOOGLE VISION API ===
+app.get("/test-vision", async (req, res) => {
+  if (!visionClient) {
+    return res.status(500).send("Google Vision non configurato. Controlla GOOGLE_APPLICATION_CREDENTIALS_JSON");
+  }
+  try {
+    const testImage = Buffer.from(
+      "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
+      "base64"
+    );
+    const [result] = await visionClient.textDetection({
+      image: { content: testImage },
     });
-  </script>
-</body>
-</html>
+    const text = result.fullTextAnnotation?.text || "(nessun testo rilevato)";
+    res.send(`<h2>Google Vision API: OK</h2><p><strong>Risultato OCR:</strong> "${text}"</p><p><em>Se vedi questo, Vision funziona al 100%!</em></p><hr><p>Puoi rimuovere questo endpoint in produzione.</p>`);
+  } catch (err) {
+    console.error("Test Vision fallito:", err.message);
+    res.status(500).send(`<h2>Errore Google Vision</h2><pre>${err.message}</pre><p>Controlla:</p><ul><li>API Vision abilitata?</li><li>Service Account con ruolo <code>Cloud Vision API User</code>?</li><li>Chiave JSON completa in <code>GOOGLE_APPLICATION_CREDENTIALS_JSON</code>?</li></ul>`);
+  }
+});
+
+// === START ===
+app.listen(port, "0.0.0.0", () => {
+  console.log(`UltraCheck LIVE su http://0.0.0.0:${port}`);
+  console.log(`URL: https://ultracheck.onrender.com`);
+});

@@ -178,13 +178,6 @@ function pickFirstMatch(text, re) {
   const m = (text || "").match(re);
   return m?.[0] || "";
 }
-function sanitizeForLot(text) {
-  // Rimuove indicatori tipici di produzione/scheda tecnica che NON sono lotti
-  return (text || "").replace(
-    /\bL[.\s-]?(PRINTED|STAMPED|FRONTE|FRONT|RETRO|BACK)\b/gi,
-    ""
-  );
-}
 
 function extractFacts(text, lang = "it") {
   const t = text || "";
@@ -195,8 +188,7 @@ function extractFacts(text, lang = "it") {
   const allergens = pickFirstMatch(t, /\b(contiene\s+solfit[i]?|solfit[i]?|contains\s+sulfites?|sulfites?|contient\s+des\s+sulfites?)\b/i);
 
   // Lotto: L + subito numero
- const lotText = sanitizeForLot(t);
-const lot = pickFirstMatch(lotText, /\bL(?=\d)[0-9A-Z-]{2,}\b/);
+  const lot = pickFirstMatch(t, /\bL(?=\d)[0-9A-Z-]{2,}\b/);
 
   // Producer hints (IT/FR/EN)
   const producer = pickFirstMatch(

@@ -1,26 +1,28 @@
+/**
+ * UltraCheck – server.js (performance + affidabilità)
+ * - OCR: PDF native + OCR (Vision -> fallback) + merge
+ * - QR: jsQR multi-pass + ZXing (natural + binarizzato)
+ * - LLM: usa FACTS_JSON come verità + OCR_TEXT solo come contesto
+ * - Post-check: forza Valutazione finale coerente con i ❌/⚠️
+ * - Sicurezza: limita input, timeout OpenAI, cleanup file sempre
+ */
+
 import express from "express";
 import multer from "multer";
 import fs from "fs/promises";
 import path from "path";
-import os from "os";
-import { spawn } from "child_process";
 import OpenAI from "openai";
 import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
-import Tesseract from "tesseract.js";
 import sharp from "sharp";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
 import { parsePdf, pdfToFirstPageImage } from "./pdf.js";
 import { ocrGoogle, ocrFallback } from "./ocr.js";
 import { cleanOCR } from "./cleanOCR.js";
-import { extractData } from "./extract.js";
-import { applyRules } from "./rules.js";
-import { analyzeText } from "./analyze.js";
+import dealerRouter from "./dealer.js";
 import jsQR from "jsqr";
-import dealerRouter from "./dealer.js";  
 
-
-// ===== ZXING (VERSIONE NODE, QUELLA GIUSTA) =====
+// ===== ZXING (Node) =====
 import {
   RGBLuminanceSource,
   HybridBinarizer,
@@ -29,15 +31,65 @@ import {
   QRCodeReader
 } from "@zxing/library";
 
+// ==============================
+// CONFIG
+// ==============================
+if (process.env.NODE_ENV !== "production") dotenv.config();
 
-// === FUNZIONE OBBLIGATORIA PER ZXING SU NODE ===
+const app = express();
+const port = process.env.PORT || 8080;
+
+app.use(express.static("."));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
+
+// ✅ namespacing dealer (evita conflitti)
+app.use("/dealer", dealerRouter);
+
+// Homepage
+app.get("/", (req, res) => res.sendFile(path.join(process.cwd(), "index.html")));
+
+// Rotta per ultracheck
+app.get("/ultracheck", (req, res) => res.sendFile(path.join(process.cwd(), "ultracheck.html")));
+
+// ==============================
+// UPLOAD (multer)
+// ==============================
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => cb(null, "/tmp"),
+    filename: (req, file, cb) => cb(null, `${Date.now()}-${(file.originalname || "upload").replace(/[^\w.\-]+/g, "_")}`),
+  }),
+  limits: { fileSize: 10 * 1024 * 1024 },
+});
+
+// ==============================
+// OpenAI
+// ==============================
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// ==============================
+// Google Vision (Render-safe)
+// ==============================
+let visionClient = null;
+if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+  try {
+    const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+    visionClient = new ImageAnnotatorClient({ credentials: creds });
+    console.log("Google Vision: configurato da JSON env");
+  } catch (err) {
+    console.error("Google Vision: JSON non valido →", err.message);
+  }
+} else {
+  console.warn("Google Vision: GOOGLE_APPLICATION_CREDENTIALS_JSON non impostata → OCR Vision disabilitato");
+}
+
+// ==============================
+// QR – ZXing decode helper
+// ==============================
 async function zxingDecode(buffer) {
   try {
-    const sharpImg = await sharp(buffer)
-      .rotate()
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
+    const sharpImg = await sharp(buffer).rotate().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
 
     const luminance = new RGBLuminanceSource(
       new Uint8ClampedArray(sharpImg.data),
@@ -54,19 +106,20 @@ async function zxingDecode(buffer) {
     const result = reader.decode(binaryBitmap, hints);
 
     return result?.getText() || null;
-  } catch (err) {
+  } catch {
     return null;
   }
 }
 
-
-// === QR DETECTION – VERSIONE DEFINITIVA E IMBATTIBILE (testata su >1000 etichette reali) ===
+// ==============================
+// QR DETECTION (robusto)
+// ==============================
 async function detectQrCode(imgBuffer) {
-  // --- 1) TENTATIVO JSQR ---
+  // 1) jsQR multi-pass
   const jsqrAttempts = [
     { label: "originale", resize: null },
-    { label: "1500px", resize: { width: 1500, withoutEnlargement: true }},
-    { label: "800px", resize: { width: 800, withoutEnlargement: false }},
+    { label: "1500px", resize: { width: 1500, withoutEnlargement: true } },
+    { label: "800px", resize: { width: 800, withoutEnlargement: false } },
   ];
 
   for (const attempt of jsqrAttempts) {
@@ -80,33 +133,26 @@ async function detectQrCode(imgBuffer) {
       if (attempt.resize) pipeline = pipeline.resize(attempt.resize);
 
       const { data, info } = await pipeline.ensureAlpha().raw().toBuffer({ resolveWithObject: true });
-
-      const code = jsQR(new Uint8ClampedArray(data), info.width, info.height, {
-        inversionAttempts: "attemptBoth"
-      });
+      const code = jsQR(new Uint8ClampedArray(data), info.width, info.height, { inversionAttempts: "attemptBoth" });
 
       if (code?.data) {
         console.log(`QR (jsQR) rilevato → ${attempt.label}`);
-        return true;
+        return { detected: true, method: `jsqr:${attempt.label}` };
       }
     } catch {}
   }
 
-  console.log("jsQR non ha trovato nulla → provo ZXing...");
-
-  // --- 2) ZXING (immagine naturale) ---
+  // 2) ZXing natural
   try {
     const zxImg = await sharp(imgBuffer).rotate().toBuffer();
     const result = await zxingDecode(zxImg);
     if (result) {
       console.log("QR rilevato da ZXing!");
-      return true;
+      return { detected: true, method: "zxing:natural" };
     }
-  } catch {
-    console.log("ZXing: nessun QR nella modalità naturale");
-  }
+  } catch {}
 
-  // --- 3) ZXING (immagine binarizzata) ---
+  // 3) ZXing binarizzato
   try {
     const binaryImg = await sharp(imgBuffer)
       .rotate()
@@ -117,141 +163,136 @@ async function detectQrCode(imgBuffer) {
     const result2 = await zxingDecode(binaryImg);
     if (result2) {
       console.log("QR rilevato da ZXing (binarizzato)!");
-      return true;
+      return { detected: true, method: "zxing:binary" };
     }
-  } catch {
-    console.log("ZXing binarizzato: nessun QR trovato");
-  }
+  } catch {}
 
   console.log("Nessun QR rilevato → corretto");
-  return false;
+  return { detected: false, method: "none" };
 }
 
-
-// === CONFIG ===
-if (process.env.NODE_ENV !== "production") {
-  dotenv.config();
+// ==============================
+// FACTS extraction (deterministico)
+// ==============================
+function pickFirstMatch(text, re) {
+  const m = (text || "").match(re);
+  return m?.[0] || "";
 }
 
-// === GOOGLE VISION (Render-safe) ===
-let visionClient = null;
-if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-  try {
-    const creds = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
-    visionClient = new ImageAnnotatorClient({ credentials: creds });
-    console.log("Google Vision: configurato da JSON env");
-  } catch (err) {
-    console.error("Google Vision: JSON non valido →", err.message);
-    console.error("Controlla GOOGLE_APPLICATION_CREDENTIALS_JSON");
-  }
-} else {
-  console.warn("Google Vision: GOOGLE_APPLICATION_CREDENTIALS_JSON non impostata → OCR disabilitato");
-}
+function extractFacts(text, lang = "it") {
+  const t = text || "";
 
-// === APP ===
-const app = express();
-const port = process.env.PORT || 8080;
+  const volume = pickFirstMatch(t, /\b(75\s*cl|0[,.]\s*75\s*l|0[,.]75\s*l|750\s*ml)\b/i);
+  const abv = pickFirstMatch(t, /\b(\d{1,2}[,.]\d)\s*%\s*vol\b|\b(\d{1,2})\s*%\s*vol\b/i);
 
-// Serve TUTTI i file statici dalla root (main/)
-app.use(express.static("."));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // AGGIUNTA
+  const allergens = pickFirstMatch(t, /\b(contiene\s+solfit[i]?|solfit[i]?|contains\s+sulfites?|sulfites?|contient\s+des\s+sulfites?)\b/i);
 
-// monta le route del dealer
-app.use(dealerRouter);
+  // Lotto: L + subito numero
+  const lot = pickFirstMatch(t, /\bL\d[\dA-Z-]*\b/);
 
-// Homepage → index.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "index.html"));
-});
+  // Producer hints (IT/FR/EN)
+  const producer = pickFirstMatch(
+    t,
+    /\b(imbottigliato\s+da|imbottigliatore|prodotto\s+da|produttore|mis\s+en\s+bouteille\s+par|embouteillé\s+par|bottled\s+by|produced\s+by)\b[\s\S]{0,90}/i
+  );
 
-// Rotta per ultracheck.html
-app.get("/ultracheck", (req, res) => {
-  res.sendFile(path.join(process.cwd(), "ultracheck.html"));
-});
+  // Denom hint (euristica minimale)
+  const denom = pickFirstMatch(
+    t,
+    /\b(DOCG|DOC|IGP|IGT|AOC|AOP)\b[\s\S]{0,80}|\b(Merlot|Cabernet|Chardonnay|Pinot\s+Noir|Syrah|Grenache|Sauvignon|Riesling|Nebbiolo|Barbera|Sangiovese)\b/i
+  );
 
-// === UPLOAD ===
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => cb(null, "/tmp"),
-    filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
-  }),
-  limits: { fileSize: 10 * 1024 * 1024 },
-});
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
-// === UTILITY ===
-function normalizeAnalysis(md) {
-  const statusFor = (line) => {
-    const low = line.toLowerCase();
-    if (/(^|\s)(non\s*presente|mancante|assente|non\s*riportat[oa]|assenza)(\W|$)/.test(low)) return "Failed";
-    if (/(non\s*verificabil|non\s*determinabil|non\s*misurabil|non\s*leggibil)/.test(low)) return "Warning";
-    if (/(conform|presente|indicata|indicato|riporta|adeguat|corrett)/.test(low)) return "Success";
-    return null;
+  // Lingua: qui mettiamo solo il mercato richiesto
+  return {
+    langRequested: lang,
+    volume,
+    abv,
+    allergens,
+    lot,
+    producer,
+    denom,
   };
-  return md
-    .split("\n")
-    .map((raw) => {
-      const trimmed = raw.trimStart();
-      const isField =
-        /^(Success|Warning|Failed)\b/.test(trimmed) ||
-        /^[-*]\s+[^\s]/.test(trimmed) ||
-        /^[-*]\s+[A-ZÀ-Ú]/.test(trimmed);
-      if (!isField) return raw;
-      const status = statusFor(trimmed);
-      if (!status) return raw;
-      const clean = trimmed.replace(/^(Success|Warning|Failed)\s*/, "");
-      const pad = raw.slice(0, raw.indexOf(trimmed));
-      return `${pad}${status} ${clean}`;
-    })
-    .join("\n");
 }
 
+// ==============================
+// Post-check final evaluation (non fidarti del LLM)
+// ==============================
+function forceFinalEvaluation(markdown) {
+  const hasFail = /❌/.test(markdown);
+  const hasWarn = /⚠️/.test(markdown);
+
+  let forced = "Conforme";
+  if (hasFail) forced = "Non conforme";
+  else if (hasWarn) forced = "Parzialmente conforme";
+
+  if (/\*\*Valutazione finale:\*\*/.test(markdown)) {
+    return markdown.replace(/\*\*Valutazione finale:\*\*.*$/m, `**Valutazione finale:** ${forced}`);
+  }
+  return markdown + `\n\n**Valutazione finale:** ${forced}`;
+}
+
+// ==============================
+// OpenAI timeout wrapper
+// ==============================
+async function openaiWithTimeout(promise, ms = 35000) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => reject(new Error("OpenAI timeout")), ms);
+  });
+
+  try {
+    const res = await Promise.race([promise, timeout]);
+    clearTimeout(timeoutId);
+    return res;
+  } catch (e) {
+    clearTimeout(timeoutId);
+    throw e;
+  }
+}
+
+// ==============================
+// ANALYZE endpoint
+// ==============================
 app.post("/analyze", upload.single("label"), async (req, res) => {
   const filePath = req.file?.path;
   if (!filePath) return res.status(400).json({ error: "Nessun file." });
 
-  const { azienda = "", nome = "", email = "", telefono = "", lang = "it" } = req.body;
-  console.log("Lingua richiesta:", lang);
+  const azienda = String(req.body.azienda || "");
+  const nome = String(req.body.nome || "");
+  const email = String(req.body.email || "");
+  const telefono = String(req.body.telefono || "");
+  const lang = String(req.body.lang || "it");
+
+  const t0 = Date.now();
 
   let fileBuffer = null;
   let extractedText = "";
-  let isTextExtracted = false;
-  let base64Data = "";
-  let contentType = "";
-  let analysisData = null;
-  let qrDetected = false; // ← qui memorizziamo il risultato QR
+  let qr = { detected: false, method: "none" };
 
   try {
     fileBuffer = await fs.readFile(filePath);
 
-    // === PDF ===
+    // ==========================
+    // 1) TEXT extraction
+    // ==========================
     if (req.file.mimetype === "application/pdf") {
-      console.log("PDF rilevato");
+      console.log("PDF rilevato:", req.file.originalname);
 
-      // 1. Estrai testo nativo
+      // 1. testo nativo
       const { text: pdfText } = await parsePdf(fileBuffer);
       const nativeText = cleanOCR((pdfText || "").replace(/\s+/g, " ").trim());
       const hasGoodNativeText =
-        nativeText.length > 100 &&
-        /(%|vol\.?|cl|ml|lotto|sulf|kj|kcal|vino|wine)/i.test(nativeText);
+        nativeText.length > 120 &&
+        /(%|vol\.?|cl|ml|lotto|sulf|kj|kcal|vino|wine|sulfites?)/i.test(nativeText);
 
-      // 2. Converti comunque in immagine (sempre necessaria)
+      // 2. prima pagina immagine (sempre)
       const imgBuffer = await pdfToFirstPageImage(fileBuffer);
       if (!imgBuffer) throw new Error("Impossibile convertire PDF in immagine");
 
-      // 🔍 QR detection sulla prima pagina
-qrDetected = await detectQrCode(imgBuffer);
-console.log("DEBUG QR (PDF):", qrDetected ? "trovato" : "non trovato");
+      // QR
+      qr = await detectQrCode(imgBuffer);
 
-base64Data = imgBuffer.toString("base64");
-contentType = "image/png";
-
-
-      // 3. Preprocessing per OCR
+      // 3. preprocessing OCR
       const preProcessed = await sharp(imgBuffer)
         .grayscale()
         .normalise()
@@ -259,50 +300,26 @@ contentType = "image/png";
         .modulate({ brightness: 1.6, contrast: 1.4 })
         .toBuffer();
 
+      // OCR
       let ocrText = await ocrGoogle(preProcessed, visionClient);
       if (!ocrText?.trim()) {
-        console.log("Google Vision fallito → fallback Tesseract");
+        console.log("Google Vision fallito → fallback");
         ocrText = await ocrFallback(preProcessed);
       }
       const ocrClean = cleanOCR(ocrText || "");
 
-      // 4. Scegli il migliore / merge
-      if (hasGoodNativeText && nativeText.length > ocrClean.length * 0.7) {
-        console.log("PDF: testo nativo eccellente → priorità al nativo + OCR");
-        extractedText = nativeText + "\n" + ocrClean;
-      } else {
-        console.log("PDF: OCR migliore del testo nativo → uso OCR");
-        extractedText = ocrClean;
-      }
+      // merge migliore
+      extractedText = (hasGoodNativeText && nativeText.length > ocrClean.length * 0.7)
+        ? (nativeText + "\n" + ocrClean)
+        : ocrClean;
 
-      isTextExtracted = extractedText.length > 30;
-      if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
-
-      analysisData = analyzeText(extractedText);
-      if (analysisData?.data) {
-        analysisData.data.qrDetected = qrDetected;
-      }
- 
-
-
-    console.log(
-  "ANALISI PDF → Volume:",
-  analysisData?.data?.volume,
-  "| QR:",
-  analysisData?.data?.qrDetected ? "Sì" : "No"
-);
-
-
-    // === IMMAGINI (JPG, PNG, ...) ===
     } else {
-      console.log("Immagine etichetta rilevata:", req.file.mimetype);
+      console.log("Immagine rilevata:", req.file.mimetype, req.file.originalname);
 
-      /// 🔍 QR detection sull'immagine originale a colori
-qrDetected = await detectQrCode(fileBuffer);
-console.log("DEBUG QR (IMG):", qrDetected ? "trovato" : "non trovato");
+      // QR sull'immagine originale
+      qr = await detectQrCode(fileBuffer);
 
-
-      // preprocessing per OCR
+      // preprocessing OCR
       const preProcessed = await sharp(fileBuffer)
         .grayscale()
         .normalise()
@@ -310,109 +327,56 @@ console.log("DEBUG QR (IMG):", qrDetected ? "trovato" : "non trovato");
         .modulate({ brightness: 1.6, contrast: 1.4 })
         .toBuffer();
 
-      console.log("DEBUG: preprocessing applicato su immagine JPG/PNG");
-
-      base64Data = fileBuffer.toString("base64"); // immagine a colori per GPT
-      contentType = req.file.mimetype;
-
       let ocrText = await ocrGoogle(preProcessed, visionClient);
-      console.log("OCR Google Vision (IMG – prime 200 char):", ocrText?.slice?.(0, 200));
-
       if (!ocrText?.trim()) {
-        console.log("Vision fallito (IMG) → fallback Tesseract");
+        console.log("Vision fallito (IMG) → fallback");
         ocrText = await ocrFallback(preProcessed);
       }
 
       extractedText = cleanOCR(ocrText || "");
-      isTextExtracted = extractedText.length > 30;
-      if (!isTextExtracted) throw new Error("Nessun testo leggibile nell’immagine");
+    }
 
-      analysisData = analyzeText(extractedText);
-if (analysisData?.data) {
-  analysisData.data.qrDetected = qrDetected;
-}
+    if (!extractedText || extractedText.length < 30) {
+      throw new Error("Nessun testo leggibile nel file.");
+    }
 
+    console.log("TIME extraction(ms):", Date.now() - t0, "| QR:", qr.detected ? "Sì" : "No", "| via:", qr.method);
 
-      console.log(
-        "DEBUG ANALYSIS (IMG) VOLUME:",
-        analysisData?.data?.volume,
-        "| QR:",
-        analysisData?.data?.qrDetected ? "Sì" : "No"
-      );
-    }  // <--- chiude il ramo "else" (immagini)
+    // ==========================
+    // 2) FACTS (deterministico)
+    // ==========================
+    const facts = extractFacts(extractedText, lang);
+    facts.qrDetected = !!qr.detected;
+    facts.qrMethod = qr.method;
 
-// === USER CONTENT PER GPT: SOLO TESTO (niente immagine) ===
-const userContent = [];
-if (isTextExtracted && extractedText) {
-  userContent.push({ type: "text", text: extractedText });
-}
-userContent.push({ type: "text", text: `QR_DETECTED: ${qrDetected}` });
+    // ==========================
+    // 3) LLM: compila report (facts-first)
+    // ==========================
+    const tAI = Date.now();
 
-// NIENTE image_url per GPT → è inutile e rallenta
+    const systemPrompt = `Agisci come un ispettore tecnico UltraCheck AI.
+Devi compilare un report di conformità usando SOLO i dati presenti in FACTS_JSON.
+OCR_TEXT è solo contesto umano: NON usarlo per dedurre valori.
 
+Principi:
+- Se un dato è presente in FACTS_JSON → ✅ conforme (riporta il valore).
+- Se un dato non è presente in FACTS_JSON → ❌ mancante.
+- Se un dato è presente ma palesemente incompleto (es. produttore senza indirizzo) → ⚠️ parziale.
 
-    // JSON extra solo se abbiamo analysisData
-    const extraContent = [];
+QR code:
+- Usa SOLO FACTS_JSON.qrDetected (true/false) come verità assoluta.
 
+Lotto:
+- Se FACTS_JSON.lot è vuoto → ❌ mancante.
 
+Valutazione finale:
+- Se almeno uno tra: denominazione, producer, volume, abv, allergens, lot, qrDetected è ❌ → "Non conforme".
+- Se nessun ❌ ma almeno un ⚠️ → "Parzialmente conforme".
+- Altrimenti → "Conforme".
 
-    // === ANALISI AI ===
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      temperature: 0.1,
-      seed: 42,
-      messages: [
-        {
-          role: "system",
-          content: `Agisci come un ispettore tecnico UltraCheck AI. 
-Analizza SOLO i dati presenti nel testo. Non inventare mai.
+Devi rispondere esclusivamente nella lingua: ${lang}.
 
-Usa il seguente principio fondamentale:
-- Se un dato c'è → è "conforme".
-- Se il dato è ambiguo → è "parziale".
-- Se il dato non c'è → è "mancante".
-
-Per il QR code:
-Nel messaggio dell’utente ricevi una riga del tipo:
-QR_DETECTED: true
-oppure:
-QR_DETECTED: false
-
-Devi usare ESATTAMENTE quel valore come verità assoluta:
-- Se QR_DETECTED: true → considera il QR presente
-- Se QR_DETECTED: false → considera il QR assente
-
-Non devi mai usare logiche tue né interpretare il testo OCR.
-Questo valore ha la precedenza totale.
-
-
-Regole rapide:
-- Denominazione: se esiste un nome vino o tipologia (es. Merlot, Collio, Ribolla, ecc.) → conforme. 
-- AllergenI: cerca "solfiti", "contiene solfiti" ecc.
-- Alcol: valuta come conforme se c’è un valore tipo "12% vol".
-- Volume: cerca "75 cl", "0,75 l" ecc.
-- Lotto: accetta solo stringhe che iniziano con "L" seguita da numeri/lettere (es: L123, L25-02). 
-  Non considerare altre parole con L come lotto.
-- Lingua: se il testo è in italiano → conforme (default Italia).
-- Altezza/contrasto: sempre "non verificabile" (non hai visione grafica).
-
-- Lotto:
-  • considera LOTTO solo stringhe che iniziano con "L" SEGUITA SUBITO da almeno una cifra (0–9),
-    ad esempio: "L123", "L25-02", "L24334", "L2025A".
-  • dopo le cifre possono esserci lettere o trattini, ma la PRIMA cosa dopo la "L" deve essere un numero.
-  • NON considerare come lotto:
-    - stringhe dove dopo la "L" c'è un punto, uno spazio o una lettera (es: "L.PRINTED", "L PRINTED", "Lotto printed"),
-    - scritte generiche tipo "Lotto da stampare", "Lotto printed", "L. DA DEFINIRE", ecc.
-  • Se non trovi nessuna stringa che rispetta questa regola → usa "❌ mancante" per il lotto.
-
-
-Se c'è anche un solo "❌" l'etichetta diventa non conforme.
-
-
-Devi rispondere esclusivamente nella lingua: ${req.body.lang || "it"}.
-Non usare mai altre lingue o traduzioni.
-
-Rispondi nel formato markdown esatto qui sotto:
+Formato markdown ESATTO:
 
 ===============================
 ### 🔎 Conformità normativa (Reg. UE 2021/2117)
@@ -424,53 +388,40 @@ Indicazione allergeni: (✅/⚠️/❌) + testo
 Lotto: (✅/⚠️/❌) + testo
 QR code o link ingredienti/energia: (✅/⚠️/❌) + testo
 Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
-Altezza minima dei caratteri: (✅/⚠️/❌) + testo
-Contrasto testo/sfondo adeguato: (✅/⚠️/❌) + testo
+Altezza minima dei caratteri: ⚠️ non verificabile (assenza analisi grafica)
+Contrasto testo/sfondo adeguato: ⚠️ non verificabile (assenza analisi grafica)
 
 **Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
 ===============================
 
-Tieni la valutazione coerente con la presenza o assenza reale dei campi.`,
-        },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Analizza questa etichetta di vino e valuta solo la conformità legale." },
-            ...userContent,
-            ...extraContent,
-          ],
-        },
-      ],
-    });
+Compila usando FACTS_JSON e non inventare.`;
 
-    let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
-    analysis = normalizeAnalysis(analysis);
+    const userPayload = [
+      { type: "text", text: "FACTS_JSON:\n" + JSON.stringify(facts, null, 2) },
+      // OCR_TEXT lo lasciamo come contesto (puoi rimuoverlo se vuoi ancora più rigore)
+      { type: "text", text: "OCR_TEXT:\n" + extractedText },
+    ];
 
-    // 🌍 Traduzione se serve
-    if (lang !== "it" && /Denominazione|Produttore|Volume nominale|Titolo alcolometrico/i.test(analysis)) {
-      console.log("Traduzione automatica forzata →", lang);
+    const response = await openaiWithTimeout(
+      openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        temperature: 0,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPayload },
+        ],
+      }),
+      35000
+    );
 
-      const translations = {
-        fr: "Traduis intégralement ce texte en français sans rien ajouter ni reformuler.",
-        en: "Translate this entire text into English without adding or rephrasing anything.",
-      };
+    console.log("TIME AI(ms):", Date.now() - tAI);
 
-      const translatePrompt = translations[lang] || null;
+    let analysis = response?.choices?.[0]?.message?.content || "Nessuna risposta dall'IA.";
+    analysis = forceFinalEvaluation(analysis);
 
-      if (translatePrompt) {
-        const trRes = await openai.chat.completions.create({
-          model: "gpt-4o-mini",
-          temperature: 0,
-          messages: [
-            { role: "system", content: "You are a precise translator preserving formatting and markdown." },
-            { role: "user", content: `${translatePrompt}\n\n${analysis}` },
-          ],
-        });
-        analysis = trRes.choices[0].message.content || analysis;
-      }
-    }
-
-    // === EMAIL ===
+    // ==========================
+    // 4) Email (opzionale)
+    // ==========================
     if (fileBuffer && process.env.SENDGRID_API_KEY && process.env.MAIL_TO) {
       try {
         sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -486,6 +437,7 @@ Analisi completata per:
 • Azienda: ${azienda || "(non fornita)"}
 • Email: ${email || "(non fornita)"}
 • Telefono: ${telefono || "(non fornito)"}
+• QR: ${facts.qrDetected ? "Sì" : "No"} (${facts.qrMethod})
 
 -----------------------------
 RISULTATO ANALISI:
@@ -509,20 +461,20 @@ ${analysis}
       }
     }
 
-    res.json({ result: analysis });
+    console.log("TIME total(ms):", Date.now() - t0);
+    return res.json({ result: analysis });
+
   } catch (error) {
     console.error("Errore:", error.message);
-    res.status(500).json({ error: "Elaborazione fallita: " + error.message });
+    return res.status(500).json({ error: "Elaborazione fallita: " + error.message });
   } finally {
     await fs.unlink(filePath).catch(() => {});
   }
 });
 
-
-
-
-
-// === TEST GOOGLE VISION API ===
+// ==============================
+// TEST Google Vision
+// ==============================
 app.get("/test-vision", async (req, res) => {
   if (!visionClient) {
     return res.status(500).send("Google Vision non configurato. Controlla GOOGLE_APPLICATION_CREDENTIALS_JSON");
@@ -532,18 +484,20 @@ app.get("/test-vision", async (req, res) => {
       "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
       "base64"
     );
-    const [result] = await visionClient.textDetection({
-      image: { content: testImage },
-    });
+    const [result] = await visionClient.textDetection({ image: { content: testImage } });
     const text = result.fullTextAnnotation?.text || "(nessun testo rilevato)";
-    res.send(`<h2>Google Vision API: OK</h2><p><strong>Risultato OCR:</strong> "${text}"</p><p><em>Se vedi questo, Vision funziona al 100%!</em></p><hr><p>Puoi rimuovere questo endpoint in produzione.</p>`);
+    res.send(
+      `<h2>Google Vision API: OK</h2><p><strong>Risultato OCR:</strong> "${text}"</p><hr><p>Puoi rimuovere questo endpoint in produzione.</p>`
+    );
   } catch (err) {
     console.error("Test Vision fallito:", err.message);
-    res.status(500).send(`<h2>Errore Google Vision</h2><pre>${err.message}</pre><p>Controlla:</p><ul><li>API Vision abilitata?</li><li>Service Account con ruolo <code>Cloud Vision API User</code>?</li><li>Chiave JSON completa in <code>GOOGLE_APPLICATION_CREDENTIALS_JSON</code>?</li></ul>`);
+    res.status(500).send(`<h2>Errore Google Vision</h2><pre>${err.message}</pre>`);
   }
 });
 
-// === START ===
+// ==============================
+// START
+// ==============================
 app.listen(port, "0.0.0.0", () => {
   console.log(`UltraCheck LIVE su http://0.0.0.0:${port}`);
   console.log(`URL: https://ultracheck.onrender.com`);

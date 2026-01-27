@@ -19,6 +19,8 @@
       min-height: 100vh;
       margin: 0;
       text-align: center;
+      padding: 24px 12px;
+      box-sizing: border-box;
     }
 
     h1 {
@@ -33,18 +35,36 @@
       font-weight: 300;
       color: #a7a7a7;
       margin-top: 0;
-      margin-bottom: 2.2rem;
-      font-size: 1.2rem;
+      margin-bottom: 0.8rem;
+      font-size: 1.1rem;
+    }
+
+    .subnote {
+      color: #6f6f6f;
+      font-size: 0.95rem;
+      margin: 0 0 1.6rem 0;
+      max-width: 420px;
+      line-height: 1.4;
     }
 
     .form-box, .upload-box {
       background: #fafafa;
       border: 1px solid #eee;
       border-radius: 16px;
-      padding: 36px;
-      width: 340px;
+      padding: 28px;
+      width: 360px;
+      max-width: calc(100vw - 32px);
       box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
+      box-sizing: border-box;
+    }
+
+    label {
+      display: block;
+      font-weight: 500;
+      color: #444;
+      text-align: left;
+      margin-top: 10px;
     }
 
     input[type="text"],
@@ -53,24 +73,18 @@
       width: 100%;
       padding: 12px;
       margin-top: 6px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       border: 1px solid #ccc;
       border-radius: 6px;
       font-size: 0.95rem;
       transition: border-color 0.3s;
+      box-sizing: border-box;
+      background: #fff;
     }
 
     input:focus {
       outline: none;
       border-color: #c6a450;
-    }
-
-    label {
-      display: block;
-      font-weight: 500;
-      color: #444;
-      text-align: left;
-      margin-top: 8px;
     }
 
     .upload-box {
@@ -83,13 +97,35 @@
       background: #fdfbf6;
     }
 
+    .upload-title {
+      margin: 0 0 8px 0;
+      font-weight: 500;
+      color: #333;
+    }
+
+    .upload-hint {
+      margin: 0 0 16px 0;
+      color: #6f6f6f;
+      font-size: 0.92rem;
+      line-height: 1.35;
+    }
+
+    .bullets {
+      text-align: left;
+      margin: 14px 0 0 0;
+      padding-left: 18px;
+      color: #555;
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
     input[type="file"] {
       display: none;
     }
 
     .btn {
       display: inline-block;
-      padding: 10px 24px;
+      padding: 10px 22px;
       background-color: #111;
       color: white;
       border: none;
@@ -97,7 +133,9 @@
       cursor: pointer;
       transition: all 0.3s;
       font-size: 0.95rem;
-      margin-top: 6px;
+      margin-top: 8px;
+      width: 100%;
+      box-sizing: border-box;
     }
 
     .btn:hover {
@@ -105,35 +143,66 @@
       color: #111;
     }
 
+    .btn-secondary {
+      background: #fff;
+      color: #111;
+      border: 1px solid #eee;
+    }
+
+    .btn-secondary:hover {
+      background: #f6f6f6;
+      color: #111;
+      border-color: #ddd;
+    }
+
+    .file-pill {
+      margin-top: 12px;
+      font-size: 0.92rem;
+      color: #444;
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 999px;
+      padding: 8px 12px;
+      display: inline-block;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      box-sizing: border-box;
+    }
+
     .progress {
-      width: 320px;
+      width: 360px;
+      max-width: calc(100vw - 32px);
       height: 8px;
       background: #eee;
       border-radius: 8px;
       overflow: hidden;
-      margin-top: 20px;
+      margin-top: 12px;
       display: none;
+      box-sizing: border-box;
     }
 
     .progress-bar {
       width: 0;
       height: 100%;
       background: #c6a450;
-      transition: width 0.3s;
+      transition: width 0.25s;
     }
 
     .result {
-      margin-top: 30px;
+      margin-top: 18px;
       text-align: left;
       display: none;
-      max-width: 400px;
+      max-width: 440px;
+      width: 100%;
     }
 
     .result-card {
       background: white;
       border-left: 6px solid #c6a450;
       border-radius: 12px;
-      padding: 24px;
+      padding: 22px;
       box-shadow: 0 4px 14px rgba(0,0,0,0.06);
       animation: fadeIn 0.6s ease;
       line-height: 1.6;
@@ -141,9 +210,15 @@
 
     .result h3 {
       font-weight: 500;
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
+      font-size: 1.3rem;
+      margin: 0 0 10px 0;
       text-align: center;
+    }
+
+    #resultDetails {
+      white-space: pre-wrap;
+      color: #222;
+      font-size: 0.98rem;
     }
 
     .ok { color: #3c763d; }
@@ -157,8 +232,8 @@
 
     .lang-switcher {
       position: absolute;
-      top: 20px;
-      right: 20px;
+      top: 18px;
+      right: 18px;
     }
 
     .lang-switcher button {
@@ -176,49 +251,91 @@
       background: #c6a450;
       color: #111;
     }
+
+    .consent {
+      font-weight: 400;
+      font-size: 0.9rem;
+      color: #555;
+      text-align: left;
+      margin-top: 10px;
+      line-height: 1.35;
+    }
+    .consent input { margin-right: 8px; }
+    .consent a { color: #111; text-decoration: underline; }
+
+    .footnote {
+      margin-top: 10px;
+      color: #7a7a7a;
+      font-size: 0.82rem;
+      max-width: 420px;
+      line-height: 1.35;
+    }
   </style>
 </head>
 
 <body>
   <div class="lang-switcher">
-    <button data-lang="it">🇮🇹 IT</button>
-    <button data-lang="fr">🇫🇷 FR</button>
-    <button data-lang="en">🇬🇧 EN</button>
+    <button type="button" data-lang="it">🇮🇹 IT</button>
+    <button type="button" data-lang="fr">🇫🇷 FR</button>
+    <button type="button" data-lang="en">🇬🇧 EN</button>
   </div>
 
   <h1>UltraCheck AI</h1>
   <h2>Analisi automatica etichette vino</h2>
+  <p class="subnote" id="subnote">
+    Carica un PDF o un’immagine dell’etichetta e genera un report con rischi e suggerimenti prima della stampa o messa in commercio.
+  </p>
 
-  <form id="userForm" class="form-box">
-    <label for="company">Azienda *</label>
+  <!-- ✅ STEP 1: Upload subito -->
+  <div class="upload-box" id="uploadSection">
+    <p class="upload-title" id="uploadTitle">Carica il file dell’etichetta</p>
+    <p class="upload-hint" id="uploadHint">Formati accettati: JPG / PNG / PDF. Dopo l’upload inserirai i dati per ricevere il report.</p>
+
+    <input type="file" id="fileInput" accept=".jpg,.png,.jpeg,.pdf" />
+    <label for="fileInput" class="btn" id="chooseBtn">Scegli file</label>
+
+    <div class="file-pill" id="filePill" style="display:none"></div>
+
+    <ul class="bullets" id="bullets">
+      <li>Controlli principali: QR / menzioni obbligatorie / lingue / incoerenze</li>
+      <li>Report leggibile e operativo</li>
+      <li>UltraCheck evidenzia rischi: la validazione finale resta al committente</li>
+    </ul>
+  </div>
+
+  <!-- ✅ STEP 2: Dati + Avvio -->
+  <form id="userForm" class="form-box" style="display:none">
+    <label for="company" id="lblCompany">Azienda *</label>
     <input type="text" id="company" name="azienda" required />
 
-    <label for="name">Nome e Cognome *</label>
+    <label for="name" id="lblName">Nome e Cognome *</label>
     <input type="text" id="name" name="nome" required />
 
-    <label for="email">Email *</label>
+    <label for="email" id="lblEmail">Email *</label>
     <input type="email" id="email" name="email" required />
 
-    <label for="phone">Telefono *</label>
-    <input type="tel" id="phone" name="telefono" required />
+    <label for="phone" id="lblPhone">Telefono (opzionale)</label>
+    <input type="tel" id="phone" name="telefono" />
 
-    <button type="submit" class="btn">Procedi all’analisi</button>
+    <label class="consent">
+      <input type="checkbox" id="privacy" required />
+      <span id="privacyText">Accetto la</span>
+      <a href="/privacy.html" target="_blank" rel="noopener noreferrer" id="privacyLink">Privacy Policy</a>
+      <span id="privacyStar">*</span>
+    </label>
+
+    <label class="consent">
+      <input type="checkbox" id="marketing" />
+      <span id="marketingText">Acconsento a essere contattato per demo e informazioni (facoltativo)</span>
+    </label>
+
+    <button type="submit" class="btn" id="analyzeBtn">Genera report</button>
+    <button type="button" class="btn btn-secondary" id="changeFileBtn" style="margin-top:10px;">Cambia file</button>
+
+    <div class="footnote" id="legalNote">
+      UltraCheck AI supporta l’analisi preliminare. Non sostituisce consulenza legale o validazione normativa definitiva.
+    </div>
   </form>
-
-
-<style>
-@keyframes pulse {
-  0% { width: 0%; }
-  50% { width: 70%; }
-  100% { width: 100%; }
-}
-</style>
-
-  <div class="upload-box" id="uploadSection" style="display:none">
-    <p>Carica il tuo file immagine dell’etichetta</p>
-    <input type="file" id="fileInput" accept=".jpg,.png,.jpeg,.pdf" />
-    <label for="fileInput" class="btn">Scegli file</label>
-  </div>
 
   <div class="progress" id="progress">
     <div class="progress-bar" id="progressBar"></div>
@@ -236,89 +353,180 @@
     const form = document.getElementById("userForm");
     const uploadSection = document.getElementById("uploadSection");
     const fileInput = document.getElementById("fileInput");
+    const filePill = document.getElementById("filePill");
     const progress = document.getElementById("progress");
     const progressBar = document.getElementById("progressBar");
     const resultBox = document.getElementById("resultBox");
     const resultText = document.getElementById("resultText");
     const resultDetails = document.getElementById("resultDetails");
+    const changeFileBtn = document.getElementById("changeFileBtn");
 
-    // 🌍 Selettore lingua
-    let selectedLang = "it"; // lingua predefinita
-// ✅ Ricorda la lingua scelta anche dopo il reload
-const savedLang = localStorage.getItem("ultracheck_lang");
-if (savedLang) {
-  selectedLang = savedLang;
-}
+    let selectedLang = "it";
+    let selectedFile = null;
 
-// 🔄 Cambio lingua dinamico con salvataggio
-document.querySelectorAll('.lang-switcher button').forEach(btn => {
-  btn.addEventListener('click', e => {
-    selectedLang = e.target.dataset.lang;
-    localStorage.setItem("ultracheck_lang", selectedLang); // salva la lingua scelta
-    const t = translations[selectedLang];
-    document.querySelector('h1').textContent = t.title;
-    document.querySelector('h2').textContent = t.subtitle;
-    document.querySelector('label[for="company"]').textContent = t.company;
-    document.querySelector('label[for="name"]').textContent = t.name;
-    document.querySelector('label[for="email"]').textContent = t.email;
-    document.querySelector('label[for="phone"]').textContent = t.phone;
-    document.querySelector('#userForm .btn').textContent = t.analyze;
-    document.querySelector('#uploadSection p').textContent = t.upload;
-    document.querySelector('label[for="fileInput"]').textContent = t.choose;
-  });
-});
+    // ✅ Ricorda lingua
+    const savedLang = localStorage.getItem("ultracheck_lang");
+    if (savedLang) selectedLang = savedLang;
 
     const translations = {
       it: {
         title: "UltraCheck AI",
         subtitle: "Analisi automatica etichette vino",
+        subnote: "Carica un PDF o un’immagine dell’etichetta e genera un report con rischi e suggerimenti prima della stampa o messa in commercio.",
+        uploadTitle: "Carica il file dell’etichetta",
+        uploadHint: "Formati accettati: JPG / PNG / PDF. Dopo l’upload inserirai i dati per ricevere il report.",
+        choose: "Scegli file",
+        bullets: [
+          "Controlli principali: QR / menzioni obbligatorie / lingue / incoerenze",
+          "Report leggibile e operativo",
+          "UltraCheck evidenzia rischi: la validazione finale resta al committente"
+        ],
         company: "Azienda *",
         name: "Nome e Cognome *",
         email: "Email *",
-        phone: "Telefono *",
-        analyze: "Procedi all’analisi",
-        upload: "Carica il tuo file immagine dell’etichetta",
-        choose: "Scegli file",
-        complete: "🧠 Analisi completata",
+        phone: "Telefono (opzionale)",
+        privacyText: "Accetto la",
+        privacyLink: "Privacy Policy",
+        marketingText: "Acconsento a essere contattato per demo e informazioni (facoltativo)",
+        analyze: "Genera report",
+        changeFile: "Cambia file",
+        complete: "🧠 Report generato",
         error: "❌ Errore nell’analisi",
+        legalNote: "UltraCheck AI supporta l’analisi preliminare. Non sostituisce consulenza legale o validazione normativa definitiva.",
+        connErr: "Controlla la connessione o riprova.",
+        fallbackErr: "Impossibile analizzare il file."
       },
       fr: {
         title: "UltraCheck AI",
         subtitle: "Analyse automatique des étiquettes de vin",
+        subnote: "Déposez un PDF ou une image d’étiquette et générez un rapport de risques et recommandations avant impression ou mise en marché.",
+        uploadTitle: "Déposez le fichier de l’étiquette",
+        uploadHint: "Formats acceptés : JPG / PNG / PDF. Après l’upload, indiquez vos coordonnées pour recevoir le rapport.",
+        choose: "Choisir un fichier",
+        bullets: [
+          "Contrôles clés : QR / mentions obligatoires / langues / incohérences",
+          "Rapport clair et opérationnel",
+          "UltraCheck signale des risques : la validation finale reste au client"
+        ],
         company: "Entreprise *",
         name: "Nom et prénom *",
         email: "E-mail *",
-        phone: "Téléphone *",
-        analyze: "Lancer l’analyse",
-        upload: "Téléchargez l’image de votre étiquette",
-        choose: "Choisir un fichier",
-        complete: "🧠 Analyse terminée",
+        phone: "Téléphone (optionnel)",
+        privacyText: "J’accepte la",
+        privacyLink: "Politique de confidentialité",
+        marketingText: "J’accepte d’être contacté pour une démo et des informations (optionnel)",
+        analyze: "Générer le rapport",
+        changeFile: "Changer le fichier",
+        complete: "🧠 Rapport généré",
         error: "❌ Erreur d’analyse",
+        legalNote: "UltraCheck AI aide à l’analyse préliminaire. Ne remplace pas un avis juridique ni une validation réglementaire définitive.",
+        connErr: "Vérifiez votre connexion ou réessayez.",
+        fallbackErr: "Impossible d’analyser le fichier."
       },
       en: {
         title: "UltraCheck AI",
         subtitle: "Automatic wine label analysis",
+        subnote: "Upload a label PDF or image and generate a risk report and recommendations before printing or going to market.",
+        uploadTitle: "Upload the label file",
+        uploadHint: "Accepted formats: JPG / PNG / PDF. After upload, enter your details to receive the report.",
+        choose: "Choose file",
+        bullets: [
+          "Key checks: QR / mandatory mentions / languages / inconsistencies",
+          "Clear, actionable report",
+          "UltraCheck flags risks: final validation remains with the owner"
+        ],
         company: "Company *",
         name: "Full name *",
         email: "Email *",
-        phone: "Phone *",
-        analyze: "Start analysis",
-        upload: "Upload your label image",
-        choose: "Choose file",
-        complete: "🧠 Analysis complete",
+        phone: "Phone (optional)",
+        privacyText: "I accept the",
+        privacyLink: "Privacy Policy",
+        marketingText: "I agree to be contacted for a demo and information (optional)",
+        analyze: "Generate report",
+        changeFile: "Change file",
+        complete: "🧠 Report generated",
         error: "❌ Analysis error",
+        legalNote: "UltraCheck AI supports preliminary analysis. It does not replace legal advice or final regulatory validation.",
+        connErr: "Check your connection or try again.",
+        fallbackErr: "Unable to analyze the file."
       }
     };
 
+    function applyLang(lang) {
+      const t = translations[lang];
+      document.querySelector("h1").textContent = t.title;
+      document.querySelector("h2").textContent = t.subtitle;
+      document.getElementById("subnote").textContent = t.subnote;
 
-    // 🧾 Gestione form
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const data = new FormData(form);
-      console.log("✅ Dati raccolti:", Object.fromEntries(data.entries()));
+      document.getElementById("uploadTitle").textContent = t.uploadTitle;
+      document.getElementById("uploadHint").textContent = t.uploadHint;
+      document.getElementById("chooseBtn").textContent = t.choose;
+
+      const bulletsEl = document.getElementById("bullets");
+      bulletsEl.innerHTML = "";
+      t.bullets.forEach(b => {
+        const li = document.createElement("li");
+        li.textContent = b;
+        bulletsEl.appendChild(li);
+      });
+
+      document.getElementById("lblCompany").textContent = t.company;
+      document.getElementById("lblName").textContent = t.name;
+      document.getElementById("lblEmail").textContent = t.email;
+      document.getElementById("lblPhone").textContent = t.phone;
+
+      document.getElementById("privacyText").textContent = t.privacyText + " ";
+      document.getElementById("privacyLink").textContent = t.privacyLink;
+      document.getElementById("marketingText").textContent = t.marketingText;
+
+      document.getElementById("analyzeBtn").textContent = t.analyze;
+      document.getElementById("changeFileBtn").textContent = t.changeFile;
+
+      document.getElementById("legalNote").textContent = t.legalNote;
+    }
+
+    // init lingua
+    applyLang(selectedLang);
+
+    // cambio lingua + salvataggio
+    document.querySelectorAll(".lang-switcher button").forEach(btn => {
+      btn.addEventListener("click", (e) => {
+        selectedLang = e.currentTarget.dataset.lang;
+        localStorage.setItem("ultracheck_lang", selectedLang);
+        applyLang(selectedLang);
+      });
+    });
+
+    // ✅ STEP 1: selezione file → mostra form
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+
+      selectedFile = file;
+      filePill.style.display = "inline-block";
+      filePill.textContent = file.name;
+
+      // reset eventuali risultati precedenti
+      resultBox.style.display = "none";
+      resultText.textContent = "";
+      resultDetails.textContent = "";
+
+      uploadSection.style.display = "none";
+      form.style.display = "block";
+    });
+
+    // cambia file
+    changeFileBtn.addEventListener("click", () => {
+      selectedFile = null;
+      fileInput.value = "";
+      filePill.style.display = "none";
 
       form.style.display = "none";
       uploadSection.style.display = "block";
+
+      resultBox.style.display = "none";
+      progress.style.display = "none";
+      progressBar.style.width = "0%";
     });
 
     // 🧠 Analisi file etichetta
@@ -327,9 +535,10 @@ document.querySelectorAll('.lang-switcher button').forEach(btn => {
       resultBox.style.display = "none";
       progressBar.style.width = "0%";
 
+      // progress "realistico": arriva a 85% e aspetta la risposta
       let width = 0;
       const interval = setInterval(() => {
-        width = Math.min(100, width + 8);
+        width = Math.min(85, width + 6);
         progressBar.style.width = width + "%";
       }, 200);
 
@@ -339,27 +548,29 @@ document.querySelectorAll('.lang-switcher button').forEach(btn => {
         formData.append("azienda", document.getElementById("company").value);
         formData.append("nome", document.getElementById("name").value);
         formData.append("email", document.getElementById("email").value);
-        formData.append("telefono", document.getElementById("phone").value);
+        formData.append("telefono", document.getElementById("phone").value || "");
         formData.append("lang", selectedLang);
-        console.log("Lingua inviata al backend:", selectedLang);
-
+        formData.append("marketing", document.getElementById("marketing").checked ? "1" : "0");
 
         const res = await fetch("/analyze", { method: "POST", body: formData });
 
         clearInterval(interval);
-        progress.style.display = "none";
+        progressBar.style.width = "100%";
+        setTimeout(() => { progress.style.display = "none"; }, 250);
+
         resultBox.style.display = "block";
 
         if (res.ok) {
           const data = await res.json();
           resultText.textContent = translations[selectedLang].complete;
           resultText.className = "ok";
-          resultDetails.innerHTML = data.result.replace(/\n/g, "<br>");
+          // sicurezza: niente innerHTML
+          resultDetails.textContent = (data && data.result) ? String(data.result) : "";
         } else {
           const err = await res.json().catch(() => ({}));
           resultText.textContent = translations[selectedLang].error;
           resultText.className = "error";
-          resultDetails.textContent = err.error || "Impossibile analizzare il file.";
+          resultDetails.textContent = err.error || translations[selectedLang].fallbackErr;
         }
       } catch (e) {
         clearInterval(interval);
@@ -367,14 +578,19 @@ document.querySelectorAll('.lang-switcher button').forEach(btn => {
         resultBox.style.display = "block";
         resultText.textContent = translations[selectedLang].error;
         resultText.className = "error";
-        resultDetails.textContent = "Controlla la connessione o riprova.";
+        resultDetails.textContent = translations[selectedLang].connErr;
       }
     }
 
-    // 📤 Caricamento file
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files?.[0];
-      if (file) analyzeImageFile(file);
+    // ✅ STEP 2: submit form → analizza
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      if (!selectedFile) {
+        // fallback: se per qualche motivo manca il file
+        changeFileBtn.click();
+        return;
+      }
+      analyzeImageFile(selectedFile);
     });
   </script>
 </body>

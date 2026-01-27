@@ -209,6 +209,26 @@ function normalizeAnalysis(md) {
     })
     .join("\n");
 }
+ // === LOTTO: normalizzazione + estrazione deterministica ===
+function normalizeLotStrings(text) {
+  if (!text) return text;
+
+  // "L 022024" / "L: 022024" / "L-022024" / "L.022024" -> "L022024"
+  // NON tocca "L.PRINTED" perché non c'è una cifra subito dopo L.
+  return text.replace(/\bL\s*[:.\-]?\s*(\d)/gi, "L$1");
+}
+
+function extractLot(text) {
+  if (!text) return null;
+
+  // Cerca "L" + (spazi/separatore opzionale) + cifra + resto (cifre/lettere/trattini)
+  // Esempi validi: L022024, L 022024, L:022024, L-25-02, L.24334, L2025A
+  // Esclude L.PRINTED perché dopo L non c'è cifra.
+  const m = text.match(/\bL\s*[:.\-]?\s*(\d[\dA-Z\-]{1,30})\b/i);
+  if (!m) return null;
+
+  return "L" + m[1];
+}
 
 app.post("/analyze", upload.single("label"), async (req, res) => {
   const filePath = req.file?.path;
@@ -224,9 +244,14 @@ app.post("/analyze", upload.single("label"), async (req, res) => {
   let contentType = "";
   let analysisData = null;
   let qrDetected = false; // ← qui memorizziamo il risultato QR
+  let detectedLot = null; // ← lotto deterministico (tipo "L022024")
+
 
   try {
     fileBuffer = await fs.readFile(filePath);
+
+   
+
 
     // === PDF ===
     if (req.file.mimetype === "application/pdf") {
@@ -274,6 +299,9 @@ contentType = "image/png";
         console.log("PDF: OCR migliore del testo nativo → uso OCR");
         extractedText = ocrClean;
       }
+extractedText = normalizeLotStrings(extractedText);
+detectedLot = extractLot(extractedText);
+console.log("DEBUG LOTTO (PDF):", detectedLot || "non trovato");
 
       isTextExtracted = extractedText.length > 30;
       if (!isTextExtracted) throw new Error("Nessun testo leggibile nel PDF");
@@ -324,6 +352,10 @@ console.log("DEBUG QR (IMG):", qrDetected ? "trovato" : "non trovato");
       }
 
       extractedText = cleanOCR(ocrText || "");
+      extractedText = normalizeLotStrings(extractedText);
+detectedLot = extractLot(extractedText);
+console.log("DEBUG LOTTO (IMG):", detectedLot || "non trovato");
+
       isTextExtracted = extractedText.length > 30;
       if (!isTextExtracted) throw new Error("Nessun testo leggibile nell’immagine");
 
@@ -347,6 +379,7 @@ if (isTextExtracted && extractedText) {
   userContent.push({ type: "text", text: extractedText });
 }
 userContent.push({ type: "text", text: `QR_DETECTED: ${qrDetected}` });
+    userContent.push({ type: "text", text: `LOT_DETECTED: ${detectedLot || "false"}` });
 
 // NIENTE image_url per GPT → è inutile e rallenta
 
@@ -391,19 +424,22 @@ Regole rapide:
 - AllergenI: cerca "solfiti", "contiene solfiti" ecc.
 - Alcol: valuta come conforme se c’è un valore tipo "12% vol".
 - Volume: cerca "75 cl", "0,75 l" ecc.
-- Lotto: accetta solo stringhe che iniziano con "L" seguita da numeri/lettere (es: L123, L25-02). 
-  Non considerare altre parole con L come lotto.
 - Lingua: se il testo è in italiano → conforme (default Italia).
 - Altezza/contrasto: sempre "non verificabile" (non hai visione grafica).
 
-- Lotto:
-  • considera LOTTO solo stringhe che iniziano con "L" SEGUITA SUBITO da almeno una cifra (0–9),
-    ad esempio: "L123", "L25-02", "L24334", "L2025A".
-  • dopo le cifre possono esserci lettere o trattini, ma la PRIMA cosa dopo la "L" deve essere un numero.
-  • NON considerare come lotto:
-    - stringhe dove dopo la "L" c'è un punto, uno spazio o una lettera (es: "L.PRINTED", "L PRINTED", "Lotto printed"),
-    - scritte generiche tipo "Lotto da stampare", "Lotto printed", "L. DA DEFINIRE", ecc.
-  • Se non trovi nessuna stringa che rispetta questa regola → usa "❌ mancante" per il lotto.
+Per il Lotto:
+Nel messaggio dell’utente ricevi una riga del tipo:
+LOT_DETECTED: L022024
+oppure:
+LOT_DETECTED: false
+
+Devi usare ESATTAMENTE quel valore come verità assoluta:
+- Se LOT_DETECTED è una stringa (es. L022024) → considera il lotto presente (✅ conforme) e riporta quel valore
+- Se LOT_DETECTED: false → considera il lotto assente (❌ mancante)
+
+Non devi mai cercare o interpretare il lotto nel testo OCR.
+Questo valore ha la precedenza totale.
+  
 
 
 Se c'è anche un solo "❌" l'etichetta diventa non conforme.

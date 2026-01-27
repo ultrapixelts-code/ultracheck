@@ -433,7 +433,7 @@ Regole rapide:
 - Denominazione: se esiste un nome vino o tipologia (es. Merlot, Collio, Ribolla, ecc.) → conforme. 
 - AllergenI: cerca "solfiti", "contiene solfiti" ecc.
 - Alcol: valuta come conforme se c’è un valore tipo "12% vol".Se è presente un valore numerico seguito da "% vol" o "%vol" (es. "13% vol") → conforme.
-- Volume: cerca "75 cl", "0,75 l" ecc.
+- Volume nominale: se è presente un valore numerico seguito da "l", "cl" o "ml" (es. "1 l", "75 cl", "750 ml", "0,75 l") → conforme.
 - Lingua:
   • Se il testo è scritto in una delle lingue ufficiali dell’Unione Europea → conforme.
   • Se il testo è scritto esclusivamente in una lingua NON ufficiale UE (es. cinese, giapponese, russo, arabo) → mancante.

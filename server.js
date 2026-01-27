@@ -221,14 +221,24 @@ function normalizeLotStrings(text) {
 function extractLot(text) {
   if (!text) return null;
 
-  // Cerca "L" + (spazi/separatore opzionale) + cifra + resto (cifre/lettere/trattini)
-  // Esempi validi: L022024, L 022024, L:022024, L-25-02, L.24334, L2025A
-  // Esclude L.PRINTED perché dopo L non c'è cifra.
-  const m = text.match(/\bL\s*[:.\-]?\s*(\d[\dA-Z\-]{1,30})\b/i);
-  if (!m) return null;
+  // Matcha:
+  // - L022024 / L 022024 / L:022024 / L-25-02
+  // - LOT n°04-24 / LOT N 04-24 / LOTTO 123 / BATCH 123
+  // Gestisce ° º o “o” (n° / nº / no)
+  const re = /\b(?:L|LOT(?:TO)?|BATCH)\s*(?:N\s*[°ºo]\s*)?[:.\-]?\s*([0-9][0-9A-Z\-\/]{1,30})\b/gi;
 
-  return "L" + m[1];
+  let m;
+  let best = null;
+
+  while ((m = re.exec(text)) !== null) {
+    const code = m[1];
+    // scegli il più "forte": più lungo e con almeno 1 cifra (c'è già) — ok
+    if (!best || code.length > best.length) best = code;
+  }
+
+  return best ? `L${best}` : null; // normalizzo sempre a "Lxxxx"
 }
+
 
 app.post("/analyze", upload.single("label"), async (req, res) => {
   const filePath = req.file?.path;

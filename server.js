@@ -388,8 +388,6 @@ Indicazione allergeni: (✅/⚠️/❌) + testo
 Lotto: (✅/⚠️/❌) + testo
 QR code o link ingredienti/energia: (✅/⚠️/❌) + testo
 Lingua corretta per il mercato UE: (✅/⚠️/❌) + testo
-Altezza minima dei caratteri: ⚠️ non verificabile (assenza analisi grafica)
-Contrasto testo/sfondo adeguato: ⚠️ non verificabile (assenza analisi grafica)
 
 **Valutazione finale:** Conforme / Parzialmente conforme / Non conforme
 ===============================

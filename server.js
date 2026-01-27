@@ -188,7 +188,7 @@ function extractFacts(text, lang = "it") {
   const allergens = pickFirstMatch(t, /\b(contiene\s+solfit[i]?|solfit[i]?|contains\s+sulfites?|sulfites?|contient\s+des\s+sulfites?)\b/i);
 
   // Lotto: L + subito numero
-  const lot = pickFirstMatch(t, /\bL\d[\dA-Z-]*\b/);
+  const lot = pickFirstMatch(t, /\bL(?=\d)[0-9A-Z-]{2,}\b/);
 
   // Producer hints (IT/FR/EN)
   const producer = pickFirstMatch(

@@ -166,8 +166,9 @@ app.use(express.urlencoded({ extended: true }));
 // monta le route del dealer
 app.use(dealerRouter);
 
+// ✅ fix slash + mount portal
+app.get("/portal", (req, res) => res.redirect("/portal/"));
 app.use("/portal", portalRouter);
-
 
 // Homepage → index.html
 app.get("/", (req, res) => {

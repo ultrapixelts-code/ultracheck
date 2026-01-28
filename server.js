@@ -157,19 +157,20 @@ const port = process.env.PORT || 8080;
 app.set("view engine", "ejs");
 app.set("views", path.join(process.cwd(), "views"));
 
-// Serve TUTTI i file statici dalla root (main/)
+// ✅ static PRIMA (così non rompi index.html assets)
 app.use(express.static("."));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
-// monta le route del dealer
-app.use(dealerRouter);
-
-// ✅ fix slash + mount portal
+// ✅ portal
 app.get("/portal", (req, res) => res.redirect("/portal/"));
 app.use("/portal", portalRouter);
-app.get("/__ping", (req, res) => res.send("PING OK"));
+
+// ✅ dealer dopo portal
+app.use(dealerRouter);
+
+
 
 
 // Homepage → index.html

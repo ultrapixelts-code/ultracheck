@@ -1,19 +1,30 @@
-<!doctype html>
-<html lang="it">
-<head>
-  <meta charset="utf-8" />
-  <title>Portal Dashboard</title>
-</head>
-<body style="font-family: system-ui; padding: 30px;">
-  <h1>Portal OK ✅</h1>
+<%
+  const title = "Dashboard";
+  const body = `
+    <section class="hero">
+      <h1 class="h1">Vos étiquettes : premium. Rapide. Au prix juste</h1>
+      <p class="lead">Portale distributori: carica file, ricevi preventivi, approva bozze, lancia UltraCheck.</p>
 
-  <p>Se vedi questa pagina, il portal funziona.</p>
+      <div class="hero__cta">
+        <a class="btn" href="/portal/upload">Carica una nuova richiesta</a>
+        <a class="btn btn--ghost" href="/portal/orders">Vedi richieste</a>
+      </div>
+    </section>
 
-  <p>Utente: <b><%= user.email %></b></p>
-
-  <ul>
-    <li><a href="/portal/login">Login (demo)</a></li>
-    <li>Prossimo step: Nuova richiesta + upload file</li>
-  </ul>
-</body>
-</html>
+    <section class="grid">
+      <div class="card">
+        <div class="card__title">1) Upload</div>
+        <div class="card__text">Carica PDF/immagini + specifiche. Tutto tracciato.</div>
+      </div>
+      <div class="card">
+        <div class="card__title">2) Preventivo</div>
+        <div class="card__text">Tu carichi il preventivo PDF. Il distributore conferma.</div>
+      </div>
+      <div class="card">
+        <div class="card__title">3) Bozza + UltraCheck</div>
+        <div class="card__text">Carichi bozza, approvazione, poi UltraCheck e stampa.</div>
+      </div>
+    </section>
+  `;
+%>
+<%- include("layout", { title, user, body }) %>

@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <%- include('partials/head') %>
+  <title><%= title || "Portal" %></title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar__inner">
+      <div class="brand">
+        <div class="brand__dot"></div>
+        <div class="brand__text">
+          <div class="brand__name">UltraCheck</div>
+          <div class="brand__sub">Portale Distributori</div>
+        </div>
+      </div>
+
+      <nav class="topnav">
+        <a class="topnav__link" href="/portal/">Dashboard</a>
+        <a class="topnav__link" href="/portal/upload">Carica file</a>
+        <a class="topnav__link" href="/portal/orders">Richieste</a>
+      </nav>
+
+      <div class="topbar__right">
+        <% if (typeof user !== "undefined" && user?.email) { %>
+          <span class="pill"><%= user.email %></span>
+        <% } %>
+        <a class="btn btn--ghost" href="/portal/login">Login</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="page">
+    <div class="container">
+      <%- body %>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span>© UltraPixel — UltraCheck</span>
+      <span class="muted">Premium • Rapide • Au prix juste</span>
+    </div>
+  </footer>
+</body>
+</html>

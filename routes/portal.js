@@ -1,4 +1,5 @@
 import express from "express";
+console.log("✅ portalRouter LOADED");
 
 const router = express.Router();
 

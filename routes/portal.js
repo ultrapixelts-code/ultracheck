@@ -1,6 +1,6 @@
 import express from "express";
-import { pool } from "../src/db.js";
 import bcrypt from "bcryptjs";
+import { pool } from "../db.js";
 
 
 console.log("✅ portalRouter LOADED");

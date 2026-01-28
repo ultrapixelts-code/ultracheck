@@ -18,6 +18,8 @@ import { applyRules } from "./rules.js";
 import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
 import dealerRouter from "./dealer.js";  
+import portalRouter from "./routes/portal.js";
+
 
 
 // ===== ZXING (VERSIONE NODE, QUELLA GIUSTA) =====

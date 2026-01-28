@@ -19,6 +19,9 @@ import { analyzeText } from "./analyze.js";
 import jsQR from "jsqr";
 import dealerRouter from "./dealer.js";  
 import portalRouter from "./routes/portal.js";
+import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { pool } from "./src/db.js";
 
 
 
@@ -154,6 +157,7 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
 // === APP ===
 const app = express();
 const port = process.env.PORT || 8080;
+app.set("trust proxy", 1); // Render usa proxy -> serve per cookie secure
 
 app.set("view engine", "ejs");
 app.set("views", path.join(process.cwd(), "views"));
@@ -164,12 +168,38 @@ app.use(express.static("."));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ✅ sessions (PRIMA del portal router)
+const PgSession = connectPgSimple(session);
+
+if (!process.env.SESSION_SECRET) {
+  console.error("❌ SESSION_SECRET mancante");
+  process.exit(1);
+}
+if (!process.env.DATABASE_URL) {
+  console.error("❌ DATABASE_URL mancante");
+  process.exit(1);
+}
+
+app.use(session({
+  store: new PgSession({
+    pool,
+    tableName: "sessions",
+    createTableIfMissing: true,
+  }),
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 24 * 14,
+  }
+}));
+
 // ✅ portal
 app.use("/portal", portalRouter);
 
-app.get("/portal/login", (req, res) => {
-  res.send("PORTAL LOGIN HARD-CODED OK");
-});
 
 // ✅ dealer dopo portal
 app.use(dealerRouter);

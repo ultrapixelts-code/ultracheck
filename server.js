@@ -169,6 +169,8 @@ app.use(dealerRouter);
 // ✅ fix slash + mount portal
 app.get("/portal", (req, res) => res.redirect("/portal/"));
 app.use("/portal", portalRouter);
+app.get("/__ping", (req, res) => res.send("PING OK"));
+
 
 // Homepage → index.html
 app.get("/", (req, res) => {

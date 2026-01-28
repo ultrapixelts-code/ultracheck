@@ -31,6 +31,7 @@ import {
   QRCodeReader
 } from "@zxing/library";
 
+console.log("🔥 SERVER.JS VERSION: 2026-01-28-A");
 
 // === FUNZIONE OBBLIGATORIA PER ZXING SU NODE ===
 async function zxingDecode(buffer) {

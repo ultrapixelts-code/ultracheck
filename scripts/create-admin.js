@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { pool } from "../src/db.js";
+import { pool } from "../db.js";
 
 const email = process.argv[2];
 const password = process.argv[3];

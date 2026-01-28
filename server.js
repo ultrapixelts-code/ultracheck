@@ -611,6 +611,6 @@ app.get("/test-vision", async (req, res) => {
 
 // === START ===
 app.listen(port, "0.0.0.0", () => {
-  console.log(`UltraCheck LIVE su http://0.0.0.0:${port}`);
+  console.log(`🔥 NEW BUILD 2026-01-28 🔥 UltraCheck LIVE su http://0.0.0.0:${port}`);
   console.log(`URL: https://ultracheck.onrender.com`);
 });

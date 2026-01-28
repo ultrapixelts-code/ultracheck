@@ -1,46 +1,374 @@
-<!doctype html>
-<html lang="it">
-<head>
-  <%- include('partials/head') %>
-  <title><%= title || "Portal" %></title>
-</head>
-<body>
-  <header class="topbar">
-    <div class="topbar__inner">
-      <div class="brand">
-        <div class="brand__dot"></div>
-        <div class="brand__text">
-          <div class="brand__name">UltraCheck</div>
-          <div class="brand__sub">Portale Distributori</div>
-        </div>
-      </div>
+/* ======================================================
+   UltraCheck Portal — Apple-ish / 2026 SaaS UI
+   Works with your layout.ejs (topbar/topnav/page/container/footer)
+   ====================================================== */
 
-      <nav class="topnav">
-        <a class="topnav__link" href="/portal/">Dashboard</a>
-        <a class="topnav__link" href="/portal/upload">Carica file</a>
-        <a class="topnav__link" href="/portal/orders">Richieste</a>
-      </nav>
+:root{
+  --bg0:#05060A;
+  --bg1:#070A12;
+  --bg2:#0B1020;
 
-      <div class="topbar__right">
-        <% if (typeof user !== "undefined" && user?.email) { %>
-          <span class="pill"><%= user.email %></span>
-        <% } %>
-        <a class="btn btn--ghost" href="/portal/login">Login</a>
-      </div>
-    </div>
-  </header>
+  --glass: rgba(255,255,255,0.06);
+  --glass2: rgba(255,255,255,0.08);
+  --line: rgba(255,255,255,0.10);
+  --line2: rgba(255,255,255,0.14);
 
-  <main class="page">
-    <div class="container">
-      <%- body %>
-    </div>
-  </main>
+  --text: rgba(255,255,255,0.92);
+  --soft: rgba(255,255,255,0.72);
+  --muted: rgba(255,255,255,0.54);
 
-  <footer class="footer">
-    <div class="container footer__inner">
-      <span>© UltraPixel — UltraCheck</span>
-      <span class="muted">Premium • Rapide • Au prix juste</span>
-    </div>
-  </footer>
-</body>
-</html>
+  --blue:#5B7CFF;
+  --violet:#8B5CF6;
+  --mint:#2DD4BF;
+
+  --r: 18px;
+  --r2: 24px;
+  --r3: 28px;
+
+  --shadow: 0 26px 80px rgba(0,0,0,0.55);
+  --shadow2: 0 14px 36px rgba(0,0,0,0.42);
+
+  --ease: cubic-bezier(.2,.9,.2,1);
+  --dur: 180ms;
+
+  --font: ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Display",
+          "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  --max: 1200px;
+}
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html,body{ height:100%; }
+body{
+  font-family: var(--font);
+  color: var(--text);
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background:
+    radial-gradient(1000px 650px at 12% -10%, rgba(91,124,255,0.34), transparent 55%),
+    radial-gradient(900px 600px at 92% 8%, rgba(139,92,246,0.22), transparent 60%),
+    radial-gradient(900px 680px at 55% 120%, rgba(45,212,191,0.12), transparent 60%),
+    linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 35%, var(--bg2) 100%);
+  overflow-x:hidden;
+}
+
+/* Apple-ish subtle noise */
+body::before{
+  content:"";
+  position:fixed; inset:0;
+  pointer-events:none;
+  opacity:0.06;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+}
+
+a{ color: var(--blue); text-decoration:none; transition: color var(--dur) var(--ease); }
+a:hover{ color: #89A0FF; }
+
+:focus-visible{
+  outline:none;
+  box-shadow: 0 0 0 3px rgba(91,124,255,0.25), 0 0 0 1px rgba(91,124,255,0.55) inset;
+  border-radius: 14px;
+}
+
+/* ===== CONTAINER ===== */
+.container{
+  width: min(var(--max), calc(100% - 48px));
+  margin: 0 auto;
+}
+
+/* ===== TOPBAR ===== */
+.topbar{
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--line);
+  background: rgba(0,0,0,0.26);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.topbar__inner{
+  width: min(var(--max), calc(100% - 32px));
+  margin: 0 auto;
+  padding: 14px 0;
+
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.brand__dot{
+  width: 11px; height: 11px; border-radius: 999px;
+  background: radial-gradient(circle at 30% 30%, #fff 0%, rgba(255,255,255,0.35) 25%, var(--blue) 55%, var(--violet) 100%);
+  box-shadow: 0 0 0 4px rgba(91,124,255,0.10), 0 18px 40px rgba(0,0,0,0.40);
+}
+
+.brand__text{ display:flex; flex-direction:column; gap: 2px; }
+.brand__name{
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  font-size: 13.5px;
+  line-height: 1.1;
+}
+.brand__sub{
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* ===== TOP NAV ===== */
+.topnav{
+  display:flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+}
+
+.topnav__link{
+  position: relative;
+  padding: 10px 12px;
+  border-radius: 999px;
+  color: var(--soft);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  transition:
+    background var(--dur) var(--ease),
+    color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
+}
+
+.topnav__link:hover{
+  background: rgba(255,255,255,0.06);
+  color: rgba(255,255,255,0.92);
+  transform: translateY(-1px);
+}
+
+/* Optional “active” state if you add class="is-active" on current link */
+.topnav__link.is-active{
+  background: linear-gradient(135deg, rgba(91,124,255,0.95), rgba(139,92,246,0.85));
+  color: white;
+  box-shadow: 0 0 0 1px rgba(91,124,255,0.30), 0 18px 60px rgba(91,124,255,0.12);
+}
+
+/* ===== RIGHT SIDE ===== */
+.topbar__right{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: var(--soft);
+  font-size: 12.5px;
+  font-weight: 850;
+  letter-spacing: -0.01em;
+}
+
+/* ===== PAGE ===== */
+.page{
+  padding: 22px 0 46px;
+}
+
+/* ===== BUTTONS ===== */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: 10px;
+
+  padding: 11px 14px;
+  border-radius: 999px;
+
+  font-weight: 950;
+  letter-spacing: -0.01em;
+  font-size: 13.5px;
+
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+
+  transition:
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    filter var(--dur) var(--ease),
+    background var(--dur) var(--ease),
+    border-color var(--dur) var(--ease);
+  user-select:none;
+}
+.btn:hover{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,0.065);
+  border-color: rgba(255,255,255,0.14);
+}
+.btn:active{ transform: translateY(0) scale(0.99); }
+
+.btn--ghost{
+  background: rgba(0,0,0,0.18);
+}
+
+/* If you ever use .btn--primary somewhere */
+.btn--primary{
+  background: linear-gradient(135deg, rgba(91,124,255,1), rgba(139,92,246,0.92));
+  border-color: rgba(255,255,255,0.14);
+  color: white;
+  box-shadow: 0 20px 60px rgba(91,124,255,0.20);
+}
+.btn--primary:hover{
+  filter: brightness(1.06);
+  box-shadow: 0 26px 80px rgba(91,124,255,0.26);
+}
+
+/* ===== HERO / CARDS STYLES (for your dashboard body) ===== */
+.hero{
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--r3);
+  border: 1px solid rgba(255,255,255,0.10);
+  background:
+    radial-gradient(1200px 420px at 20% 0%, rgba(91,124,255,0.22), transparent 60%),
+    radial-gradient(1000px 420px at 80% 0%, rgba(139,92,246,0.16), transparent 60%),
+    rgba(255,255,255,0.04);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 28px;
+}
+
+.h1{
+  margin-top: 2px;
+  font-size: clamp(28px, 3.2vw, 44px);
+  font-weight: 950;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+.lead{
+  margin-top: 12px;
+  max-width: 70ch;
+  color: var(--soft);
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+
+.hero__cta{
+  margin-top: 18px;
+  display:flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Grid/cards in dashboard */
+.grid{
+  margin-top: 16px;
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.card{
+  position: relative;
+  overflow:hidden;
+  border-radius: var(--r2);
+  padding: 18px;
+
+  border: 1px solid rgba(255,255,255,0.10);
+  background:
+    radial-gradient(900px 240px at 20% 0%, rgba(91,124,255,0.12), transparent 60%),
+    rgba(255,255,255,0.035);
+
+  box-shadow: var(--shadow2);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
+  transition:
+    transform var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.card:hover{
+  transform: translateY(-3px);
+  border-color: rgba(91,124,255,0.22);
+  box-shadow: 0 22px 60px rgba(0,0,0,0.55);
+}
+
+.card__title{
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+.card__text{
+  color: var(--soft);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ===== FOOTER ===== */
+.footer{
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.18);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.footer__inner{
+  width: min(var(--max), calc(100% - 48px));
+  margin: 0 auto;
+  padding: 16px 0;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.muted{ color: var(--muted); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 980px){
+  .container{ width: min(var(--max), calc(100% - 28px)); }
+  .topbar__inner{ width: min(var(--max), calc(100% - 28px)); }
+  .hero{ padding: 20px; }
+  .grid{ grid-template-columns: 1fr; }
+  .footer__inner{ width: min(var(--max), calc(100% - 28px)); flex-direction: column; align-items:flex-start; }
+}
+
+@media (max-width: 760px){
+  .topbar__inner{
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .topnav{
+    justify-content: space-between;
+  }
+  .topbar__right{
+    justify-content: space-between;
+  }
+}
+
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; }
+}

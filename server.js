@@ -21,7 +21,8 @@ import dealerRouter from "./dealer.js";
 import portalRouter from "./routes/portal.js";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
-import { pool } from "./src/db.js";
+import { pool } from "./db.js";
+
 
 
 

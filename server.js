@@ -165,7 +165,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ✅ portal
-app.get("/portal", (req, res) => res.redirect("/portal/"));
 app.use("/portal", portalRouter);
 
 app.get("/portal/login", (req, res) => {

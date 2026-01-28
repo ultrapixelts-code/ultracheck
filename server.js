@@ -154,13 +154,20 @@ if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
 const app = express();
 const port = process.env.PORT || 8080;
 
+app.set("view engine", "ejs");
+app.set("views", path.join(process.cwd(), "views"));
+
 // Serve TUTTI i file statici dalla root (main/)
 app.use(express.static("."));
 app.use(express.json());
-app.use(express.urlencoded({ extended: true })); // AGGIUNTA
+app.use(express.urlencoded({ extended: true }));
+
 
 // monta le route del dealer
 app.use(dealerRouter);
+
+app.use("/portal", portalRouter);
+
 
 // Homepage → index.html
 app.get("/", (req, res) => {

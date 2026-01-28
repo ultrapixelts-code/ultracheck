@@ -20,4 +20,5 @@ await pool.query(
        role = excluded.role,
        dealer_name = excluded.dealer_name,
        is_active = true`,
-  [email.toLowerCase().trim]()
+[email.toLowerCase().trim(), hash, dealerName]
+

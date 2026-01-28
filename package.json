@@ -11,18 +11,22 @@
     "@google-cloud/vision": "^5.3.4",
     "@sendgrid/mail": "^8.1.6",
     "@zxing/library": "^0.21.3",
+    "bcrypt": "^6.0.0",
     "canvas": "^3.2.0",
+    "connect-pg-simple": "^10.0.0",
     "dotenv": "^17.2.3",
+    "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "express-session": "^1.19.0",
     "jsqr": "^1.4.0",
     "multer": "^2.0.2",
     "openai": "^6.8.1",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",
     "pdfjs-dist": "^5.4.449",
+    "pg": "^8.17.2",
     "sharp": "^0.33.5",
-    "tesseract.js": "^5.1.1",
-    "ejs": "^3.1.10"
+    "tesseract.js": "^5.1.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"

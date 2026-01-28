@@ -4,8 +4,9 @@
   <meta charset="utf-8" />
   <title>Portal Login</title>
 </head>
-<body style="font-family: system-ui; padding: 30px;">
-  <h1>Login Portal (demo)</h1>
+
+<body style="font-family: system-ui; padding: 30px; max-width: 400px; margin: auto;">
+  <h1>Login Portal</h1>
 
   <% if (error) { %>
     <p style="background:#ffe8e8;padding:10px;border-radius:10px;">
@@ -13,8 +14,30 @@
     </p>
   <% } %>
 
-  <p>Per ora è solo una pagina finta.</p>
+  <form method="post" action="/portal/login">
+    <div style="margin-bottom:12px;">
+      <label>Email</label><br />
+      <input
+        type="email"
+        name="email"
+        required
+        style="width:100%;padding:8px;"
+      />
+    </div>
 
-  <a href="/portal">Vai alla dashboard</a>
+    <div style="margin-bottom:12px;">
+      <label>Password</label><br />
+      <input
+        type="password"
+        name="password"
+        required
+        style="width:100%;padding:8px;"
+      />
+    </div>
+
+    <button type="submit" style="padding:10px 20px;">
+      Login
+    </button>
+  </form>
 </body>
 </html>

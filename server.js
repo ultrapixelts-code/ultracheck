@@ -167,6 +167,10 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/portal", (req, res) => res.redirect("/portal/"));
 app.use("/portal", portalRouter);
 
+app.get("/portal/login", (req, res) => {
+  res.send("PORTAL LOGIN HARD-CODED OK");
+});
+
 // ✅ dealer dopo portal
 app.use(dealerRouter);
 

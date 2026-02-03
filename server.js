@@ -23,6 +23,8 @@ import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db.js";
 import "./scripts/migrate-files.js";
+import { migrateFilesAndQuotes } from "./scripts/migrate-files.js";
+
 
 
 

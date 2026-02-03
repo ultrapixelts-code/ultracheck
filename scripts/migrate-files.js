@@ -1,6 +1,6 @@
 import { pool } from "../db.js";
 
-async function migrate() {
+export async function migrateFilesAndQuotes() {
   console.log("🚀 Running DB migration (files + quotes)...");
 
   await pool.query(`
@@ -32,10 +32,4 @@ async function migrate() {
   `);
 
   console.log("✅ Migration completed (files + quotes)");
-  process.exit(0);
 }
-
-migrate().catch((err) => {
-  console.error("❌ Migration failed (files + quotes):", err);
-  process.exit(1);
-});

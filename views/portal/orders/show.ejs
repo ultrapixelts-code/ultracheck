@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>Richiesta <%= order.id %></title>
+</head>
+<body style="font-family:system-ui; padding:24px;">
+
+  <h1>Richiesta #<%= order.id %></h1>
+
+  <p><b>Titolo:</b> <%= order.title %></p>
+  <p><b>Stato:</b> <%= order.status %></p>
+
+  <% if (quote) { %>
+    <h3>Preventivo</h3>
+    <p>Prezzo: <%= quote.price_total %> €</p>
+    <p>Tempi: <%= quote.lead_time_days %> giorni</p>
+  <% } else { %>
+    <p>Nessun preventivo.</p>
+  <% } %>
+
+  <p><a href="/portal/orders">← Torna alle richieste</a></p>
+
+</body>
+</html>

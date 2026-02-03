@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>Richieste</title>
+</head>
+<body style="font-family:system-ui; padding:24px;">
+
+  <h1>Richieste</h1>
+  <p>Utente: <%= user.email %> (<%= user.role %>)</p>
+
+  <p>
+    <a href="/portal/orders/new">➕ Nuova richiesta</a> |
+    <a href="/portal">Dashboard</a>
+  </p>
+
+  <% if (!orders || orders.length === 0) { %>
+    <p>Nessuna richiesta presente.</p>
+  <% } else { %>
+    <table border="1" cellpadding="8">
+      <tr>
+        <th>ID</th>
+        <th>Titolo</th>
+        <th>Stato</th>
+        <th></th>
+      </tr>
+      <% orders.forEach(o => { %>
+        <tr>
+          <td><%= o.id %></td>
+          <td><%= o.title %></td>
+          <td><%= o.status %></td>
+          <td><a href="/portal/orders/<%= o.id %>">Apri</a></td>
+        </tr>
+      <% }) %>
+    </table>
+  <% } %>
+
+</body>
+</html>

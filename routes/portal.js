@@ -121,23 +121,16 @@ router.get("/orders/:id", requireLogin, async (req, res) => {
   if (notFound) return res.status(404).send("Ordine non trovato");
   if (forbidden) return res.status(403).send("Non autorizzato");
 
+  // files
   const { rows: files } = await pool.query(
-    `SELECT * FROM order_files WHERE order_id = $1 ORDER BY created_at DESC`,
+    `SELECT id, order_id, uploader_user_id, original_name, mime_type, size_bytes, created_at
+     FROM order_files
+     WHERE order_id = $1
+     ORDER BY created_at DESC`,
     [orderId]
   );
 
-  // Temporaneamente disabilitate perché le tabelle quotes e proofs non esistono ancora
-  // const { rows: quoteRows } = await pool.query(`SELECT * FROM quotes WHERE order_id = $1 LIMIT 1`, [orderId]);
-  // const quote = quoteRows[0] || null;
-
-  // const { rows: proofRows } = await pool.query(
-  //   `SELECT * FROM proofs WHERE order_id = $1 ORDER BY version DESC`,
-  //   [orderId]
-  // );
-
-  const quote = null;
-  const proofRows = [];
-
+  // events
   const { rows: events } = await pool.query(
     `SELECT e.*, u.email
      FROM order_events e
@@ -148,7 +141,23 @@ router.get("/orders/:id", requireLogin, async (req, res) => {
     [orderId]
   );
 
-  res.render("portal/orders/show", {
+  // quote (se tabella esiste ok, se no rimane null)
+  let quote = null;
+  try {
+    const { rows: quoteRows } = await pool.query(
+      `SELECT * FROM quotes WHERE order_id = $1 LIMIT 1`,
+      [orderId]
+    );
+    quote = quoteRows[0] || null;
+  } catch (err) {
+    // se quotes non esiste ancora, non bloccare la pagina
+    console.warn("quotes table missing or query failed:", err.message);
+  }
+
+  // proofs DISABILITATE per ora (tabella non esiste)
+  const proofRows = [];
+
+  return res.render("portal/orders/show", {
     user,
     order,
     files,
@@ -157,6 +166,7 @@ router.get("/orders/:id", requireLogin, async (req, res) => {
     events
   });
 });
+
 
 // ────────────────────────────────────────────────
 // CARICA FILE NELL'ORDINE

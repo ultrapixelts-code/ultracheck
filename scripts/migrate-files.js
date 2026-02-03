@@ -1,7 +1,7 @@
 import { pool } from "../db.js";
 
 async function migrate() {
-  console.log("🚀 Running DB migration (files)...");
+  console.log("🚀 Running DB migration (files + quotes)...");
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS order_files (
@@ -16,14 +16,26 @@ async function migrate() {
     );
   `);
 
-  await pool.query(`CREATE INDEX IF NOT EXISTS idx_order_files_order ON order_files(order_id);`);
+  await pool.query(`
+    CREATE INDEX IF NOT EXISTS idx_order_files_order
+    ON order_files(order_id);
+  `);
 
-  console.log("✅ Migration completed (files)");
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS quotes (
+      order_id       BIGINT PRIMARY KEY REFERENCES orders(id) ON DELETE CASCADE,
+      price_total    NUMERIC(12,2),
+      lead_time_days INT,
+      sent_at        TIMESTAMPTZ,
+      accepted_at    TIMESTAMPTZ
+    );
+  `);
+
+  console.log("✅ Migration completed (files + quotes)");
   process.exit(0);
 }
 
 migrate().catch((err) => {
-  console.error("❌ Migration failed (files):", err);
+  console.error("❌ Migration failed (files + quotes):", err);
   process.exit(1);
 });
-EOF

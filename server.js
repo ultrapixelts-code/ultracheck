@@ -1,5 +1,4 @@
 import express from "express";
-import "./scripts/migrate-orders.js";
 import multer from "multer";
 import fs from "fs/promises";
 import path from "path";

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <title>Nuova richiesta</title>
+</head>
+<body style="font-family:system-ui; padding:24px;">
+
+  <h1>Nuova richiesta</h1>
+
+  <% if (error) { %>
+    <p style="color:red;"><%= error %></p>
+  <% } %>
+
+  <form method="post" action="/portal/orders">
+    <p>
+      <label>Titolo</label><br>
+      <input name="title" required>
+    </p>
+
+    <p>
+      <label>Note</label><br>
+      <textarea name="notes_dealer"></textarea>
+    </p>
+
+    <button type="submit">Invia</button>
+  </form>
+
+  <p><a href="/portal/orders">← Indietro</a></p>
+
+</body>
+</html>

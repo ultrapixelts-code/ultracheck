@@ -27,6 +27,8 @@ import "./scripts/migrate-files.js";
 
 
 
+
+
 // ===== ZXING (VERSIONE NODE, QUELLA GIUSTA) =====
 import {
   RGBLuminanceSource,

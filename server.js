@@ -22,6 +22,8 @@ import portalRouter from "./routes/portal.js";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db.js";
+import "./scripts/migrate.js";
+
 
 
 

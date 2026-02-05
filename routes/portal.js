@@ -1,3 +1,47 @@
+// src/routes/portal.js
+
+import express, { Router } from 'express';
+const router = Router();
+
+// ────────────────────────────────────────────────
+// IMPORT DB (adatta il percorso reale del tuo pool PostgreSQL)
+// ────────────────────────────────────────────────
+import { pool } from '../db.js';  // oppure '../config/db.js' o simile – cambia se necessario
+
+// ────────────────────────────────────────────────
+// MIDDLEWARE DI AUTENTICAZIONE
+// ────────────────────────────────────────────────
+function requireLogin(req, res, next) {
+  if (!req.session?.user) {
+    const redirectTo = encodeURIComponent(req.originalUrl);
+    return res.redirect(`/portal/login?redirect=${redirectTo}`);
+  }
+  next();
+}
+
+function requireAdmin(req, res, next) {
+  if (!req.session?.user || req.session.user.role !== 'admin') {
+    return res.status(403).send('Accesso negato – solo amministratori');
+  }
+  next();
+}
+
+// ────────────────────────────────────────────────
+// QUI VANNO LE TUE ALTRE ROUTE ESISTENTI
+// (login, logout, elenco ordini, dettaglio ordine, upload file, ecc.)
+// Non toccarle – lasciale esattamente come sono nel tuo file reale
+// Esempi di come potrebbero apparire (non copiarle se già esistono):
+//
+// router.get('/login', (req, res) => { ... });
+// router.post('/login', (req, res) => { ... });
+// router.get('/logout', (req, res) => { ... });
+// router.get('/orders', requireLogin, async (req, res) => { ... });
+// router.get('/orders/:id(\\d+)', requireLogin, async (req, res) => { ... });
+// router.post('/orders/:id/upload', requireLogin, ...);
+// ecc.
+// ────────────────────────────────────────────────
+
+
 // ────────────────────────────────────────────────
 // INVIA PREVENTIVO (solo admin)
 // ────────────────────────────────────────────────
@@ -26,7 +70,7 @@ router.post(
     try {
       await client.query('BEGIN');
 
-      // 0) Leggi stato reale dell'ordine
+      // Leggi stato reale dell'ordine
       const { rows: oRows } = await client.query(
         `SELECT status FROM orders WHERE id = $1`,
         [orderId]
@@ -38,12 +82,12 @@ router.post(
 
       const fromStatus = oRows[0].status;
 
-      // FIX 1: Blocca SUBITO se non è RFQ — prima di toccare la quote
+      // Blocco immediato se non è in stato RFQ
       if (fromStatus !== 'RFQ') {
         throw new Error(`Impossibile quotare: ordine non in stato RFQ (attuale: ${fromStatus})`);
       }
 
-      // 1) Salva / aggiorna preventivo
+      // Salva / aggiorna preventivo
       await client.query(
         `INSERT INTO quotes (order_id, price_total, lead_time_days, sent_at)
          VALUES ($1, $2, $3, NOW())
@@ -54,7 +98,7 @@ router.post(
         [orderId, price_total, lead_time_days]
       );
 
-      // 2) Cambia stato ordine (con doppia sicurezza)
+      // Aggiorna stato ordine (con doppia sicurezza)
       const { rowCount } = await client.query(
         `UPDATE orders 
          SET status = 'QUOTED', 
@@ -64,12 +108,10 @@ router.post(
       );
 
       if (rowCount === 0) {
-        // Dovrebbe essere quasi impossibile arrivare qui dopo il check precedente,
-        // ma teniamo il controllo per race conditions teoriche
-        throw new Error(`Impossibile aggiornare stato ordine (possibile race condition)`);
+        throw new Error('Impossibile aggiornare stato ordine (possibile race condition)');
       }
 
-      // 3) Registra evento QUOTE_SENT
+      // Registra evento QUOTE_SENT
       await client.query(
         `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
          VALUES ($1, $2, 'QUOTE_SENT', $3, NOW())`,
@@ -80,7 +122,7 @@ router.post(
         ]
       );
 
-      // 4) Evento STATUS_CHANGED con from reale
+      // Registra evento STATUS_CHANGED con stato reale
       await client.query(
         `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
          VALUES ($1, $2, 'STATUS_CHANGED', $3, NOW())`,
@@ -93,10 +135,8 @@ router.post(
 
       await client.query('COMMIT');
 
-      // FIX 2: risposta più prevedibile per form classici
-      const isAjax = req.xhr;
-
-      if (isAjax) {
+      // Risposta: AJAX o redirect normale
+      if (req.xhr) {
         return res.json({
           success: true,
           message: 'Preventivo inviato con successo',
@@ -105,7 +145,6 @@ router.post(
         });
       }
 
-      // Comportamento standard per submit form normale
       res.redirect(`/portal/orders/${orderId}`);
     } catch (err) {
       await client.query('ROLLBACK');
@@ -113,20 +152,18 @@ router.post(
       console.error('Errore invio preventivo:', {
         orderId,
         error: err.message,
-        stack: err.stack?.substring(0, 400) || 'no stack'
+        stack: err.stack?.slice(0, 500) || 'no stack'
       });
 
-      const isClientError = 
-        err.message.includes('non trovato') ||
-        err.message.includes('non in stato') ||
-        err.message.includes('non valido');
+      const isClientError =
+        err.message?.includes('non trovato') ||
+        err.message?.includes('non in stato') ||
+        err.message?.includes('non valido');
 
       const statusCode = isClientError ? 400 : 500;
       const message = err.message || 'Errore durante l\'invio del preventivo';
 
-      const isAjax = req.xhr;
-
-      if (isAjax) {
+      if (req.xhr) {
         return res.status(statusCode).json({ error: message });
       }
 
@@ -136,3 +173,8 @@ router.post(
     }
   }
 );
+
+// ────────────────────────────────────────────────
+// ESM EXPORT (obbligatorio per il tuo server.js)
+// ────────────────────────────────────────────────
+export default router;

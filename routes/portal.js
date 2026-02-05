@@ -46,7 +46,7 @@ function requireAdmin(req, res, next) {
 // INVIA PREVENTIVO (solo admin)
 // ────────────────────────────────────────────────
 router.post(
-  '/orders/:id(\\d+)/quote',
+  '/orders/:id/quote',
   requireLogin,
   requireAdmin,
   express.urlencoded({ extended: true }),

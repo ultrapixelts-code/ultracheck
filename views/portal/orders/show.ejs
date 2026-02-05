@@ -1,3 +1,4 @@
+cat > views/portal/orders/show.ejs <<'EOF'
 <!doctype html>
 <html lang="it">
 <head>
@@ -19,8 +20,6 @@
     <p>Nessun preventivo.</p>
   <% } %>
 
-
-  <!-- ================= FILE ================= -->
   <h2>File allegati</h2>
 
   <% if (files && files.length > 0) { %>
@@ -38,19 +37,14 @@
     <p>Nessun file caricato.</p>
   <% } %>
 
-
-  <!-- ================= UPLOAD ================= -->
   <h3>Carica nuovo file</h3>
 
-  <form action="/portal/orders/<%= order.id %>/files" 
-        method="POST" 
+  <form action="/portal/orders/<%= order.id %>/files"
+        method="POST"
         enctype="multipart/form-data">
-
     <input type="file" name="file" required>
     <button type="submit">Carica</button>
-
   </form>
-
 
   <hr>
 
@@ -58,3 +52,4 @@
 
 </body>
 </html>
+EOF

@@ -1,4 +1,3 @@
-cat > views/portal/orders/show.ejs <<'EOF'
 <!doctype html>
 <html lang="it">
 <head>
@@ -12,15 +11,62 @@ cat > views/portal/orders/show.ejs <<'EOF'
   <p><b>Titolo:</b> <%= order.title %></p>
   <p><b>Stato:</b> <%= order.status %></p>
 
-  <% if (quote) { %>
-    <h3>Preventivo</h3>
-    <p>Prezzo: <%= quote.price_total %> €</p>
-    <p>Tempi: <%= quote.lead_time_days %> giorni</p>
-  <% } else { %>
-    <p>Nessun preventivo.</p>
+  <hr>
+
+  <h2>Azioni</h2>
+
+  <% if (user && user.role === 'admin' && order.status === 'RFQ') { %>
+    <h3>Invia preventivo (admin)</h3>
+    <form action="/portal/orders/<%= order.id %>/quote" method="POST">
+      <label>Prezzo totale (€):</label>
+      <input type="number" name="price_total" step="0.01" min="0.01" required>
+      <label>Lead time (giorni):</label>
+      <input type="number" name="lead_time_days" step="1" min="1" required>
+      <button type="submit">Invia preventivo</button>
+    </form>
+  <% } %>
+
+  <% if (user && user.role !== 'admin' && order.status === 'QUOTED') { %>
+    <h3>Approva prezzo (dealer)</h3>
+    <form action="/portal/orders/<%= order.id %>/confirm" method="POST">
+      <button type="submit">Approvo il preventivo</button>
+    </form>
+  <% } %>
+
+  <% if (user && user.role === 'admin' && (order.status === 'PRICE_APPROVED' || order.status === 'PROOF_CHANGES_REQUESTED')) { %>
+    <h3>Invia bozza PDF (admin)</h3>
+    <form action="/portal/orders/<%= order.id %>/proof" method="POST" enctype="multipart/form-data">
+      <input type="file" name="file" accept="application/pdf" required>
+      <button type="submit">Carica bozza e invia</button>
+    </form>
+  <% } %>
+
+  <% if (user && user.role !== 'admin' && order.status === 'PROOF_SENT') { %>
+    <h3>Bozza ricevuta (dealer)</h3>
+
+    <form action="/portal/orders/<%= order.id %>/proof/approve" method="POST" style="margin-bottom:12px;">
+      <button type="submit">Approvo la bozza</button>
+    </form>
+
+    <form action="/portal/orders/<%= order.id %>/proof/changes" method="POST">
+      <label>Note modifiche:</label><br>
+      <textarea name="note" rows="3" style="width:340px;" placeholder="Es. cambia colore, sposta logo, ecc"></textarea><br>
+      <button type="submit">Richiedo modifiche</button>
+    </form>
   <% } %>
 
   <h2>File allegati</h2>
+
+  <%
+    const proofs = (files || []).filter(f => f.kind === 'PROOF_ADMIN');
+    const latestProof = proofs.length ? proofs[0] : null; // il primo è il più recente (ORDER BY created_at DESC)
+  %>
+
+  <% if (latestProof) { %>
+    <p><b>Bozza attuale:</b>
+      <a href="/portal/files/<%= latestProof.id %>" target="_blank"><%= latestProof.original_name %></a>
+    </p>
+  <% } %>
 
   <% if (files && files.length > 0) { %>
     <ul>
@@ -30,6 +76,9 @@ cat > views/portal/orders/show.ejs <<'EOF'
             <%= file.original_name %>
           </a>
           (<%= Math.round((file.size_bytes || 0) / 1024) %> KB)
+          <% if (file.kind) { %>
+            — tipo: <%= file.kind %>
+          <% } %>
         </li>
       <% }) %>
     </ul>
@@ -52,4 +101,3 @@ cat > views/portal/orders/show.ejs <<'EOF'
 
 </body>
 </html>
-EOF

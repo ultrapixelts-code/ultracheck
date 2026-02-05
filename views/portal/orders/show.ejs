@@ -19,6 +19,41 @@
     <p>Nessun preventivo.</p>
   <% } %>
 
+
+  <!-- ================= FILE ================= -->
+  <h2>File allegati</h2>
+
+  <% if (files && files.length > 0) { %>
+    <ul>
+      <% files.forEach(file => { %>
+        <li>
+          <a href="/portal/files/<%= file.id %>" target="_blank">
+            <%= file.original_name %>
+          </a>
+          (<%= Math.round((file.size_bytes || 0) / 1024) %> KB)
+        </li>
+      <% }) %>
+    </ul>
+  <% } else { %>
+    <p>Nessun file caricato.</p>
+  <% } %>
+
+
+  <!-- ================= UPLOAD ================= -->
+  <h3>Carica nuovo file</h3>
+
+  <form action="/portal/orders/<%= order.id %>/files" 
+        method="POST" 
+        enctype="multipart/form-data">
+
+    <input type="file" name="file" required>
+    <button type="submit">Carica</button>
+
+  </form>
+
+
+  <hr>
+
   <p><a href="/portal/orders">← Torna alle richieste</a></p>
 
 </body>

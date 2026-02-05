@@ -22,7 +22,6 @@ import portalRouter from "./routes/portal.js";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import { pool } from "./db.js";
-import "./scripts/migrate-files.js";
 import { migrateFilesAndQuotes } from "./scripts/migrate-files.js";
 
 
@@ -646,6 +645,8 @@ app.get("/test-vision", async (req, res) => {
 });
 
 // === START ===
+await migrateFilesAndQuotes();
+
 app.listen(port, "0.0.0.0", () => {
   console.log(`🔥 NEW BUILD 2026-01-28 🔥 UltraCheck LIVE su http://0.0.0.0:${port}`);
   console.log(`URL: https://ultracheck.onrender.com`);

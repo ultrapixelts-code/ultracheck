@@ -99,6 +99,7 @@ router.get("/login", (req, res) => {
 });
 
 router.post("/login", express.urlencoded({ extended: true }), async (req, res) => {
+   console.log("LOGIN BODY:", req.body);
   const email = String(req.body.email || "").trim().toLowerCase();
   const password = String(req.body.password || "");
 
@@ -277,37 +278,41 @@ router.get("/orders/:id", requireLogin, async (req, res) => {
    - file: il file
    - kind: opzionale (string)
 ──────────────────────────────────────────────── */
-router.post("/orders/:id/files", requireLogin, upload.single("file"), async (req, res) => {
-  const user = req.session.user;
-  const orderId = Number(req.params.id);
+router.post("/orders/:id/files", requireLogin, (req, res) => {
+  upload.single("file")(req, res, async (err) => {
+    const user = req.session.user;
+    const orderId = Number(req.params.id);
 
-  try {
-    const check = await getOrderOr403(orderId, user, pool);
-    if (!check.ok) return res.status(check.status).send(check.message);
+    if (err) return res.status(400).send(err.message || "Errore upload");
+    try {
+      const check = await getOrderOr403(orderId, user, pool);
+      if (!check.ok) return res.status(check.status).send(check.message);
 
-    if (!req.file) return res.status(400).send("Nessun file caricato");
+      if (!req.file) return res.status(400).send("Nessun file caricato");
 
-    const kind = normalizeKind(req.body.kind);
-    const { originalname, mimetype, size, buffer } = req.file;
+      const kind = normalizeKind(req.body.kind);
+      const { originalname, mimetype, size, buffer } = req.file;
 
-    await pool.query(
-      `INSERT INTO order_files (order_id, uploader_user_id, original_name, mime_type, size_bytes, content, kind)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [orderId, user.id, originalname, mimetype, size, buffer, kind]
-    );
+      await pool.query(
+        `INSERT INTO order_files (order_id, uploader_user_id, original_name, mime_type, size_bytes, content, kind)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+        [orderId, user.id, originalname, mimetype, size, buffer, kind]
+      );
 
-    await pool.query(
-      `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
-       VALUES ($1, $2, 'FILE_UPLOADED', $3, NOW())`,
-      [orderId, user.id, JSON.stringify({ name: originalname, size_bytes: size, kind })]
-    );
+      await pool.query(
+        `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+         VALUES ($1, $2, 'FILE_UPLOADED', $3, NOW())`,
+        [orderId, user.id, JSON.stringify({ name: originalname, size_bytes: size, kind })]
+      );
 
-    res.redirect(`/portal/orders/${orderId}`);
-  } catch (err) {
-    console.error("Errore upload file:", err);
-    res.status(500).send("Errore durante il caricamento del file");
-  }
+      return res.redirect(`/portal/orders/${orderId}`);
+    } catch (e) {
+      console.error("Errore upload file:", e);
+      return res.status(500).send("Errore durante il caricamento del file");
+    }
+  });
 });
+
 
 /* ────────────────────────────────────────────────
    VIEW / DOWNLOAD FILE
@@ -424,6 +429,182 @@ router.post(
       await client.query("ROLLBACK");
       console.error("Errore invio preventivo:", err);
       res.status(400).send(err.message || "Errore durante l'invio del preventivo");
+    } finally {
+      client.release();
+    }
+  }
+);
+/* ────────────────────────────────────────────────
+   PROOF FLOW
+   - Admin carica bozza PDF → status PROOF_SENT (file salvato come PROOF_ADMIN)
+   - Dealer approva → status PROOF_APPROVED
+   - Dealer richiede modifiche → status PROOF_CHANGES_REQUESTED (+ note)
+──────────────────────────────────────────────── */
+
+// Admin: carica bozza (PDF) e invia
+router.post(
+  "/orders/:id/proof",
+  requireLogin,
+  requireAdmin,
+  (req, res) => {
+    // wrapper per catturare errori multer (tipo mimetype non supportato)
+    upload.single("file")(req, res, async (err) => {
+      const orderId = Number(req.params.id);
+
+      if (err) return res.status(400).send(err.message || "Errore upload");
+      if (!req.file) return res.status(400).send("Nessun file caricato");
+
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+
+        const { rows } = await client.query(`SELECT status FROM orders WHERE id = $1`, [orderId]);
+        if (rows.length === 0) throw new Error("Ordine non trovato");
+        const fromStatus = rows[0].status;
+
+        // Consentiamo invio proof solo da PRICE_APPROVED o PROOF_CHANGES_REQUESTED
+        if (!["PRICE_APPROVED", "PROOF_CHANGES_REQUESTED"].includes(fromStatus)) {
+          throw new Error(`Impossibile inviare bozza: stato attuale = ${fromStatus}`);
+        }
+
+        const { originalname, mimetype, size, buffer } = req.file;
+
+        // extra safety: bozza solo PDF (anche se multer già filtra)
+        if (mimetype !== "application/pdf") throw new Error("La bozza deve essere un PDF");
+
+        // salva come PROOF_ADMIN
+        await client.query(
+          `INSERT INTO order_files (order_id, uploader_user_id, original_name, mime_type, size_bytes, content, kind)
+           VALUES ($1, $2, $3, $4, $5, $6, 'PROOF_ADMIN')`,
+          [orderId, req.session.user.id, originalname, mimetype, size, buffer]
+        );
+
+        // aggiorna stato
+        await client.query(
+          `UPDATE orders SET status='PROOF_SENT', updated_at=NOW() WHERE id=$1`,
+          [orderId]
+        );
+
+        // eventi
+        await client.query(
+          `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+           VALUES ($1, $2, 'PROOF_SENT', $3, NOW())`,
+          [orderId, req.session.user.id, JSON.stringify({ file: originalname })]
+        );
+
+        await client.query(
+          `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+           VALUES ($1, $2, 'STATUS_CHANGED', $3, NOW())`,
+          [orderId, req.session.user.id, JSON.stringify({ from: fromStatus, to: "PROOF_SENT" })]
+        );
+
+        await client.query("COMMIT");
+        return res.redirect(`/portal/orders/${orderId}`);
+      } catch (e) {
+        await client.query("ROLLBACK");
+        console.error("PROOF upload error:", e);
+        return res.status(400).send(e.message || "Errore invio bozza");
+      } finally {
+        client.release();
+      }
+    });
+  }
+);
+
+// Dealer: approva bozza
+router.post("/orders/:id/proof/approve", requireLogin, async (req, res) => {
+  const user = req.session.user;
+  const orderId = Number(req.params.id);
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const check = await getOrderOr403(orderId, user, client);
+    if (!check.ok) {
+      await client.query("ROLLBACK");
+      return res.status(check.status).send(check.message);
+    }
+
+    if (check.order.status !== "PROOF_SENT") {
+      await client.query("ROLLBACK");
+      return res.status(400).send("Ordine non in stato PROOF_SENT → impossibile approvare");
+    }
+
+    const { rowCount } = await client.query(
+      `UPDATE orders SET status='PROOF_APPROVED', updated_at=NOW()
+       WHERE id=$1 AND status='PROOF_SENT'`,
+      [orderId]
+    );
+    if (rowCount === 0) throw new Error("Approvazione fallita: stato cambiato nel frattempo");
+
+    await client.query(
+      `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+       VALUES ($1, $2, 'STATUS_CHANGED', $3, NOW())`,
+      [orderId, user.id, JSON.stringify({ from: "PROOF_SENT", to: "PROOF_APPROVED" })]
+    );
+
+    await client.query("COMMIT");
+    return res.redirect(`/portal/orders/${orderId}`);
+  } catch (e) {
+    await client.query("ROLLBACK");
+    console.error("PROOF approve error:", e);
+    return res.status(500).send("Errore durante approvazione bozza");
+  } finally {
+    client.release();
+  }
+});
+
+// Dealer: richiede modifiche
+router.post(
+  "/orders/:id/proof/changes",
+  requireLogin,
+  express.urlencoded({ extended: true }),
+  async (req, res) => {
+    const user = req.session.user;
+    const orderId = Number(req.params.id);
+    const note = String(req.body.note || "").trim() || null;
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+
+      const check = await getOrderOr403(orderId, user, client);
+      if (!check.ok) {
+        await client.query("ROLLBACK");
+        return res.status(check.status).send(check.message);
+      }
+
+      if (check.order.status !== "PROOF_SENT") {
+        await client.query("ROLLBACK");
+        return res.status(400).send("Ordine non in stato PROOF_SENT → impossibile chiedere modifiche");
+      }
+
+      const { rowCount } = await client.query(
+        `UPDATE orders SET status='PROOF_CHANGES_REQUESTED', updated_at=NOW()
+         WHERE id=$1 AND status='PROOF_SENT'`,
+        [orderId]
+      );
+      if (rowCount === 0) throw new Error("Richiesta modifiche fallita: stato cambiato nel frattempo");
+
+      await client.query(
+        `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+         VALUES ($1, $2, 'PROOF_CHANGES_REQUESTED', $3, NOW())`,
+        [orderId, user.id, JSON.stringify({ note })]
+      );
+
+      await client.query(
+        `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+         VALUES ($1, $2, 'STATUS_CHANGED', $3, NOW())`,
+        [orderId, user.id, JSON.stringify({ from: "PROOF_SENT", to: "PROOF_CHANGES_REQUESTED" })]
+      );
+
+      await client.query("COMMIT");
+      return res.redirect(`/portal/orders/${orderId}`);
+    } catch (e) {
+      await client.query("ROLLBACK");
+      console.error("PROOF changes error:", e);
+      return res.status(500).send("Errore durante richiesta modifiche");
     } finally {
       client.release();
     }

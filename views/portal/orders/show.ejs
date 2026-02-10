@@ -68,42 +68,55 @@
 
 
 
+<h2>File allegati</h2>
 
-  <h2>File allegati</h2>
+<%
+  const proofs = (files || []).filter(f => f.kind === 'PROOF_ADMIN');
+  const latestProof = proofs.length ? proofs[0] : null;
 
-  <%
-    const proofs = (files || []).filter(f => f.kind === 'PROOF_ADMIN');
-    const latestProof = proofs.length ? proofs[0] : null; // il primo è il più recente (ORDER BY created_at DESC)
-  %>
+  const canSeeProof =
+    (user && user.role === 'admin') ||
+    ['PROOF_SENT','PROOF_APPROVED','PROOF_CHANGES_REQUESTED'].includes(order.status);
 
-  <% if (latestProof) { %>
-    <p><b>Bozza attuale:</b>
-      <a href="/portal/files/<%= latestProof.id %>" target="_blank"><%= latestProof.original_name %></a>
-    </p>
-  <% } %>
+  const visibleFiles = (files || []).filter(f => {
+    if (f.kind === 'PROOF_ADMIN') return canSeeProof; // bozza visibile solo quando permesso
+    return true;
+  });
+%>
 
-  <% if (files && files.length > 0) { %>
-    <ul>
-      <% files.forEach(file => { %>
-        <li>
-          <a href="/portal/files/<%= file.id %>" target="_blank">
-            <%= file.original_name %>
-          </a>
-          (<%= Math.round((file.size_bytes || 0) / 1024) %> KB)
-          <% if (file.kind) { %>
-            — tipo: <%= file.kind %>
-          <% } %>
-        </li>
-      <% }) %>
-    </ul>
-  <% } else { %>
-    <p>Nessun file caricato.</p>
-  <% } %>
+<% if (latestProof && canSeeProof) { %>
+  <p><b>Bozza attuale:</b>
+    <a href="/portal/files/<%= latestProof.id %>" target="_blank"><%= latestProof.original_name %></a>
+  </p>
+<% } %>
 
- 
+<% if (visibleFiles.length > 0) { %>
+  <ul>
+    <% visibleFiles.forEach(file => { %>
+      <li>
+        <a href="/portal/files/<%= file.id %>" target="_blank"><%= file.original_name %></a>
+        (<%= Math.round((file.size_bytes || 0) / 1024) %> KB)
+        <% if (file.kind) { %> — tipo: <%= file.kind %><% } %>
+      </li>
+    <% }) %>
+  </ul>
+<% } else { %>
+  <p>Nessun file caricato.</p>
+<% } %>
+
+
+
+
 
   <hr>
-
+<% if (user && user.role === 'admin') { %>
+  <h3>Carica logo dealer</h3>
+  <form action="/portal/dealers/<%= order.dealer_user_id %>/logo" method="POST" enctype="multipart/form-data">
+    <input type="file" name="file" accept="image/png,image/jpeg,image/webp" required />
+    <button type="submit">Upload logo</button>
+  </form>
+<% } %>
+<hr>
 <h3>Carica nuovo file</h3>
 <form action="/portal/orders/<%= order.id %>/files" method="POST" enctype="multipart/form-data">
   <label>Tipo:</label>
@@ -111,7 +124,6 @@
     <option value="GENERIC">Generico</option>
     <option value="ARTWORK">Artwork</option>
     <option value="BRIEF">Brief</option>
-    <option value="DEALER_LOGO">Logo dealer</option>
     <% if (user && user.role === 'admin') { %>
       <option value="PROOF_ADMIN">Bozza admin</option>
     <% } %>

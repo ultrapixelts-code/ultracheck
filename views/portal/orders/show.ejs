@@ -11,16 +11,17 @@
   <p><b>Titolo:</b> <%= order.title %></p>
   <p><b>Stato:</b> <%= order.status %></p>
 
-
 <% if (quote) { %>
   <hr>
   <h2>Preventivo</h2>
-  <p><b>Prezzo:</b> <%= Number(quote.price_total).toFixed(2) %> €</p>
+  <p><b>Prezzo:</b> <%= (Number(quote.price_total) || 0).toFixed(2) %> €</p>
   <p><b>Lead time:</b> <%= quote.lead_time_days %> giorni</p>
   <% if (quote.sent_at) { %>
     <p style="opacity:.7;">Inviato: <%= new Date(quote.sent_at).toLocaleString('it-IT') %></p>
   <% } %>
 <% } %>
+
+
 
 
   <h2>Azioni</h2>
@@ -65,6 +66,9 @@
     </form>
   <% } %>
 
+
+
+
   <h2>File allegati</h2>
 
   <%
@@ -96,17 +100,27 @@
     <p>Nessun file caricato.</p>
   <% } %>
 
-  <h3>Carica nuovo file</h3>
-
-  <form action="/portal/orders/<%= order.id %>/files"
-        method="POST"
-        enctype="multipart/form-data">
-    <input type="file" name="file" required>
-    <button type="submit">Carica</button>
-  </form>
+ 
 
   <hr>
 
+<h3>Carica nuovo file</h3>
+<form action="/portal/orders/<%= order.id %>/files" method="POST" enctype="multipart/form-data">
+  <label>Tipo:</label>
+  <select name="kind">
+    <option value="GENERIC">Generico</option>
+    <option value="ARTWORK">Artwork</option>
+    <option value="BRIEF">Brief</option>
+    <option value="DEALER_LOGO">Logo dealer</option>
+    <% if (user && user.role === 'admin') { %>
+      <option value="PROOF_ADMIN">Bozza admin</option>
+    <% } %>
+  </select>
+  <br><br>
+  <input type="file" name="file" required>
+  <button type="submit">Carica</button>
+</form>
+<hr>
   <p><a href="/portal/orders">← Torna alle richieste</a></p>
 
 </body>

@@ -634,21 +634,51 @@ router.post("/orders/:id/confirm", requireLogin, async (req, res) => {
       await client.query("ROLLBACK");
       return res.status(400).send("Ordine non in stato QUOTED → impossibile confermare");
     }
-
-    const { rowCount } = await client.query(
-      `UPDATE orders
-       SET status = 'PRICE_APPROVED', updated_at = NOW()
-       WHERE id = $1 AND status = 'QUOTED'`,
+     
+    // Leggi il preventivo (quote) e prenditi il prezzo
+    const { rows: qRows } = await client.query(
+      `SELECT price_total, lead_time_days
+       FROM quotes
+       WHERE order_id = $1
+       LIMIT 1`,
       [orderId]
     );
 
+    if (qRows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(400).send("Nessun preventivo trovato per questo ordine");
+    }
+
+    const { price_total, lead_time_days } = qRows[0];
+
+    // 1) aggiorna ordine e "congela" il prezzo approvato
+    const { rowCount } = await client.query(
+      `UPDATE orders
+       SET status = 'PRICE_APPROVED',
+           price_approved = $2,
+           approved_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $1 AND status = 'QUOTED'`,
+      [orderId, price_total]
+    );
+
     if (rowCount === 0) throw new Error("Conferma fallita: stato cambiato nel frattempo");
+
+    // 2) eventi SOLO dopo update riuscito
+    await client.query(
+      `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+       VALUES ($1, $2, 'PRICE_APPROVED', $3, NOW())`,
+      [orderId, user.id, JSON.stringify({ price_total, lead_time_days })]
+    );
 
     await client.query(
       `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
        VALUES ($1, $2, 'STATUS_CHANGED', $3, NOW())`,
       [orderId, user.id, JSON.stringify({ from: "QUOTED", to: "PRICE_APPROVED" })]
     );
+
+
+   
 
     await client.query("COMMIT");
     res.redirect(`/portal/orders/${orderId}`);

@@ -327,20 +327,32 @@ router.get("/files/:id", requireLogin, async (req, res) => {
 
   try {
     const { rows } = await pool.query(
-      `SELECT f.*, o.dealer_user_id
-       FROM order_files f
-       JOIN orders o ON o.id = f.order_id
-       WHERE f.id = $1
-       LIMIT 1`,
-      [fileId]
-    );
+  `SELECT f.*, 
+          o.dealer_user_id,
+          o.status AS order_status
+   FROM order_files f
+   JOIN orders o ON o.id = f.order_id
+   WHERE f.id = $1
+   LIMIT 1`,
+  [fileId]
+);
+
 
     const file = rows[0];
+     const orderStatus = String(file.order_status || "").trim();
+
     if (!file) return res.status(404).send("File non trovato");
 
     if (user.role !== "admin" && Number(file.dealer_user_id) !== Number(user.id)) {
       return res.status(403).send("Non autorizzato");
     }
+const canSeeProof =
+  user.role === "admin" ||
+  ["PROOF_SENT", "PROOF_APPROVED", "PROOF_CHANGES_REQUESTED"].includes(orderStatus);
+
+if (file.kind === "PROOF_ADMIN" && !canSeeProof) {
+  return res.status(403).send("Bozza non ancora disponibile");
+}
 
     const filename = safeFilename(file.original_name);
 

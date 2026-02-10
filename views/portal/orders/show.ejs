@@ -11,7 +11,17 @@
   <p><b>Titolo:</b> <%= order.title %></p>
   <p><b>Stato:</b> <%= order.status %></p>
 
+
+<% if (quote) { %>
   <hr>
+  <h2>Preventivo</h2>
+  <p><b>Prezzo:</b> <%= Number(quote.price_total).toFixed(2) %> €</p>
+  <p><b>Lead time:</b> <%= quote.lead_time_days %> giorni</p>
+  <% if (quote.sent_at) { %>
+    <p style="opacity:.7;">Inviato: <%= new Date(quote.sent_at).toLocaleString('it-IT') %></p>
+  <% } %>
+<% } %>
+
 
   <h2>Azioni</h2>
 

@@ -691,4 +691,36 @@ router.post("/orders/:id/confirm", requireLogin, async (req, res) => {
   }
 });
 
+router.post(
+  "/dealers/:id/logo",
+  requireLogin,
+  requireAdmin,
+  (req, res) => {
+    upload.single("file")(req, res, async (err) => {
+      if (err) return res.status(400).send(err.message || "Errore upload");
+      if (!req.file) return res.status(400).send("Nessun file caricato");
+
+      const dealerId = Number(req.params.id);
+      if (!Number.isSafeInteger(dealerId) || dealerId < 1) return res.status(400).send("Dealer ID non valido");
+
+      // accettiamo solo immagini
+      const okMime = ["image/png", "image/jpeg", "image/webp"];
+      if (!okMime.includes(req.file.mimetype)) return res.status(400).send("Logo deve essere PNG/JPG/WEBP");
+
+      await pool.query(
+        `INSERT INTO dealer_logos (user_id, mime_type, content, updated_at)
+         VALUES ($1, $2, $3, NOW())
+         ON CONFLICT (user_id) DO UPDATE SET
+           mime_type = EXCLUDED.mime_type,
+           content = EXCLUDED.content,
+           updated_at = NOW()`,
+        [dealerId, req.file.mimetype, req.file.buffer]
+      );
+
+      res.send("OK logo salvato");
+    });
+  }
+);
+
+
 export default router;

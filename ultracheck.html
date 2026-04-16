@@ -8,268 +8,899 @@
   <link rel="icon" type="image/png" href="favicon.png" />
 
   <style>
-    body {
-      font-family: "Helvetica Neue", Arial, sans-serif;
-      background-color: #fff;
-      color: #1a1a1a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
+    :root {
+      --bg: #f5f7fa;
+      --surface: #ffffff;
+      --surface-soft: #fafbfc;
+      --border: #e6e9ef;
+      --border-strong: #d9dee8;
+      --text: #111827;
+      --muted: #6b7280;
+      --accent: #c6a450;
+      --accent-dark: #a8842f;
+      --success: #1f7a4d;
+      --success-bg: #edf8f2;
+      --warning: #9a6700;
+      --warning-bg: #fff7e6;
+      --danger: #b42318;
+      --danger-bg: #fff1f0;
+      --info: #175cd3;
+      --info-bg: #eff4ff;
+      --shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
+      --radius-lg: 20px;
+      --radius-md: 14px;
+      --radius-sm: 10px;
+      --max-width: 1180px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
       margin: 0;
-      text-align: center;
+      padding: 0;
+      font-family: "Inter", "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    body {
+      min-height: 100vh;
+    }
+
+    .page {
+      width: 100%;
+      max-width: var(--max-width);
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 24px;
+    }
+
+    .lang-switcher {
+      display: inline-flex;
+      gap: 8px;
+      background: rgba(255,255,255,0.75);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px;
+      backdrop-filter: blur(6px);
+      box-shadow: var(--shadow);
+    }
+
+    .lang-switcher button {
+      background: transparent;
+      border: none;
+      border-radius: 999px;
+      padding: 8px 12px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      color: var(--muted);
+      transition: 0.2s ease;
+    }
+
+    .lang-switcher button:hover,
+    .lang-switcher button.active {
+      background: #fff;
+      color: var(--text);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 24px;
+      align-items: stretch;
+      margin-bottom: 28px;
+    }
+
+    .hero-left,
+    .hero-right {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-left {
+      padding: 36px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: #f8f3e7;
+      color: #7a5d19;
+      font-size: 0.82rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
     }
 
     h1 {
-      font-weight: 500;
-      letter-spacing: -0.5px;
-      font-size: 2.6rem;
-      margin-bottom: 0.2rem;
-      color: #111;
+      margin: 0 0 10px;
+      font-size: 3rem;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      font-weight: 700;
+      color: var(--text);
     }
 
     h2 {
-      font-weight: 300;
-      color: #a7a7a7;
-      margin-top: 0;
-      margin-bottom: 2.2rem;
-      font-size: 1.2rem;
+      margin: 0;
+      font-size: 1.12rem;
+      font-weight: 400;
+      color: var(--muted);
+      line-height: 1.6;
+      max-width: 620px;
     }
 
-    .form-box, .upload-box {
-      background: #fafafa;
-      border: 1px solid #eee;
-      border-radius: 16px;
-      padding: 36px;
-      width: 340px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-      margin-bottom: 20px;
+    .hero-points {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 28px;
+    }
+
+    .hero-point {
+      background: var(--surface-soft);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+
+    .hero-point strong {
+      display: block;
+      font-size: 0.92rem;
+      margin-bottom: 6px;
+    }
+
+    .hero-point span {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.45;
+    }
+
+    .hero-right {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background:
+        radial-gradient(circle at top right, rgba(198,164,80,0.12), transparent 35%),
+        var(--surface);
+    }
+
+    .hero-right-card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 22px;
+    }
+
+    .hero-right-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+    }
+
+    .hero-right-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .main-grid {
+      display: grid;
+      grid-template-columns: 380px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .panel-body {
+      padding: 28px;
+    }
+
+    .panel-title {
+      margin: 0 0 18px;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .form-box {
+      position: sticky;
+      top: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: #374151;
+      text-align: left;
+      margin-top: 10px;
+      margin-bottom: 8px;
+      font-size: 0.93rem;
     }
 
     input[type="text"],
     input[type="email"],
     input[type="tel"] {
       width: 100%;
-      padding: 12px;
-      margin-top: 6px;
-      margin-bottom: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 0.95rem;
-      transition: border-color 0.3s;
+      padding: 14px 14px;
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      font-size: 0.96rem;
+      background: #fff;
+      transition: 0.25s ease;
     }
 
     input:focus {
       outline: none;
-      border-color: #c6a450;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(198,164,80,0.12);
     }
 
-    label {
-      display: block;
-      font-weight: 500;
-      color: #444;
+    .consent {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      margin-top: 16px;
       text-align: left;
-      margin-top: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+    }
+
+    .consent input {
+      margin-top: 4px;
+    }
+
+    .consent a {
+      color: var(--text);
+      text-decoration: underline;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 14px 18px;
+      background: var(--text);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.25s ease;
+      font-size: 0.97rem;
+      font-weight: 600;
+      margin-top: 18px;
+    }
+
+    .btn:hover {
+      background: var(--accent);
+      color: #111;
+      transform: translateY(-1px);
     }
 
     .upload-box {
-      border: 2px dashed #c6a450;
-      background-color: #fff;
-      transition: border-color 0.3s, background 0.3s;
+      border: 1.5px dashed var(--accent);
+      background: #fffdf7;
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      display: none;
+      text-align: center;
     }
 
-    .upload-box:hover {
-      background: #fdfbf6;
+    .upload-box p {
+      margin: 0 0 16px;
+      color: var(--muted);
+      line-height: 1.5;
     }
 
     input[type="file"] {
       display: none;
     }
 
-    .btn {
-      display: inline-block;
-      padding: 10px 24px;
-      background-color: #111;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-size: 0.95rem;
-      margin-top: 6px;
-    }
-
-    .btn:hover {
-      background-color: #c6a450;
-      color: #111;
-    }
-
     .progress {
-      width: 320px;
-      height: 8px;
-      background: #eee;
-      border-radius: 8px;
+      width: 100%;
+      height: 10px;
+      background: #eef1f5;
+      border-radius: 999px;
       overflow: hidden;
-      margin-top: 20px;
+      margin-top: 18px;
       display: none;
     }
 
     .progress-bar {
       width: 0;
       height: 100%;
-      background: #c6a450;
-      transition: width 0.3s;
+      background: linear-gradient(90deg, var(--accent), #e2c06c);
+      transition: width 0.3s ease;
+      border-radius: 999px;
+    }
+
+    .analysis-shell {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .empty-state {
+      padding: 42px 28px;
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .empty-state h3 {
+      margin: 0 0 10px;
+      color: var(--text);
+      font-size: 1.25rem;
+    }
+
+    .empty-state p {
+      margin: 0;
+      line-height: 1.7;
     }
 
     .result {
-      margin-top: 30px;
-      text-align: left;
       display: none;
-      max-width: 400px;
     }
 
-    .result-card {
-      background: white;
-      border-left: 6px solid #c6a450;
-      border-radius: 12px;
-      padding: 24px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.06);
-      animation: fadeIn 0.6s ease;
-      line-height: 1.6;
+    .result-hero {
+      padding: 26px 28px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      box-shadow: var(--shadow);
     }
 
-    .result h3 {
-      font-weight: 500;
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-
-    .ok { color: #3c763d; }
-    .warn { color: #b77f00; }
-    .error { color: #a94442; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .lang-switcher {
-      position: absolute;
-      top: 20px;
-      right: 20px;
-    }
-
-    .lang-switcher button {
-      background: #fff;
-      border: 1px solid #eee;
-      border-radius: 8px;
-      margin-left: 6px;
-      padding: 6px 10px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: all 0.2s;
-    }
-
-    .lang-switcher button:hover {
-      background: #c6a450;
-      color: #111;
-    }
-
-    /* ✅ Privacy checkbox styling (minimal, coerente) */
-    .consent {
+    .result-hero-top {
       display: flex;
-      gap: 10px;
-      align-items: flex-start;
-      margin-top: 10px;
-      text-align: left;
-      color: #555;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .result-kicker {
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 14px;
+      border-radius: 999px;
       font-size: 0.9rem;
-      line-height: 1.35;
+      font-weight: 700;
+      border: 1px solid transparent;
     }
-    .consent input {
-      margin-top: 3px;
+
+    .status-success {
+      color: var(--success);
+      background: var(--success-bg);
+      border-color: #ccebd8;
     }
-    .consent a {
-      color: #111;
-      text-decoration: underline;
+
+    .status-warning {
+      color: var(--warning);
+      background: var(--warning-bg);
+      border-color: #f4ddb0;
+    }
+
+    .status-danger {
+      color: var(--danger);
+      background: var(--danger-bg);
+      border-color: #f0c3bf;
+    }
+
+    .status-info {
+      color: var(--info);
+      background: var(--info-bg);
+      border-color: #d0ddff;
+    }
+
+    .result-title {
+      margin: 0 0 10px;
+      font-size: 2rem;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .result-summary {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 1rem;
+    }
+
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .summary-label {
+      color: var(--muted);
+      font-size: 0.86rem;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .summary-value {
+      font-size: 1.8rem;
+      line-height: 1;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .report-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .report-header {
+      padding: 22px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .report-header h3 {
+      margin: 0;
+      font-size: 1.08rem;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 0.82rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 14px 24px;
+      background: #fafbfc;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody td {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table-note {
+      color: var(--muted);
+    }
+
+    .cell-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .section-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .section-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      padding: 22px;
+    }
+
+    .section-card h3 {
+      margin: 0 0 12px;
+      font-size: 1.02rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section-card ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .section-card li {
+      margin-bottom: 10px;
+      line-height: 1.55;
+    }
+
+    .section-card li:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-empty {
+      color: var(--muted);
+      font-style: italic;
+    }
+
+    .section-danger {
+      border-color: #f0c3bf;
+      background: #fffaf9;
+    }
+
+    .section-warning {
+      border-color: #f4ddb0;
+      background: #fffdf8;
+    }
+
+    .section-success {
+      border-color: #ccebd8;
+      background: #f8fdf9;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+
+    .meta-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .meta-card .label {
+      font-size: 0.82rem;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .meta-card .value {
+      font-size: 0.96rem;
+      font-weight: 600;
+      line-height: 1.45;
+      word-break: break-word;
+    }
+
+    .raw-output {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .raw-output summary {
+      cursor: pointer;
+      padding: 18px 22px;
+      font-weight: 700;
+      list-style: none;
+    }
+
+    .raw-output summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .raw-output-content {
+      border-top: 1px solid var(--border);
+      padding: 20px 22px;
+      color: var(--muted);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      background: #fcfcfd;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 1100px) {
+      .hero,
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-box {
+        position: static;
+      }
+
+      .summary-grid,
+      .section-grid,
+      .meta-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        padding: 18px 14px 40px;
+      }
+
+      .hero-left,
+      .hero-right,
+      .panel-body {
+        padding: 22px;
+      }
+
+      h1 {
+        font-size: 2.3rem;
+      }
+
+      .hero-points,
+      .summary-grid,
+      .section-grid,
+      .meta-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .result-title {
+        font-size: 1.55rem;
+      }
+
+      thead th,
+      tbody td {
+        padding: 14px 14px;
+      }
     }
   </style>
 </head>
 
 <body>
-  <div class="lang-switcher">
-    <button data-lang="it">🇮🇹 IT</button>
-    <button data-lang="fr">🇫🇷 FR</button>
-    <button data-lang="en">🇬🇧 EN</button>
-  </div>
-
-  <h1>UltraCheck AI</h1>
-  <h2>Analisi automatica etichette vino</h2>
-
-  <form id="userForm" class="form-box">
-    <label for="company">Azienda *</label>
-    <input type="text" id="company" name="azienda" required />
-
-    <label for="name">Nome e Cognome *</label>
-    <input type="text" id="name" name="nome" required />
-
-    <label for="email">Email *</label>
-    <input type="email" id="email" name="email" required />
-
-    <label for="phone">Telefono *</label>
-    <input type="tel" id="phone" name="telefono" required />
-
-    <!-- ✅ Privacy consent (obbligatorio) -->
-    <label class="consent">
-      <input type="checkbox" id="privacyConsent" required />
-      <span id="privacyText">
-        Acconsento alla <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> *
-      </span>
-    </label>
-
-    <button type="submit" class="btn">Procedi all’analisi</button>
-  </form>
-
-  <div class="upload-box" id="uploadSection" style="display:none">
-    <p>Carica il tuo file immagine dell’etichetta</p>
-    <input type="file" id="fileInput" accept=".jpg,.png,.jpeg,.pdf" />
-    <label for="fileInput" class="btn">Scegli file</label>
-  </div>
-
-  <div class="progress" id="progress">
-    <div class="progress-bar" id="progressBar"></div>
-  </div>
-
-  <div class="result" id="resultBox">
-    <div class="result-card">
-      <h3 id="resultText"></h3>
-      <div id="resultDetails"></div>
+  <div class="page">
+    <div class="topbar">
+      <div class="lang-switcher">
+        <button data-lang="it">🇮🇹 IT</button>
+        <button data-lang="fr">🇫🇷 FR</button>
+        <button data-lang="en">🇬🇧 EN</button>
+      </div>
     </div>
+
+    <section class="hero">
+      <div class="hero-left">
+        <span class="eyebrow">UltraCheck AI</span>
+        <h1 id="pageTitle">UltraCheck AI</h1>
+        <h2 id="pageSubtitle">Analisi automatica etichette vino</h2>
+
+        <div class="hero-points">
+          <div class="hero-point">
+            <strong>OCR + AI Review</strong>
+            <span>Lettura automatica dell’etichetta con analisi strutturata dei principali elementi.</span>
+          </div>
+          <div class="hero-point">
+            <strong>QR & Lotto</strong>
+            <span>Rilevamento QR code e riconoscimento lotto, se presenti nel file analizzato.</span>
+          </div>
+          <div class="hero-point">
+            <strong>Clear Report</strong>
+            <span>Risultato leggibile, ordinato e pronto da condividere internamente o con il cliente.</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="hero-right-card">
+          <h3>Wine label compliance review</h3>
+          <p>
+            UltraCheck trasforma un’analisi tecnica complessa in un report chiaro, leggibile e professionale,
+            mantenendo la semplicità operativa di un flusso upload → scan → risultato.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="main-grid">
+      <aside class="panel form-box">
+        <div class="panel-body">
+          <h3 class="panel-title">Start a new analysis</h3>
+
+          <form id="userForm">
+            <label for="company">Azienda *</label>
+            <input type="text" id="company" name="azienda" required />
+
+            <label for="name">Nome e Cognome *</label>
+            <input type="text" id="name" name="nome" required />
+
+            <label for="email">Email *</label>
+            <input type="email" id="email" name="email" required />
+
+            <label for="phone">Telefono *</label>
+            <input type="tel" id="phone" name="telefono" required />
+
+            <label class="consent">
+              <input type="checkbox" id="privacyConsent" required />
+              <span id="privacyText">
+                Acconsento alla <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> *
+              </span>
+            </label>
+
+            <button type="submit" class="btn" id="submitBtn">Procedi all’analisi</button>
+          </form>
+
+          <div class="upload-box" id="uploadSection">
+            <p id="uploadText">Carica il tuo file immagine dell’etichetta</p>
+            <input type="file" id="fileInput" accept=".jpg,.png,.jpeg,.pdf" />
+            <label for="fileInput" class="btn" id="fileBtn">Scegli file</label>
+          </div>
+
+          <div class="progress" id="progress">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="analysis-shell">
+        <div class="panel empty-state" id="emptyState">
+          <div class="panel-body">
+            <h3>Ready to analyze</h3>
+            <p>
+              Carica una retro etichetta vino per ottenere un report più ordinato e leggibile,
+              con esito sintetico, controlli strutturati e aree di attenzione separate.
+            </p>
+          </div>
+        </div>
+
+        <div class="result" id="resultBox">
+          <section class="result-hero">
+            <div class="result-hero-top">
+              <span class="result-kicker" id="resultKicker">Analysis result</span>
+              <span class="status-badge status-info" id="finalBadge">Da elaborare</span>
+            </div>
+            <h3 class="result-title" id="resultTitle">Analisi completata</h3>
+            <p class="result-summary" id="resultSummary">
+              Il sistema ha elaborato il file e organizzato il report in sezioni leggibili.
+            </p>
+          </section>
+
+          <section class="summary-grid">
+            <div class="summary-card">
+              <span class="summary-label">Controlli totali</span>
+              <div class="summary-value" id="statTotal">0</div>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">Conformi</span>
+              <div class="summary-value" id="statSuccess">0</div>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">Criticità</span>
+              <div class="summary-value" id="statDanger">0</div>
+            </div>
+            <div class="summary-card">
+              <span class="summary-label">Da verificare</span>
+              <div class="summary-value" id="statWarning">0</div>
+            </div>
+          </section>
+
+          <section class="report-card">
+            <div class="report-header">
+              <h3>Dettaglio controlli</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Elemento</th>
+                    <th>Stato</th>
+                    <th>Note</th>
+                    <th>Gravità</th>
+                  </tr>
+                </thead>
+                <tbody id="controlsTableBody">
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="section-grid">
+            <div class="section-card section-danger">
+              <h3>Non conformità reali</h3>
+              <div id="dangerList"></div>
+            </div>
+
+            <div class="section-card section-warning">
+              <h3>Elementi da verificare</h3>
+              <div id="warningList"></div>
+            </div>
+
+            <div class="section-card section-success">
+              <h3>Elementi conformi</h3>
+              <div id="successList"></div>
+            </div>
+          </section>
+
+          <section class="meta-grid">
+            <div class="meta-card">
+              <span class="label">File analizzato</span>
+              <div class="value" id="metaFile">—</div>
+            </div>
+            <div class="meta-card">
+              <span class="label">Lingua</span>
+              <div class="value" id="metaLang">—</div>
+            </div>
+            <div class="meta-card">
+              <span class="label">QR rilevato</span>
+              <div class="value" id="metaQr">—</div>
+            </div>
+            <div class="meta-card">
+              <span class="label">Lotto rilevato</span>
+              <div class="value" id="metaLot">—</div>
+            </div>
+          </section>
+
+          <details class="raw-output">
+            <summary>Output completo originale</summary>
+            <div class="raw-output-content" id="rawOutput"></div>
+          </details>
+        </div>
+      </main>
+    </section>
   </div>
 
   <script>
-    // 🔹 Riferimenti agli elementi
     const form = document.getElementById("userForm");
     const uploadSection = document.getElementById("uploadSection");
     const fileInput = document.getElementById("fileInput");
     const progress = document.getElementById("progress");
     const progressBar = document.getElementById("progressBar");
     const resultBox = document.getElementById("resultBox");
-    const resultText = document.getElementById("resultText");
-    const resultDetails = document.getElementById("resultDetails");
     const privacyConsent = document.getElementById("privacyConsent");
     const privacyText = document.getElementById("privacyText");
+    const emptyState = document.getElementById("emptyState");
 
-    // 🌍 Selettore lingua
-    let selectedLang = "it"; // lingua predefinita
-
-    // ✅ Ricorda la lingua scelta anche dopo il reload
+    let selectedLang = "it";
     const savedLang = localStorage.getItem("ultracheck_lang");
-    if (savedLang) {
-      selectedLang = savedLang;
-    }
+    if (savedLang) selectedLang = savedLang;
 
     const translations = {
       it: {
@@ -282,8 +913,8 @@
         analyze: "Procedi all’analisi",
         upload: "Carica il tuo file immagine dell’etichetta",
         choose: "Scegli file",
-        complete: "🧠 Analisi completata",
-        error: "❌ Errore nell’analisi",
+        complete: "Analisi completata",
+        error: "Errore nell’analisi",
         privacy: 'Acconsento alla <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> *',
       },
       fr: {
@@ -296,8 +927,8 @@
         analyze: "Lancer l’analyse",
         upload: "Téléchargez l’image de votre étiquette",
         choose: "Choisir un fichier",
-        complete: "🧠 Analyse terminée",
-        error: "❌ Erreur d’analyse",
+        complete: "Analyse terminée",
+        error: "Erreur d’analyse",
         privacy: 'J’accepte la <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Politique de confidentialité</a> *',
       },
       en: {
@@ -310,59 +941,240 @@
         analyze: "Start analysis",
         upload: "Upload your label image",
         choose: "Choose file",
-        complete: "🧠 Analysis complete",
-        error: "❌ Analysis error",
+        complete: "Analysis complete",
+        error: "Analysis error",
         privacy: 'I accept the <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> *',
       }
     };
 
     function applyLang(lang) {
       const t = translations[lang];
-      document.querySelector('h1').textContent = t.title;
-      document.querySelector('h2').textContent = t.subtitle;
+      document.getElementById("pageTitle").textContent = t.title;
+      document.getElementById("pageSubtitle").textContent = t.subtitle;
       document.querySelector('label[for="company"]').textContent = t.company;
       document.querySelector('label[for="name"]').textContent = t.name;
       document.querySelector('label[for="email"]').textContent = t.email;
       document.querySelector('label[for="phone"]').textContent = t.phone;
-      document.querySelector('#userForm .btn').textContent = t.analyze;
-      document.querySelector('#uploadSection p').textContent = t.upload;
-      document.querySelector('label[for="fileInput"]').textContent = t.choose;
-
-      // ✅ privacy text (contiene link)
+      document.getElementById("submitBtn").textContent = t.analyze;
+      document.getElementById("uploadText").textContent = t.upload;
+      document.getElementById("fileBtn").textContent = t.choose;
       privacyText.innerHTML = t.privacy;
+
+      document.querySelectorAll(".lang-switcher button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.lang === lang);
+      });
     }
 
-    // ✅ Applica lingua salvata al load
     applyLang(selectedLang);
 
-    // 🔄 Cambio lingua dinamico con salvataggio
     document.querySelectorAll('.lang-switcher button').forEach(btn => {
       btn.addEventListener('click', e => {
-        selectedLang = e.target.dataset.lang;
+        selectedLang = e.currentTarget.dataset.lang;
         localStorage.setItem("ultracheck_lang", selectedLang);
         applyLang(selectedLang);
       });
     });
 
-    // 🧾 Gestione form
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      if (!privacyConsent.checked) return; // safety
+      if (!privacyConsent.checked) return;
 
-      const data = new FormData(form);
-      console.log("✅ Dati raccolti:", Object.fromEntries(data.entries()));
-
-      form.style.display = "none";
+      form.classList.add("hidden");
       uploadSection.style.display = "block";
     });
 
-    // 🧠 Analisi file etichetta
+    function escapeHtml(str = "") {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function getStatusConfig(status) {
+      const s = (status || "").toLowerCase();
+
+      if (s.includes("non conforme") || s.includes("mancante") || s.includes("failed") || s.includes("errore")) {
+        return { label: status || "Non conforme", className: "status-danger", shortClass: "status-danger", bucket: "danger" };
+      }
+
+      if (s.includes("da verificare") || s.includes("partial") || s.includes("parziale") || s.includes("warning") || s.includes("non vérifiable") || s.includes("à vérifier")) {
+        return { label: status || "Da verificare", className: "status-warning", shortClass: "status-warning", bucket: "warning" };
+      }
+
+      if (s.includes("conforme") || s.includes("success") || s.includes("ok")) {
+        return { label: status || "Conforme", className: "status-success", shortClass: "status-success", bucket: "success" };
+      }
+
+      return { label: status || "Info", className: "status-info", shortClass: "status-info", bucket: "info" };
+    }
+
+    function extractTableRows(text) {
+      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+
+      return lines
+        .filter(line => line.includes("|"))
+        .map(line => line.split("|").map(part => part.trim()).filter(Boolean))
+        .filter(parts => parts.length >= 4)
+        .filter(parts => {
+          const merged = parts.join(" ").toLowerCase();
+          return !merged.includes("---") && !merged.includes("elemento stato") && !merged.includes("élément") && !merged.includes("gravità");
+        })
+        .map(parts => {
+          if (parts.length >= 5) {
+            return {
+              element: parts[1] || "—",
+              status: parts[2] || "—",
+              notes: parts[3] || "—",
+              severity: parts[4] || "—"
+            };
+          }
+
+          return {
+            element: parts[0] || "—",
+            status: parts[1] || "—",
+            notes: parts[2] || "—",
+            severity: parts[3] || "—"
+          };
+        });
+    }
+
+    function buildFallbackRows(text) {
+      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+
+      return lines
+        .filter(line => /^[\-•\d]/.test(line))
+        .slice(0, 10)
+        .map(line => ({
+          element: line.replace(/^[\-•\d\.\)\s]+/, "").slice(0, 70) || "Elemento rilevato",
+          status: "Da verificare",
+          notes: line,
+          severity: "Moderata"
+        }));
+    }
+
+    function detectOverallStatus(text, rows) {
+      const lower = text.toLowerCase();
+      const hasDanger = rows.some(r => getStatusConfig(r.status).bucket === "danger");
+      const hasWarning = rows.some(r => getStatusConfig(r.status).bucket === "warning");
+
+      if (lower.includes("non conforme") || lower.includes("failed") || hasDanger) {
+        return {
+          badge: "Non conforme",
+          badgeClass: "status-danger",
+          title: "Non conformità rilevate",
+          summary: "L’analisi ha evidenziato almeno un elemento critico che richiede correzione o revisione."
+        };
+      }
+
+      if (lower.includes("da verificare") || lower.includes("partial") || hasWarning) {
+        return {
+          badge: "Da verificare",
+          badgeClass: "status-warning",
+          title: "Esito da verificare",
+          summary: "L’analisi non evidenzia necessariamente una non conformità certa, ma sono presenti elementi che richiedono verifica."
+        };
+      }
+
+      return {
+        badge: "Conforme",
+        badgeClass: "status-success",
+        title: "Esito complessivamente conforme",
+        summary: "Il report non evidenzia criticità manifeste e gli elementi rilevati risultano coerenti con un esito positivo."
+      };
+    }
+
+    function detectMeta(text, fileName) {
+      const qrTrue = /qr_detected\s*:\s*true/i.test(text);
+      const qrFalse = /qr_detected\s*:\s*false/i.test(text);
+
+      const lotMatch = text.match(/lot_detected\s*:\s*([^\n\r]+)/i);
+
+      return {
+        file: fileName || "—",
+        lang: selectedLang.toUpperCase(),
+        qr: qrTrue ? "Sì" : qrFalse ? "No" : "Non indicato",
+        lot: lotMatch ? lotMatch[1].trim() : "Non indicato"
+      };
+    }
+
+    function renderList(targetId, items, emptyText) {
+      const el = document.getElementById(targetId);
+      if (!items.length) {
+        el.innerHTML = `<div class="section-empty">${escapeHtml(emptyText)}</div>`;
+        return;
+      }
+
+      el.innerHTML = `<ul>${items.map(item => `<li>${escapeHtml(item.element)} — ${escapeHtml(item.notes)}</li>`).join("")}</ul>`;
+    }
+
+    function renderReport(rawText, fileName = "") {
+      const text = rawText || "";
+      let rows = extractTableRows(text);
+
+      if (!rows.length) {
+        rows = buildFallbackRows(text);
+      }
+
+      const status = detectOverallStatus(text, rows);
+      const meta = detectMeta(text, fileName);
+
+      const successRows = rows.filter(r => getStatusConfig(r.status).bucket === "success");
+      const warningRows = rows.filter(r => getStatusConfig(r.status).bucket === "warning");
+      const dangerRows = rows.filter(r => getStatusConfig(r.status).bucket === "danger");
+
+      document.getElementById("finalBadge").className = `status-badge ${status.badgeClass}`;
+      document.getElementById("finalBadge").textContent = status.badge;
+      document.getElementById("resultTitle").textContent = status.title;
+      document.getElementById("resultSummary").textContent =
+        `${status.summary} Controlli letti: ${rows.length}. Criticità: ${dangerRows.length}. Da verificare: ${warningRows.length}.`;
+
+      document.getElementById("statTotal").textContent = rows.length;
+      document.getElementById("statSuccess").textContent = successRows.length;
+      document.getElementById("statDanger").textContent = dangerRows.length;
+      document.getElementById("statWarning").textContent = warningRows.length;
+
+      const tbody = document.getElementById("controlsTableBody");
+      if (!rows.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="4" class="table-note">Nessuna riga strutturata rilevata. Consulta l’output completo originale.</td>
+          </tr>
+        `;
+      } else {
+        tbody.innerHTML = rows.map(row => {
+          const cfg = getStatusConfig(row.status);
+          const sev = getStatusConfig(row.severity);
+
+          return `
+            <tr>
+              <td><strong>${escapeHtml(row.element)}</strong></td>
+              <td><span class="cell-badge ${cfg.shortClass}">${escapeHtml(cfg.label)}</span></td>
+              <td class="table-note">${escapeHtml(row.notes || "—")}</td>
+              <td><span class="cell-badge ${sev.shortClass}">${escapeHtml(row.severity || "—")}</span></td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      renderList("dangerList", dangerRows, "Nessuna non conformità reale rilevata.");
+      renderList("warningList", warningRows, "Nessun elemento da verificare rilevato.");
+      renderList("successList", successRows, "Nessun elemento conforme classificato automaticamente.");
+
+      document.getElementById("metaFile").textContent = meta.file;
+      document.getElementById("metaLang").textContent = meta.lang;
+      document.getElementById("metaQr").textContent = meta.qr;
+      document.getElementById("metaLot").textContent = meta.lot;
+      document.getElementById("rawOutput").textContent = text;
+    }
+
     async function analyzeImageFile(file) {
       progress.style.display = "block";
       resultBox.style.display = "none";
+      emptyState.style.display = "none";
       progressBar.style.width = "0%";
 
-      // ✅ Barra che si ferma all'85% finché non arriva la risposta
       let width = 0;
       const interval = setInterval(() => {
         width = Math.min(85, width + 7);
@@ -378,44 +1190,52 @@
         formData.append("telefono", document.getElementById("phone").value);
         formData.append("lang", selectedLang);
 
-        console.log("Lingua inviata al backend:", selectedLang);
-
         const res = await fetch("/analyze", { method: "POST", body: formData });
 
         clearInterval(interval);
-
-        // ✅ Completa a 100% solo a risposta arrivata
         progressBar.style.width = "100%";
-
-        // piccolo delay per far vedere il 100%
-        setTimeout(() => {
-          progress.style.display = "none";
-          resultBox.style.display = "block";
-        }, 200);
 
         if (res.ok) {
           const data = await res.json();
-          resultText.textContent = translations[selectedLang].complete;
-          resultText.className = "ok";
-          // (lascio come prima: <br> sui newline)
-          resultDetails.innerHTML = (data.result || "").replace(/\n/g, "<br>");
+          renderReport(data.result || "", file.name);
+          setTimeout(() => {
+            progress.style.display = "none";
+            resultBox.style.display = "flex";
+            resultBox.style.flexDirection = "column";
+            resultBox.style.gap = "18px";
+          }, 220);
         } else {
           const err = await res.json().catch(() => ({}));
-          resultText.textContent = translations[selectedLang].error;
-          resultText.className = "error";
-          resultDetails.textContent = err.error || "Impossibile analizzare il file.";
+          renderReport(err.error || "Impossibile analizzare il file.", file.name);
+
+          document.getElementById("finalBadge").className = "status-badge status-danger";
+          document.getElementById("finalBadge").textContent = "Errore";
+          document.getElementById("resultTitle").textContent = translations[selectedLang].error;
+          document.getElementById("resultSummary").textContent = err.error || "Impossibile analizzare il file.";
+
+          setTimeout(() => {
+            progress.style.display = "none";
+            resultBox.style.display = "flex";
+            resultBox.style.flexDirection = "column";
+            resultBox.style.gap = "18px";
+          }, 220);
         }
       } catch (e) {
         clearInterval(interval);
         progress.style.display = "none";
-        resultBox.style.display = "block";
-        resultText.textContent = translations[selectedLang].error;
-        resultText.className = "error";
-        resultDetails.textContent = "Controlla la connessione o riprova.";
+        renderReport("Controlla la connessione o riprova.", file.name);
+
+        document.getElementById("finalBadge").className = "status-badge status-danger";
+        document.getElementById("finalBadge").textContent = "Errore";
+        document.getElementById("resultTitle").textContent = translations[selectedLang].error;
+        document.getElementById("resultSummary").textContent = "Controlla la connessione o riprova.";
+
+        resultBox.style.display = "flex";
+        resultBox.style.flexDirection = "column";
+        resultBox.style.gap = "18px";
       }
     }
 
-    // 📤 Caricamento file
     fileInput.addEventListener("change", () => {
       const file = fileInput.files?.[0];
       if (file) analyzeImageFile(file);

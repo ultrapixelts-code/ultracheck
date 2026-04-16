@@ -310,14 +310,15 @@ REGOLE OBBLIGATORIE:
 - Usa SOLO i dati forniti.
 - Non inventare nulla.
 - Non dare per presente un elemento che non vedi.
-- Non dare per assente un elemento che potrebbe trovarsi su capsula, fascetta, collarino o altre parti della bottiglia non visibili.
+- Non dare per assente un elemento che potrebbe trovarsi su fronte etichetta, capsula, fascetta, collarino, vetro, fondo bottiglia o altre parti non visibili.
 - Distingui SEMPRE tra:
   1. elemento presente e conforme
   2. violazione reale / non conformità
   3. elemento non verificabile dalla sola retro etichetta
 - QR_DETECTED è verità assoluta.
-- LOT_DETECTED è verità assoluta.
-- Se LOT_DETECTED è false, il lotto è assente.
+- LOT_DETECTED è verità assoluta SOLO per dire se il lotto è visibile nel file analizzato.
+- Se LOT_DETECTED è false, NON concludere automaticamente che la bottiglia sia non conforme:
+  devi scrivere che il lotto non è visibile nella retro etichetta analizzata e che potrebbe trovarsi in altre parti della bottiglia.
 - Se QR_DETECTED è true, il QR è presente.
 - Non cercare o reinterpretare lotto e QR nel testo OCR.
 - Non citare siti web o fonti esterne.

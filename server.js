@@ -297,115 +297,102 @@ function extractLot(text) {
   return best ? `L${best}` : null; // normalizzo sempre a "Lxxxx"
 }
 
-function safeJsonParse(text) {
-  if (!text) return null;
 
-  // 1) prova diretta
-  try {
-    return JSON.parse(text);
-  } catch {}
 
-  // 2) caso ```json ... ```
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  if (fenced?.[1]) {
-    try {
-      return JSON.parse(fenced[1]);
-    } catch {}
-  }
 
-  // 3) prova a estrarre tra { e }
-  const firstBrace = text.indexOf("{");
-  const lastBrace = text.lastIndexOf("}");
-  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-    const possibleJson = text.slice(firstBrace, lastBrace + 1);
-    try {
-      return JSON.parse(possibleJson);
-    } catch {}
-  }
-
-  return null;
-}
-
-async function validateWithClaude({ extractedText, qrDetected, detectedLot, gptAnalysis, lang }) {
+async function validateWithClaude({ extractedText, qrDetected, detectedLot, lang }) {
   const prompt = `
-Sei il validatore finale di UltraCheck per etichette vino.
+Sei UltraCheck PRO, revisore tecnico esperto di etichettatura vino per il mercato UE e italiano.
 
-Regole obbligatorie:
-- Usa solo le evidenze fornite.
+Devi analizzare una RETRO ETICHETTA di vino e dire se è conforme o non conforme nel modo più preciso possibile.
+
+REGOLE OBBLIGATORIE:
+- Usa SOLO i dati forniti.
 - Non inventare nulla.
+- Non dare per presente un elemento che non vedi.
+- Non dare per assente un elemento che potrebbe trovarsi su capsula, fascetta, collarino o altre parti della bottiglia non visibili.
+- Distingui SEMPRE tra:
+  1. elemento presente e conforme
+  2. violazione reale / non conformità
+  3. elemento non verificabile dalla sola retro etichetta
 - QR_DETECTED è verità assoluta.
 - LOT_DETECTED è verità assoluta.
-- Se un campo non è chiaramente supportato, segnalo come Warning o Failed.
-- Puoi essere più severo dell'analisi GPT, mai più permissivo senza prove.
+- Se LOT_DETECTED è false, il lotto è assente.
+- Se QR_DETECTED è true, il QR è presente.
+- Non cercare o reinterpretare lotto e QR nel testo OCR.
+- Non citare siti web o fonti esterne.
+- Usa tono tecnico, chiaro, autorevole e prudente.
+- Rispondi esclusivamente in lingua: ${lang}.
 
-Rispondi nella lingua: ${lang}
+DATI DISPONIBILI
 
 Testo OCR:
 ${extractedText}
 
-Deterministic facts:
+Fatti deterministici:
 QR_DETECTED: ${qrDetected}
 LOT_DETECTED: ${detectedLot || "false"}
 
-Analisi GPT:
-${gptAnalysis}
+FORMATO OBBLIGATORIO DELLA RISPOSTA
 
-Rispondi SOLO in JSON valido con questo schema:
-{
-  "final_status": "Success" | "Warning" | "Failed",
-  "decision_reason": "string",
-  "checks": [
-    {
-      "field": "Denominazione di origine",
-      "status": "Success" | "Warning" | "Failed",
-      "reason": "string"
-    }
-  ]
-}
+Analisi elemento per elemento
+
+Analizzo ciò che è visibile nell'immagine della retro etichetta:
+
+✅ ELEMENTI PRESENTI E CONFORMI
+Elenca solo gli elementi chiaramente presenti e spiegali in modo concreto.
+
+❌ VIOLAZIONI REALI / NON CONFORMITÀ
+Inserisci qui SOLO ciò che puoi considerare realmente assente o non conforme sulla base dei dati visibili.
+Se non hai certezza assoluta, NON inserirlo qui.
+
+⚠️ ELEMENTI NON VERIFICABILI O DA CONTROLLARE
+Inserisci qui tutto ciò che potrebbe trovarsi su altre parti della bottiglia o che non è leggibile/verificabile con certezza.
+
+Riepilogo finale
+Scrivi un riepilogo sintetico in punti, con:
+- elemento
+- stato
+- gravità (se applicabile)
+
+Conclusione
+Chiudi con una conclusione molto chiara scegliendo una sola delle tre:
+- Etichetta conforme
+- Etichetta non conforme
+- Etichetta apparentemente conforme, ma con verifiche necessarie
+
+REGOLE DECISIONALI IMPORTANTI:
+- La mancanza del lotto è una non conformità reale.
+- Se il valore energetico fisico non è chiaramente visibile in etichetta, segnalalo come non conformità reale SOLO se dai dati forniti risulta davvero assente e non solo poco leggibile.
+- QR code, ingredienti online, valori nutrizionali online e informazioni ambientali via QR vanno distinti da ciò che deve essere fisicamente presente.
+- Codice ICQRF su capsula, fascetta di Stato, elementi sul tappo/capsula/gabbietta vanno di norma messi tra gli elementi non verificabili, salvo prova contraria.
+- Se un testo OCR è ambiguo o tronco, non trasformarlo automaticamente in violazione: valuta se è non verificabile.
 `.trim();
 
   const response = await anthropic.messages.create({
     model: ANTHROPIC_MODEL,
-    max_tokens: 1500,
+    max_tokens: 1800,
     temperature: 0,
     messages: [
-      {
-        role: "user",
-        content: prompt
-      }
+      { role: "user", content: prompt }
     ]
   });
 
-    const text = response.content
-    .filter(item => item.type === "text")
-    .map(item => item.text)
-    .join("\n")
+  const text = response.content
+    .filter(x => x.type === "text")
+    .map(x => x.text)
+    .join("\\n")
     .trim();
 
-  console.log("CLAUDE RAW RESPONSE:", text);
+  console.log("CLAUDE FINAL:", text);
 
-  const parsed = safeJsonParse(text);
-  if (!parsed) {
-    throw new Error("Claude ha restituito JSON non valido");
+  if (!text || text.length < 30) {
+    throw new Error("Claude risposta vuota");
   }
 
-  return parsed;
+  return text;
 }
 
-function buildFinalMarkdownFromClaude(claudeValidation) {
-  const lines = [];
-  lines.push("### 🔎 Conformità normativa (Reg. UE 2021/2117)");
-
-  for (const check of claudeValidation.checks || []) {
-    lines.push(`${check.status} ${check.field}: ${check.reason}`);
-  }
-
-  lines.push("");
-  lines.push(`**Valutazione finale:** ${claudeValidation.final_status}`);
-  lines.push(`**Motivazione:** ${claudeValidation.decision_reason}`);
-
-  return lines.join("\n");
-}
 app.post("/analyze", upload.single("label"), async (req, res) => {
   const filePath = req.file?.path;
   if (!filePath) return res.status(400).json({ error: "Nessun file." });
@@ -611,8 +598,7 @@ Fatti deterministici:
 QR_DETECTED: ${qrDetected}
 LOT_DETECTED: ${detectedLot || "false"}
 
-Analisi preliminare:
-${gptAnalysis}
+
 
 FORMATO OBBLIGATORIO DELLA RISPOSTA
 
@@ -665,24 +651,23 @@ Scrivi in modo professionale, leggibile e convincente.`,
     let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
 analysis = normalizeAnalysis(analysis);
 
-let claudeValidation = null;
 let finalAnalysis = analysis;
 
 try {
-  claudeValidation = await validateWithClaude({
+  const claudeText = await validateWithClaude({
     extractedText,
     qrDetected,
     detectedLot,
-    gptAnalysis: analysis,
     lang,
   });
 
-  finalAnalysis = buildFinalMarkdownFromClaude(claudeValidation);
-  finalAnalysis = normalizeAnalysis(finalAnalysis);
+  finalAnalysis = claudeText;
 } catch (err) {
-  console.warn("Claude validation fallita:", err.message);
+  console.warn("Claude fallito → fallback GPT:", err.message);
   finalAnalysis = analysis;
 }
+
+
 
     // 🌍 Traduzione se serve
     if (lang !== "it" && /Denominazione|Produttore|Volume nominale|Titolo alcolometrico/i.test(finalAnalysis)) {
@@ -749,8 +734,7 @@ ${finalAnalysis}
 
     res.json({
   result: finalAnalysis,
-  gpt_result: analysis,
-  claude_validation: claudeValidation
+  gpt_result: analysis
 });
   } catch (error) {
     console.error("Errore:", error.message);

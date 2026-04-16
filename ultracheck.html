@@ -17,7 +17,6 @@
       --text: #111827;
       --muted: #6b7280;
       --accent: #c6a450;
-      --accent-dark: #a8842f;
       --success: #1f7a4d;
       --success-bg: #edf8f2;
       --warning: #9a6700;
@@ -30,7 +29,6 @@
       --radius-xl: 22px;
       --radius-lg: 18px;
       --radius-md: 14px;
-      --radius-sm: 10px;
       --max-width: 1180px;
     }
 
@@ -453,7 +451,7 @@
     }
 
     .summary-grid {
-      display: grid;
+      display: none;
       grid-template-columns: repeat(4, 1fr);
       gap: 14px;
     }
@@ -815,7 +813,7 @@
             </p>
           </section>
 
-          <section class="summary-grid">
+          <section class="summary-grid" id="summaryGrid">
             <div class="summary-card">
               <span class="summary-label" id="statLabelTotal">Controlli totali</span>
               <div class="summary-value" id="statTotal">0</div>
@@ -916,6 +914,7 @@
     const privacyText = document.getElementById("privacyText");
     const reportCard = document.getElementById("reportCard");
     const sectionGrid = document.getElementById("sectionGrid");
+    const summaryGrid = document.getElementById("summaryGrid");
 
     let selectedLang = "it";
     const savedLang = localStorage.getItem("ultracheck_lang");
@@ -946,7 +945,6 @@
         emptyStateTitle: "Pronto per l’analisi",
         emptyStateText: "Carica una retro etichetta vino per ottenere un report più ordinato e leggibile, con esito sintetico, metadati tecnici e dettaglio completo dell’output.",
         resultKicker: "Risultato analisi",
-        resultComplete: "Analisi completata",
         resultError: "Errore nell’analisi",
         privacy: 'Acconsento alla <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> *',
         statsTotal: "Controlli totali",
@@ -1010,7 +1008,6 @@
         emptyStateTitle: "Prêt pour l’analyse",
         emptyStateText: "Chargez une contre-étiquette de vin pour obtenir un rapport plus clair, avec synthèse, métadonnées techniques et détail complet de la sortie.",
         resultKicker: "Résultat d’analyse",
-        resultComplete: "Analyse terminée",
         resultError: "Erreur d’analyse",
         privacy: 'J’accepte la <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Politique de confidentialité</a> *',
         statsTotal: "Contrôles totaux",
@@ -1074,7 +1071,6 @@
         emptyStateTitle: "Ready to analyze",
         emptyStateText: "Upload a wine back label to get a cleaner report with summary, technical metadata and full output detail.",
         resultKicker: "Analysis result",
-        resultComplete: "Analysis complete",
         resultError: "Analysis error",
         privacy: 'I accept the <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> *',
         statsTotal: "Total checks",
@@ -1223,13 +1219,13 @@
       if (
         s.includes("non conforme") ||
         s.includes("non-compliant") ||
-        s.includes("non conforme") ||
         s.includes("mancante") ||
         s.includes("missing") ||
         s.includes("failed") ||
         s.includes("critical") ||
         s.includes("critique") ||
-        s.includes("élevée")
+        s.includes("élevée") ||
+        s.includes("alta")
       ) {
         return { className: "status-danger", bucket: "danger" };
       }
@@ -1424,26 +1420,17 @@
       if (rows.length > 0) {
         document.getElementById("resultSummary").textContent =
           `${status.summary} ${tr.statsTotal}: ${rows.length}. ${tr.statsDanger}: ${dangerRows.length}. ${tr.statsWarning}: ${warningRows.length}.`;
-      } else {
-        document.getElementById("resultSummary").textContent =
-          `${status.summary} ${tr.summaryNoTable}`;
-      }
 
-      document.getElementById("statTotal").textContent = rows.length;
-      document.getElementById("statSuccess").textContent = successRows.length;
-      document.getElementById("statDanger").textContent = dangerRows.length;
-      document.getElementById("statWarning").textContent = warningRows.length;
-
-      const tbody = document.getElementById("controlsTableBody");
-
-      if (!rows.length) {
-        reportCard.style.display = "none";
-        sectionGrid.style.display = "none";
-        tbody.innerHTML = "";
-      } else {
+        summaryGrid.style.display = "grid";
         reportCard.style.display = "block";
         sectionGrid.style.display = "grid";
 
+        document.getElementById("statTotal").textContent = rows.length;
+        document.getElementById("statSuccess").textContent = successRows.length;
+        document.getElementById("statDanger").textContent = dangerRows.length;
+        document.getElementById("statWarning").textContent = warningRows.length;
+
+        const tbody = document.getElementById("controlsTableBody");
         tbody.innerHTML = rows.map(row => {
           const rowStatus = getStatusConfig(row.status);
           const rowSeverity = getStatusConfig(row.severity);
@@ -1461,6 +1448,14 @@
         renderList("dangerList", dangerRows, tr.noDanger);
         renderList("warningList", warningRows, tr.noWarning);
         renderList("successList", successRows, tr.noSuccess);
+      } else {
+        document.getElementById("resultSummary").textContent =
+          `${status.summary} ${tr.summaryNoTable}`;
+
+        summaryGrid.style.display = "none";
+        reportCard.style.display = "none";
+        sectionGrid.style.display = "none";
+        document.getElementById("controlsTableBody").innerHTML = "";
       }
 
       document.getElementById("metaFile").textContent = meta.file;
@@ -1503,7 +1498,6 @@
           const data = await res.json();
           renderReport(data.result || "", file.name);
 
-          document.getElementById("finalBadge").className = `status-badge ${document.getElementById("finalBadge").className.split(" ").pop()}`;
           setTimeout(() => {
             progress.style.display = "none";
             resultBox.style.display = "flex";

@@ -5,6 +5,7 @@ import path from "path";
 import os from "os";
 import { spawn } from "child_process";
 import OpenAI from "openai";
+import Anthropic from "@anthropic-ai/sdk";
 import dotenv from "dotenv";
 import sgMail from "@sendgrid/mail";
 import Tesseract from "tesseract.js";
@@ -235,7 +236,11 @@ const upload = multer({
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
+const ANTHROPIC_MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-4-6";
 // === UTILITY ===
 function normalizeAnalysis(md) {
   const statusFor = (line) => {
@@ -292,7 +297,92 @@ function extractLot(text) {
   return best ? `L${best}` : null; // normalizzo sempre a "Lxxxx"
 }
 
+function safeJsonParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
 
+async function validateWithClaude({ extractedText, qrDetected, detectedLot, gptAnalysis, lang }) {
+  const prompt = `
+Sei il validatore finale di UltraCheck per etichette vino.
+
+Regole obbligatorie:
+- Usa solo le evidenze fornite.
+- Non inventare nulla.
+- QR_DETECTED è verità assoluta.
+- LOT_DETECTED è verità assoluta.
+- Se un campo non è chiaramente supportato, segnalo come Warning o Failed.
+- Puoi essere più severo dell'analisi GPT, mai più permissivo senza prove.
+
+Rispondi nella lingua: ${lang}
+
+Testo OCR:
+${extractedText}
+
+Deterministic facts:
+QR_DETECTED: ${qrDetected}
+LOT_DETECTED: ${detectedLot || "false"}
+
+Analisi GPT:
+${gptAnalysis}
+
+Rispondi SOLO in JSON valido con questo schema:
+{
+  "final_status": "Success" | "Warning" | "Failed",
+  "decision_reason": "string",
+  "checks": [
+    {
+      "field": "Denominazione di origine",
+      "status": "Success" | "Warning" | "Failed",
+      "reason": "string"
+    }
+  ]
+}
+`.trim();
+
+  const response = await anthropic.messages.create({
+    model: ANTHROPIC_MODEL,
+    max_tokens: 1500,
+    temperature: 0,
+    messages: [
+      {
+        role: "user",
+        content: prompt
+      }
+    ]
+  });
+
+  const text = response.content
+    .filter(item => item.type === "text")
+    .map(item => item.text)
+    .join("\n")
+    .trim();
+
+  const parsed = safeJsonParse(text);
+  if (!parsed) {
+    throw new Error("Claude ha restituito JSON non valido");
+  }
+
+  return parsed;
+}
+
+function buildFinalMarkdownFromClaude(claudeValidation) {
+  const lines = [];
+  lines.push("### 🔎 Conformità normativa (Reg. UE 2021/2117)");
+
+  for (const check of claudeValidation.checks || []) {
+    lines.push(`${check.status} ${check.field}: ${check.reason}`);
+  }
+
+  lines.push("");
+  lines.push(`**Valutazione finale:** ${claudeValidation.final_status}`);
+  lines.push(`**Motivazione:** ${claudeValidation.decision_reason}`);
+
+  return lines.join("\n");
+}
 app.post("/analyze", upload.single("label"), async (req, res) => {
   const filePath = req.file?.path;
   if (!filePath) return res.status(400).json({ error: "Nessun file." });
@@ -545,10 +635,29 @@ Tieni la valutazione coerente con la presenza o assenza reale dei campi.`,
     });
 
     let analysis = response.choices[0].message.content || "Nessuna risposta dall'IA.";
-    analysis = normalizeAnalysis(analysis);
+analysis = normalizeAnalysis(analysis);
+
+let claudeValidation = null;
+let finalAnalysis = analysis;
+
+try {
+  claudeValidation = await validateWithClaude({
+    extractedText,
+    qrDetected,
+    detectedLot,
+    gptAnalysis: analysis,
+    lang,
+  });
+
+  finalAnalysis = buildFinalMarkdownFromClaude(claudeValidation);
+  finalAnalysis = normalizeAnalysis(finalAnalysis);
+} catch (err) {
+  console.warn("Claude validation fallita:", err.message);
+  finalAnalysis = analysis;
+}
 
     // 🌍 Traduzione se serve
-    if (lang !== "it" && /Denominazione|Produttore|Volume nominale|Titolo alcolometrico/i.test(analysis)) {
+    if (lang !== "it" && /Denominazione|Produttore|Volume nominale|Titolo alcolometrico/i.test(finalAnalysis)) {
       console.log("Traduzione automatica forzata →", lang);
 
       const translations = {
@@ -564,10 +673,10 @@ Tieni la valutazione coerente con la presenza o assenza reale dei campi.`,
           temperature: 0,
           messages: [
             { role: "system", content: "You are a precise translator preserving formatting and markdown." },
-            { role: "user", content: `${translatePrompt}\n\n${analysis}` },
+            { role: "user", content: `${translatePrompt}\n\n${finalAnalysis}` },
           ],
         });
-        analysis = trRes.choices[0].message.content || analysis;
+        finalAnalysis = trRes.choices[0].message.content || finalAnalysis;
       }
     }
 
@@ -592,7 +701,7 @@ Analisi completata per:
 RISULTATO ANALISI:
 -----------------------------
 
-${analysis}
+${finalAnalysis}
           `,
           attachments: [
             {
@@ -610,7 +719,11 @@ ${analysis}
       }
     }
 
-    res.json({ result: analysis });
+    res.json({
+  result: finalAnalysis,
+  gpt_result: analysis,
+  claude_validation: claudeValidation
+});
   } catch (error) {
     console.error("Errore:", error.message);
     res.status(500).json({ error: "Elaborazione fallita: " + error.message });

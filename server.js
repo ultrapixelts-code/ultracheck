@@ -298,11 +298,32 @@ function extractLot(text) {
 }
 
 function safeJsonParse(text) {
+  if (!text) return null;
+
+  // 1) prova diretta
   try {
     return JSON.parse(text);
-  } catch {
-    return null;
+  } catch {}
+
+  // 2) caso ```json ... ```
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fenced?.[1]) {
+    try {
+      return JSON.parse(fenced[1]);
+    } catch {}
   }
+
+  // 3) prova a estrarre tra { e }
+  const firstBrace = text.indexOf("{");
+  const lastBrace = text.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const possibleJson = text.slice(firstBrace, lastBrace + 1);
+    try {
+      return JSON.parse(possibleJson);
+    } catch {}
+  }
+
+  return null;
 }
 
 async function validateWithClaude({ extractedText, qrDetected, detectedLot, gptAnalysis, lang }) {
@@ -355,11 +376,13 @@ Rispondi SOLO in JSON valido con questo schema:
     ]
   });
 
-  const text = response.content
+    const text = response.content
     .filter(item => item.type === "text")
     .map(item => item.text)
     .join("\n")
     .trim();
+
+  console.log("CLAUDE RAW RESPONSE:", text);
 
   const parsed = safeJsonParse(text);
   if (!parsed) {

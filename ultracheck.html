@@ -27,7 +27,8 @@
       --info: #175cd3;
       --info-bg: #eff4ff;
       --shadow: 0 10px 30px rgba(16, 24, 40, 0.06);
-      --radius-lg: 20px;
+      --radius-xl: 22px;
+      --radius-lg: 18px;
       --radius-md: 14px;
       --radius-sm: 10px;
       --max-width: 1180px;
@@ -53,23 +54,23 @@
       width: 100%;
       max-width: var(--max-width);
       margin: 0 auto;
-      padding: 32px 20px 60px;
+      padding: 28px 20px 56px;
     }
 
     .topbar {
       display: flex;
       justify-content: flex-end;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
     }
 
     .lang-switcher {
       display: inline-flex;
       gap: 8px;
-      background: rgba(255,255,255,0.75);
+      background: rgba(255,255,255,0.82);
       border: 1px solid var(--border);
       border-radius: 999px;
       padding: 6px;
-      backdrop-filter: blur(6px);
+      backdrop-filter: blur(8px);
       box-shadow: var(--shadow);
     }
 
@@ -93,22 +94,30 @@
 
     .hero {
       display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
+      grid-template-columns: 1.15fr 0.85fr;
       gap: 24px;
-      align-items: stretch;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
 
     .hero-left,
     .hero-right {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       box-shadow: var(--shadow);
     }
 
     .hero-left {
-      padding: 36px;
+      padding: 34px;
+    }
+
+    .hero-right {
+      padding: 24px;
+      background:
+        radial-gradient(circle at top right, rgba(198,164,80,0.12), transparent 36%),
+        var(--surface);
+      display: flex;
+      align-items: center;
     }
 
     .eyebrow {
@@ -118,9 +127,9 @@
       border-radius: 999px;
       background: #f8f3e7;
       color: #7a5d19;
-      font-size: 0.82rem;
-      font-weight: 600;
-      letter-spacing: 0.02em;
+      font-size: 0.81rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
       text-transform: uppercase;
     }
 
@@ -128,25 +137,24 @@
       margin: 0 0 10px;
       font-size: 3rem;
       line-height: 1;
-      letter-spacing: -0.04em;
-      font-weight: 700;
-      color: var(--text);
+      letter-spacing: -0.045em;
+      font-weight: 750;
     }
 
     h2 {
       margin: 0;
-      font-size: 1.12rem;
+      font-size: 1.08rem;
       font-weight: 400;
+      line-height: 1.65;
       color: var(--muted);
-      line-height: 1.6;
-      max-width: 620px;
+      max-width: 670px;
     }
 
     .hero-points {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 12px;
-      margin-top: 28px;
+      margin-top: 26px;
     }
 
     .hero-point {
@@ -163,22 +171,14 @@
     }
 
     .hero-point span {
-      color: var(--muted);
+      display: block;
       font-size: 0.9rem;
-      line-height: 1.45;
-    }
-
-    .hero-right {
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      background:
-        radial-gradient(circle at top right, rgba(198,164,80,0.12), transparent 35%),
-        var(--surface);
+      line-height: 1.5;
+      color: var(--muted);
     }
 
     .hero-right-card {
+      width: 100%;
       background: #fff;
       border: 1px solid var(--border);
       border-radius: 18px;
@@ -187,13 +187,14 @@
 
     .hero-right-card h3 {
       margin: 0 0 10px;
-      font-size: 1.05rem;
+      font-size: 1.04rem;
+      letter-spacing: -0.02em;
     }
 
     .hero-right-card p {
       margin: 0;
       color: var(--muted);
-      line-height: 1.6;
+      line-height: 1.65;
     }
 
     .main-grid {
@@ -206,7 +207,7 @@
     .panel {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       box-shadow: var(--shadow);
     }
 
@@ -216,12 +217,12 @@
 
     .panel-title {
       margin: 0 0 18px;
-      font-size: 1.15rem;
+      font-size: 1.12rem;
       font-weight: 700;
       letter-spacing: -0.02em;
     }
 
-    .form-box {
+    .form-panel {
       position: sticky;
       top: 20px;
     }
@@ -245,7 +246,8 @@
       border-radius: 12px;
       font-size: 0.96rem;
       background: #fff;
-      transition: 0.25s ease;
+      transition: 0.22s ease;
+      color: var(--text);
     }
 
     input:focus {
@@ -267,6 +269,7 @@
 
     .consent input {
       margin-top: 4px;
+      width: auto;
     }
 
     .consent a {
@@ -285,9 +288,9 @@
       border: none;
       border-radius: 12px;
       cursor: pointer;
-      transition: 0.25s ease;
+      transition: 0.24s ease;
       font-size: 0.97rem;
-      font-weight: 600;
+      font-weight: 650;
       margin-top: 18px;
     }
 
@@ -297,23 +300,32 @@
       transform: translateY(-1px);
     }
 
+    input[type="file"] {
+      display: none;
+    }
+
     .upload-box {
+      display: none;
+      margin-top: 18px;
       border: 1.5px dashed var(--accent);
       background: #fffdf7;
       border-radius: var(--radius-lg);
-      padding: 28px;
-      display: none;
+      padding: 24px;
       text-align: center;
     }
 
     .upload-box p {
-      margin: 0 0 16px;
+      margin: 0 0 14px;
+      line-height: 1.55;
       color: var(--muted);
-      line-height: 1.5;
     }
 
-    input[type="file"] {
-      display: none;
+    .upload-file-name {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--text);
+      font-weight: 600;
+      word-break: break-word;
     }
 
     .progress {
@@ -330,8 +342,8 @@
       width: 0;
       height: 100%;
       background: linear-gradient(90deg, var(--accent), #e2c06c);
-      transition: width 0.3s ease;
       border-radius: 999px;
+      transition: width 0.3s ease;
     }
 
     .analysis-shell {
@@ -349,7 +361,8 @@
     .empty-state h3 {
       margin: 0 0 10px;
       color: var(--text);
-      font-size: 1.25rem;
+      font-size: 1.22rem;
+      letter-spacing: -0.02em;
     }
 
     .empty-state p {
@@ -359,11 +372,13 @@
 
     .result {
       display: none;
+      flex-direction: column;
+      gap: 18px;
     }
 
     .result-hero {
       padding: 26px 28px;
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       border: 1px solid var(--border);
       background: var(--surface);
       box-shadow: var(--shadow);
@@ -386,15 +401,17 @@
       color: var(--muted);
     }
 
-    .status-badge {
+    .status-badge,
+    .cell-badge {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 9px 14px;
+      padding: 8px 12px;
       border-radius: 999px;
-      font-size: 0.9rem;
+      font-size: 0.84rem;
       font-weight: 700;
       border: 1px solid transparent;
+      white-space: nowrap;
     }
 
     .status-success {
@@ -423,7 +440,7 @@
 
     .result-title {
       margin: 0 0 10px;
-      font-size: 2rem;
+      font-size: 1.95rem;
       line-height: 1.1;
       letter-spacing: -0.03em;
     }
@@ -459,20 +476,23 @@
     .summary-value {
       font-size: 1.8rem;
       line-height: 1;
-      font-weight: 700;
+      font-weight: 750;
       letter-spacing: -0.03em;
     }
 
-    .report-card {
+    .report-card,
+    .meta-card-shell,
+    .raw-output {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       box-shadow: var(--shadow);
       overflow: hidden;
     }
 
-    .report-header {
-      padding: 22px 24px;
+    .report-header,
+    .meta-header {
+      padding: 20px 24px;
       border-bottom: 1px solid var(--border);
       display: flex;
       justify-content: space-between;
@@ -481,9 +501,11 @@
       flex-wrap: wrap;
     }
 
-    .report-header h3 {
+    .report-header h3,
+    .meta-header h3 {
       margin: 0;
-      font-size: 1.08rem;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
     }
 
     .table-wrap {
@@ -510,7 +532,7 @@
       padding: 16px 24px;
       border-bottom: 1px solid var(--border);
       vertical-align: top;
-      line-height: 1.5;
+      line-height: 1.55;
       font-size: 0.95rem;
     }
 
@@ -522,18 +544,8 @@
       color: var(--muted);
     }
 
-    .cell-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 6px 10px;
-      border-radius: 999px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      white-space: nowrap;
-    }
-
     .section-grid {
-      display: grid;
+      display: none;
       grid-template-columns: repeat(3, 1fr);
       gap: 18px;
     }
@@ -541,14 +553,14 @@
     .section-card {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
+      border-radius: var(--radius-xl);
       box-shadow: var(--shadow);
       padding: 22px;
     }
 
     .section-card h3 {
       margin: 0 0 12px;
-      font-size: 1.02rem;
+      font-size: 1.01rem;
       letter-spacing: -0.02em;
     }
 
@@ -569,6 +581,7 @@
     .section-empty {
       color: var(--muted);
       font-style: italic;
+      line-height: 1.6;
     }
 
     .section-danger {
@@ -590,36 +603,28 @@
       display: grid;
       grid-template-columns: repeat(4, 1fr);
       gap: 14px;
+      padding: 20px 24px 24px;
     }
 
     .meta-card {
-      background: var(--surface);
+      background: var(--surface-soft);
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 16px;
-      box-shadow: var(--shadow);
     }
 
     .meta-card .label {
+      display: block;
       font-size: 0.82rem;
       color: var(--muted);
-      display: block;
       margin-bottom: 8px;
     }
 
     .meta-card .value {
       font-size: 0.96rem;
-      font-weight: 600;
+      font-weight: 650;
       line-height: 1.45;
       word-break: break-word;
-    }
-
-    .raw-output {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius-lg);
-      box-shadow: var(--shadow);
-      overflow: hidden;
     }
 
     .raw-output summary {
@@ -627,6 +632,7 @@
       padding: 18px 22px;
       font-weight: 700;
       list-style: none;
+      user-select: none;
     }
 
     .raw-output summary::-webkit-details-marker {
@@ -636,10 +642,11 @@
     .raw-output-content {
       border-top: 1px solid var(--border);
       padding: 20px 22px;
-      color: var(--muted);
+      color: #475467;
       line-height: 1.7;
       white-space: pre-wrap;
       background: #fcfcfd;
+      font-size: 0.95rem;
     }
 
     .hidden {
@@ -652,13 +659,17 @@
         grid-template-columns: 1fr;
       }
 
-      .form-box {
+      .form-panel {
         position: static;
       }
 
       .summary-grid,
-      .section-grid,
       .meta-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .section-grid,
+      .hero-points {
         grid-template-columns: repeat(2, 1fr);
       }
     }
@@ -675,13 +686,13 @@
       }
 
       h1 {
-        font-size: 2.3rem;
+        font-size: 2.25rem;
       }
 
       .hero-points,
       .summary-grid,
-      .section-grid,
-      .meta-grid {
+      .meta-grid,
+      .section-grid {
         grid-template-columns: 1fr;
       }
 
@@ -709,30 +720,30 @@
 
     <section class="hero">
       <div class="hero-left">
-        <span class="eyebrow">UltraCheck AI</span>
+        <span class="eyebrow" id="heroEyebrow">Wine Label Compliance Review</span>
         <h1 id="pageTitle">UltraCheck AI</h1>
-        <h2 id="pageSubtitle">Analisi automatica etichette vino</h2>
+        <h2 id="pageSubtitle">Analisi automatica e strutturata delle retro etichette vino</h2>
 
         <div class="hero-points">
           <div class="hero-point">
-            <strong>OCR + AI Review</strong>
-            <span>Lettura automatica dell’etichetta con analisi strutturata dei principali elementi.</span>
+            <strong id="point1Title">OCR + AI Review</strong>
+            <span id="point1Text">Lettura automatica dell’etichetta con analisi strutturata dei principali elementi.</span>
           </div>
           <div class="hero-point">
-            <strong>QR & Lotto</strong>
-            <span>Rilevamento QR code e riconoscimento lotto, se presenti nel file analizzato.</span>
+            <strong id="point2Title">QR & Lotto</strong>
+            <span id="point2Text">Rilevamento QR code e riconoscimento lotto, se presenti nel file analizzato.</span>
           </div>
           <div class="hero-point">
-            <strong>Clear Report</strong>
-            <span>Risultato leggibile, ordinato e pronto da condividere internamente o con il cliente.</span>
+            <strong id="point3Title">Clear Report</strong>
+            <span id="point3Text">Risultato leggibile, ordinato e pronto da condividere internamente o con il cliente.</span>
           </div>
         </div>
       </div>
 
       <div class="hero-right">
         <div class="hero-right-card">
-          <h3>Wine label compliance review</h3>
-          <p>
+          <h3 id="heroCardTitle">Professional result presentation</h3>
+          <p id="heroCardText">
             UltraCheck trasforma un’analisi tecnica complessa in un report chiaro, leggibile e professionale,
             mantenendo la semplicità operativa di un flusso upload → scan → risultato.
           </p>
@@ -741,21 +752,21 @@
     </section>
 
     <section class="main-grid">
-      <aside class="panel form-box">
+      <aside class="panel form-panel">
         <div class="panel-body">
-          <h3 class="panel-title">Start a new analysis</h3>
+          <h3 class="panel-title" id="startAnalysisTitle">Start a new analysis</h3>
 
           <form id="userForm">
-            <label for="company">Azienda *</label>
+            <label for="company" id="labelCompany">Azienda *</label>
             <input type="text" id="company" name="azienda" required />
 
-            <label for="name">Nome e Cognome *</label>
+            <label for="name" id="labelName">Nome e Cognome *</label>
             <input type="text" id="name" name="nome" required />
 
-            <label for="email">Email *</label>
+            <label for="email" id="labelEmail">Email *</label>
             <input type="email" id="email" name="email" required />
 
-            <label for="phone">Telefono *</label>
+            <label for="phone" id="labelPhone">Telefono *</label>
             <input type="tel" id="phone" name="telefono" required />
 
             <label class="consent">
@@ -772,6 +783,7 @@
             <p id="uploadText">Carica il tuo file immagine dell’etichetta</p>
             <input type="file" id="fileInput" accept=".jpg,.png,.jpeg,.pdf" />
             <label for="fileInput" class="btn" id="fileBtn">Scegli file</label>
+            <div class="upload-file-name hidden" id="selectedFileName"></div>
           </div>
 
           <div class="progress" id="progress">
@@ -783,10 +795,10 @@
       <main class="analysis-shell">
         <div class="panel empty-state" id="emptyState">
           <div class="panel-body">
-            <h3>Ready to analyze</h3>
-            <p>
+            <h3 id="emptyStateTitle">Ready to analyze</h3>
+            <p id="emptyStateText">
               Carica una retro etichetta vino per ottenere un report più ordinato e leggibile,
-              con esito sintetico, controlli strutturati e aree di attenzione separate.
+              con esito sintetico, metadati tecnici e dettaglio completo dell’output.
             </p>
           </div>
         </div>
@@ -805,81 +817,85 @@
 
           <section class="summary-grid">
             <div class="summary-card">
-              <span class="summary-label">Controlli totali</span>
+              <span class="summary-label" id="statLabelTotal">Controlli totali</span>
               <div class="summary-value" id="statTotal">0</div>
             </div>
             <div class="summary-card">
-              <span class="summary-label">Conformi</span>
+              <span class="summary-label" id="statLabelSuccess">Conformi</span>
               <div class="summary-value" id="statSuccess">0</div>
             </div>
             <div class="summary-card">
-              <span class="summary-label">Criticità</span>
+              <span class="summary-label" id="statLabelDanger">Criticità</span>
               <div class="summary-value" id="statDanger">0</div>
             </div>
             <div class="summary-card">
-              <span class="summary-label">Da verificare</span>
+              <span class="summary-label" id="statLabelWarning">Da verificare</span>
               <div class="summary-value" id="statWarning">0</div>
             </div>
           </section>
 
-          <section class="report-card">
+          <section class="report-card" id="reportCard" style="display:none;">
             <div class="report-header">
-              <h3>Dettaglio controlli</h3>
+              <h3 id="tableTitle">Dettaglio controlli</h3>
             </div>
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Elemento</th>
-                    <th>Stato</th>
-                    <th>Note</th>
-                    <th>Gravità</th>
+                    <th id="thElement">Elemento</th>
+                    <th id="thStatus">Stato</th>
+                    <th id="thNotes">Note</th>
+                    <th id="thSeverity">Gravità</th>
                   </tr>
                 </thead>
-                <tbody id="controlsTableBody">
-                </tbody>
+                <tbody id="controlsTableBody"></tbody>
               </table>
             </div>
           </section>
 
-          <section class="section-grid">
+          <section class="section-grid" id="sectionGrid">
             <div class="section-card section-danger">
-              <h3>Non conformità reali</h3>
+              <h3 id="dangerTitle">Non conformità reali</h3>
               <div id="dangerList"></div>
             </div>
 
             <div class="section-card section-warning">
-              <h3>Elementi da verificare</h3>
+              <h3 id="warningTitle">Elementi da verificare</h3>
               <div id="warningList"></div>
             </div>
 
             <div class="section-card section-success">
-              <h3>Elementi conformi</h3>
+              <h3 id="successTitle">Elementi conformi</h3>
               <div id="successList"></div>
             </div>
           </section>
 
-          <section class="meta-grid">
-            <div class="meta-card">
-              <span class="label">File analizzato</span>
-              <div class="value" id="metaFile">—</div>
+          <section class="meta-card-shell">
+            <div class="meta-header">
+              <h3 id="metaTitle">Audit metadata</h3>
             </div>
-            <div class="meta-card">
-              <span class="label">Lingua</span>
-              <div class="value" id="metaLang">—</div>
-            </div>
-            <div class="meta-card">
-              <span class="label">QR rilevato</span>
-              <div class="value" id="metaQr">—</div>
-            </div>
-            <div class="meta-card">
-              <span class="label">Lotto rilevato</span>
-              <div class="value" id="metaLot">—</div>
+            <div class="meta-grid">
+              <div class="meta-card">
+                <span class="label" id="metaLabelFile">File analizzato</span>
+                <div class="value" id="metaFile">—</div>
+              </div>
+              <div class="meta-card">
+                <span class="label" id="metaLabelLang">Lingua</span>
+                <div class="value" id="metaLang">—</div>
+              </div>
+              <div class="meta-card">
+                <span class="label" id="metaLabelQr">QR rilevato</span>
+                <div class="value" id="metaQr">—</div>
+              </div>
+              <div class="meta-card">
+                <span class="label" id="metaLabelLot">Lotto rilevato</span>
+                <div class="value" id="metaLot">—</div>
+              </div>
             </div>
           </section>
 
           <details class="raw-output">
-            <summary>Output completo originale</summary>
+            <summary id="rawOutputTitle">Report tecnico completo</summary>
             <div class="raw-output-content" id="rawOutput"></div>
           </details>
         </div>
@@ -891,12 +907,15 @@
     const form = document.getElementById("userForm");
     const uploadSection = document.getElementById("uploadSection");
     const fileInput = document.getElementById("fileInput");
+    const selectedFileName = document.getElementById("selectedFileName");
     const progress = document.getElementById("progress");
     const progressBar = document.getElementById("progressBar");
     const resultBox = document.getElementById("resultBox");
+    const emptyState = document.getElementById("emptyState");
     const privacyConsent = document.getElementById("privacyConsent");
     const privacyText = document.getElementById("privacyText");
-    const emptyState = document.getElementById("emptyState");
+    const reportCard = document.getElementById("reportCard");
+    const sectionGrid = document.getElementById("sectionGrid");
 
     let selectedLang = "it";
     const savedLang = localStorage.getItem("ultracheck_lang");
@@ -904,8 +923,18 @@
 
     const translations = {
       it: {
+        heroEyebrow: "Wine Label Compliance Review",
         title: "UltraCheck AI",
-        subtitle: "Analisi automatica etichette vino",
+        subtitle: "Analisi automatica e strutturata delle retro etichette vino",
+        heroCardTitle: "Presentazione professionale del risultato",
+        heroCardText: "UltraCheck trasforma un’analisi tecnica complessa in un report chiaro, leggibile e professionale, mantenendo la semplicità operativa di un flusso upload → scan → risultato.",
+        point1Title: "OCR + AI Review",
+        point1Text: "Lettura automatica dell’etichetta con analisi strutturata dei principali elementi.",
+        point2Title: "QR & Lotto",
+        point2Text: "Rilevamento QR code e riconoscimento lotto, se presenti nel file analizzato.",
+        point3Title: "Clear Report",
+        point3Text: "Risultato leggibile, ordinato e pronto da condividere internamente o con il cliente.",
+        startAnalysisTitle: "Avvia una nuova analisi",
         company: "Azienda *",
         name: "Nome e Cognome *",
         email: "Email *",
@@ -913,13 +942,63 @@
         analyze: "Procedi all’analisi",
         upload: "Carica il tuo file immagine dell’etichetta",
         choose: "Scegli file",
-        complete: "Analisi completata",
-        error: "Errore nell’analisi",
+        selectedFile: "File selezionato:",
+        emptyStateTitle: "Pronto per l’analisi",
+        emptyStateText: "Carica una retro etichetta vino per ottenere un report più ordinato e leggibile, con esito sintetico, metadati tecnici e dettaglio completo dell’output.",
+        resultKicker: "Risultato analisi",
+        resultComplete: "Analisi completata",
+        resultError: "Errore nell’analisi",
         privacy: 'Acconsento alla <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> *',
+        statsTotal: "Controlli totali",
+        statsSuccess: "Conformi",
+        statsDanger: "Criticità",
+        statsWarning: "Da verificare",
+        tableTitle: "Dettaglio controlli",
+        thElement: "Elemento",
+        thStatus: "Stato",
+        thNotes: "Note",
+        thSeverity: "Gravità",
+        dangerTitle: "Non conformità reali",
+        warningTitle: "Elementi da verificare",
+        successTitle: "Elementi conformi",
+        metaTitle: "Metadati tecnici",
+        metaFile: "File analizzato",
+        metaLang: "Lingua",
+        metaQr: "QR rilevato",
+        metaLot: "Lotto rilevato",
+        rawOutputTitle: "Report tecnico completo",
+        badgeSuccess: "Conforme",
+        badgeWarning: "Da verificare",
+        badgeDanger: "Non conforme",
+        badgeError: "Errore",
+        titleSuccess: "Esito complessivamente conforme",
+        titleWarning: "Esito da verificare",
+        titleDanger: "Non conformità rilevate",
+        summarySuccess: "Il report non evidenzia criticità manifeste e gli elementi rilevati risultano coerenti con un esito positivo.",
+        summaryWarning: "L’analisi non evidenzia necessariamente una non conformità certa, ma sono presenti elementi che richiedono verifica.",
+        summaryDanger: "L’analisi ha evidenziato almeno un elemento critico che richiede correzione o revisione.",
+        summaryNoTable: "Il report non contiene ancora una tabella strutturata, quindi l’output viene mostrato in forma testuale completa.",
+        noDanger: "Nessuna non conformità reale rilevata.",
+        noWarning: "Nessun elemento da verificare rilevato.",
+        noSuccess: "Nessun elemento conforme classificato automaticamente.",
+        yes: "Sì",
+        no: "No",
+        notIndicated: "Non indicato",
+        connectionError: "Controlla la connessione o riprova."
       },
       fr: {
+        heroEyebrow: "Wine Label Compliance Review",
         title: "UltraCheck AI",
-        subtitle: "Analyse automatique des étiquettes de vin",
+        subtitle: "Analyse automatique et structurée des contre-étiquettes de vin",
+        heroCardTitle: "Présentation professionnelle du résultat",
+        heroCardText: "UltraCheck transforme une analyse technique complexe en un rapport clair, lisible et professionnel, tout en conservant la simplicité d’un flux upload → scan → résultat.",
+        point1Title: "OCR + AI Review",
+        point1Text: "Lecture automatique de l’étiquette avec analyse structurée des principaux éléments.",
+        point2Title: "QR & Lot",
+        point2Text: "Détection du QR code et reconnaissance du lot, s’ils sont présents dans le fichier analysé.",
+        point3Title: "Clear Report",
+        point3Text: "Résultat lisible, ordonné et prêt à être partagé en interne ou avec le client.",
+        startAnalysisTitle: "Démarrer une nouvelle analyse",
         company: "Entreprise *",
         name: "Nom et prénom *",
         email: "E-mail *",
@@ -927,13 +1006,63 @@
         analyze: "Lancer l’analyse",
         upload: "Téléchargez l’image de votre étiquette",
         choose: "Choisir un fichier",
-        complete: "Analyse terminée",
-        error: "Erreur d’analyse",
+        selectedFile: "Fichier sélectionné :",
+        emptyStateTitle: "Prêt pour l’analyse",
+        emptyStateText: "Chargez une contre-étiquette de vin pour obtenir un rapport plus clair, avec synthèse, métadonnées techniques et détail complet de la sortie.",
+        resultKicker: "Résultat d’analyse",
+        resultComplete: "Analyse terminée",
+        resultError: "Erreur d’analyse",
         privacy: 'J’accepte la <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Politique de confidentialité</a> *',
+        statsTotal: "Contrôles totaux",
+        statsSuccess: "Conformes",
+        statsDanger: "Critiques",
+        statsWarning: "À vérifier",
+        tableTitle: "Détail des contrôles",
+        thElement: "Élément",
+        thStatus: "Statut",
+        thNotes: "Notes",
+        thSeverity: "Gravité",
+        dangerTitle: "Non-conformités réelles",
+        warningTitle: "Éléments à vérifier",
+        successTitle: "Éléments conformes",
+        metaTitle: "Métadonnées techniques",
+        metaFile: "Fichier analysé",
+        metaLang: "Langue",
+        metaQr: "QR détecté",
+        metaLot: "Lot détecté",
+        rawOutputTitle: "Rapport technique complet",
+        badgeSuccess: "Conforme",
+        badgeWarning: "À vérifier",
+        badgeDanger: "Non conforme",
+        badgeError: "Erreur",
+        titleSuccess: "Résultat globalement conforme",
+        titleWarning: "Résultat à vérifier",
+        titleDanger: "Non-conformités détectées",
+        summarySuccess: "Le rapport ne met pas en évidence de criticité manifeste et les éléments détectés sont cohérents avec un résultat positif.",
+        summaryWarning: "L’analyse ne met pas nécessairement en évidence une non-conformité certaine, mais certains éléments nécessitent une vérification.",
+        summaryDanger: "L’analyse a mis en évidence au moins un élément critique nécessitant une correction ou une révision.",
+        summaryNoTable: "Le rapport ne contient pas encore de tableau structuré, la sortie est donc affichée sous forme textuelle complète.",
+        noDanger: "Aucune non-conformité réelle détectée.",
+        noWarning: "Aucun élément à vérifier détecté.",
+        noSuccess: "Aucun élément conforme classé automatiquement.",
+        yes: "Oui",
+        no: "Non",
+        notIndicated: "Non indiqué",
+        connectionError: "Vérifiez la connexion ou réessayez."
       },
       en: {
+        heroEyebrow: "Wine Label Compliance Review",
         title: "UltraCheck AI",
-        subtitle: "Automatic wine label analysis",
+        subtitle: "Automatic and structured wine back-label analysis",
+        heroCardTitle: "Professional result presentation",
+        heroCardText: "UltraCheck turns a complex technical analysis into a clear, readable and professional report, while keeping the workflow simple: upload → scan → result.",
+        point1Title: "OCR + AI Review",
+        point1Text: "Automatic label reading with structured analysis of the main elements.",
+        point2Title: "QR & Lot",
+        point2Text: "QR code detection and lot recognition, if present in the analyzed file.",
+        point3Title: "Clear Report",
+        point3Text: "Readable, ordered result ready to be shared internally or with the client.",
+        startAnalysisTitle: "Start a new analysis",
         company: "Company *",
         name: "Full name *",
         email: "Email *",
@@ -941,24 +1070,107 @@
         analyze: "Start analysis",
         upload: "Upload your label image",
         choose: "Choose file",
-        complete: "Analysis complete",
-        error: "Analysis error",
+        selectedFile: "Selected file:",
+        emptyStateTitle: "Ready to analyze",
+        emptyStateText: "Upload a wine back label to get a cleaner report with summary, technical metadata and full output detail.",
+        resultKicker: "Analysis result",
+        resultComplete: "Analysis complete",
+        resultError: "Analysis error",
         privacy: 'I accept the <a href="/privacy.html" target="_blank" rel="noopener noreferrer">Privacy Policy</a> *',
+        statsTotal: "Total checks",
+        statsSuccess: "Compliant",
+        statsDanger: "Critical",
+        statsWarning: "To verify",
+        tableTitle: "Control details",
+        thElement: "Element",
+        thStatus: "Status",
+        thNotes: "Notes",
+        thSeverity: "Severity",
+        dangerTitle: "Real non-compliances",
+        warningTitle: "Items to verify",
+        successTitle: "Compliant items",
+        metaTitle: "Technical metadata",
+        metaFile: "Analyzed file",
+        metaLang: "Language",
+        metaQr: "QR detected",
+        metaLot: "Lot detected",
+        rawOutputTitle: "Complete technical report",
+        badgeSuccess: "Compliant",
+        badgeWarning: "To verify",
+        badgeDanger: "Non-compliant",
+        badgeError: "Error",
+        titleSuccess: "Overall compliant result",
+        titleWarning: "Result to verify",
+        titleDanger: "Non-compliances detected",
+        summarySuccess: "The report does not highlight obvious critical issues and the detected elements are consistent with a positive result.",
+        summaryWarning: "The analysis does not necessarily show a certain non-compliance, but there are elements that require verification.",
+        summaryDanger: "The analysis highlighted at least one critical element that requires correction or review.",
+        summaryNoTable: "The report does not yet contain a structured table, so the output is shown as complete text.",
+        noDanger: "No real non-compliances detected.",
+        noWarning: "No items to verify detected.",
+        noSuccess: "No compliant items automatically classified.",
+        yes: "Yes",
+        no: "No",
+        notIndicated: "Not indicated",
+        connectionError: "Check the connection or try again."
       }
     };
 
+    function t() {
+      return translations[selectedLang];
+    }
+
     function applyLang(lang) {
-      const t = translations[lang];
-      document.getElementById("pageTitle").textContent = t.title;
-      document.getElementById("pageSubtitle").textContent = t.subtitle;
-      document.querySelector('label[for="company"]').textContent = t.company;
-      document.querySelector('label[for="name"]').textContent = t.name;
-      document.querySelector('label[for="email"]').textContent = t.email;
-      document.querySelector('label[for="phone"]').textContent = t.phone;
-      document.getElementById("submitBtn").textContent = t.analyze;
-      document.getElementById("uploadText").textContent = t.upload;
-      document.getElementById("fileBtn").textContent = t.choose;
-      privacyText.innerHTML = t.privacy;
+      selectedLang = lang;
+      const tr = t();
+
+      document.getElementById("heroEyebrow").textContent = tr.heroEyebrow;
+      document.getElementById("pageTitle").textContent = tr.title;
+      document.getElementById("pageSubtitle").textContent = tr.subtitle;
+      document.getElementById("heroCardTitle").textContent = tr.heroCardTitle;
+      document.getElementById("heroCardText").textContent = tr.heroCardText;
+
+      document.getElementById("point1Title").textContent = tr.point1Title;
+      document.getElementById("point1Text").textContent = tr.point1Text;
+      document.getElementById("point2Title").textContent = tr.point2Title;
+      document.getElementById("point2Text").textContent = tr.point2Text;
+      document.getElementById("point3Title").textContent = tr.point3Title;
+      document.getElementById("point3Text").textContent = tr.point3Text;
+
+      document.getElementById("startAnalysisTitle").textContent = tr.startAnalysisTitle;
+      document.getElementById("labelCompany").textContent = tr.company;
+      document.getElementById("labelName").textContent = tr.name;
+      document.getElementById("labelEmail").textContent = tr.email;
+      document.getElementById("labelPhone").textContent = tr.phone;
+      document.getElementById("submitBtn").textContent = tr.analyze;
+      document.getElementById("uploadText").textContent = tr.upload;
+      document.getElementById("fileBtn").textContent = tr.choose;
+      document.getElementById("emptyStateTitle").textContent = tr.emptyStateTitle;
+      document.getElementById("emptyStateText").textContent = tr.emptyStateText;
+      document.getElementById("resultKicker").textContent = tr.resultKicker;
+      document.getElementById("statLabelTotal").textContent = tr.statsTotal;
+      document.getElementById("statLabelSuccess").textContent = tr.statsSuccess;
+      document.getElementById("statLabelDanger").textContent = tr.statsDanger;
+      document.getElementById("statLabelWarning").textContent = tr.statsWarning;
+      document.getElementById("tableTitle").textContent = tr.tableTitle;
+      document.getElementById("thElement").textContent = tr.thElement;
+      document.getElementById("thStatus").textContent = tr.thStatus;
+      document.getElementById("thNotes").textContent = tr.thNotes;
+      document.getElementById("thSeverity").textContent = tr.thSeverity;
+      document.getElementById("dangerTitle").textContent = tr.dangerTitle;
+      document.getElementById("warningTitle").textContent = tr.warningTitle;
+      document.getElementById("successTitle").textContent = tr.successTitle;
+      document.getElementById("metaTitle").textContent = tr.metaTitle;
+      document.getElementById("metaLabelFile").textContent = tr.metaFile;
+      document.getElementById("metaLabelLang").textContent = tr.metaLang;
+      document.getElementById("metaLabelQr").textContent = tr.metaQr;
+      document.getElementById("metaLabelLot").textContent = tr.metaLot;
+      document.getElementById("rawOutputTitle").textContent = tr.rawOutputTitle;
+      privacyText.innerHTML = tr.privacy;
+
+      if (!selectedFileName.classList.contains("hidden") && fileInput.files?.[0]) {
+        selectedFileName.textContent = `${tr.selectedFile} ${fileInput.files[0].name}`;
+      }
 
       document.querySelectorAll(".lang-switcher button").forEach(btn => {
         btn.classList.toggle("active", btn.dataset.lang === lang);
@@ -967,11 +1179,11 @@
 
     applyLang(selectedLang);
 
-    document.querySelectorAll('.lang-switcher button').forEach(btn => {
-      btn.addEventListener('click', e => {
-        selectedLang = e.currentTarget.dataset.lang;
-        localStorage.setItem("ultracheck_lang", selectedLang);
-        applyLang(selectedLang);
+    document.querySelectorAll(".lang-switcher button").forEach(btn => {
+      btn.addEventListener("click", e => {
+        const lang = e.currentTarget.dataset.lang;
+        localStorage.setItem("ultracheck_lang", lang);
+        applyLang(lang);
       });
     });
 
@@ -983,8 +1195,17 @@
       uploadSection.style.display = "block";
     });
 
+    fileInput.addEventListener("change", () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+
+      selectedFileName.classList.remove("hidden");
+      selectedFileName.textContent = `${t().selectedFile} ${file.name}`;
+      analyzeImageFile(file);
+    });
+
     function escapeHtml(str = "") {
-      return str
+      return String(str)
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;")
@@ -992,131 +1213,203 @@
         .replace(/'/g, "&#039;");
     }
 
+    function normalizeText(str = "") {
+      return String(str).toLowerCase().trim();
+    }
+
     function getStatusConfig(status) {
-      const s = (status || "").toLowerCase();
+      const s = normalizeText(status);
 
-      if (s.includes("non conforme") || s.includes("mancante") || s.includes("failed") || s.includes("errore")) {
-        return { label: status || "Non conforme", className: "status-danger", shortClass: "status-danger", bucket: "danger" };
+      if (
+        s.includes("non conforme") ||
+        s.includes("non-compliant") ||
+        s.includes("non conforme") ||
+        s.includes("mancante") ||
+        s.includes("missing") ||
+        s.includes("failed") ||
+        s.includes("critical") ||
+        s.includes("critique") ||
+        s.includes("élevée")
+      ) {
+        return { className: "status-danger", bucket: "danger" };
       }
 
-      if (s.includes("da verificare") || s.includes("partial") || s.includes("parziale") || s.includes("warning") || s.includes("non vérifiable") || s.includes("à vérifier")) {
-        return { label: status || "Da verificare", className: "status-warning", shortClass: "status-warning", bucket: "warning" };
+      if (
+        s.includes("da verificare") ||
+        s.includes("à vérifier") ||
+        s.includes("to verify") ||
+        s.includes("partial") ||
+        s.includes("parziale") ||
+        s.includes("warning") ||
+        s.includes("non vérifiable") ||
+        s.includes("not verifiable") ||
+        s.includes("moderata") ||
+        s.includes("modérée") ||
+        s.includes("medium")
+      ) {
+        return { className: "status-warning", bucket: "warning" };
       }
 
-      if (s.includes("conforme") || s.includes("success") || s.includes("ok")) {
-        return { label: status || "Conforme", className: "status-success", shortClass: "status-success", bucket: "success" };
+      if (
+        s.includes("conforme") ||
+        s.includes("compliant") ||
+        s.includes("success") ||
+        s.includes("ok") ||
+        s.includes("faible") ||
+        s.includes("bassa") ||
+        s.includes("low")
+      ) {
+        return { className: "status-success", bucket: "success" };
       }
 
-      return { label: status || "Info", className: "status-info", shortClass: "status-info", bucket: "info" };
+      return { className: "status-info", bucket: "info" };
     }
 
     function extractTableRows(text) {
-      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
+      const lines = String(text)
+        .split("\n")
+        .map(line => line.trim())
+        .filter(Boolean);
 
-      return lines
-        .filter(line => line.includes("|"))
-        .map(line => line.split("|").map(part => part.trim()).filter(Boolean))
+      const tableLines = lines.filter(line => {
+        if (!line.includes("|")) return false;
+        const normalized = line.replace(/\s+/g, " ").trim();
+        if (/^\|?[-:\s|]+\|?$/.test(normalized)) return false;
+        return true;
+      });
+
+      const rows = tableLines
+        .map(line => line.split("|").map(part => part.trim()))
+        .map(parts => parts.filter(Boolean))
         .filter(parts => parts.length >= 4)
         .filter(parts => {
-          const merged = parts.join(" ").toLowerCase();
-          return !merged.includes("---") && !merged.includes("elemento stato") && !merged.includes("élément") && !merged.includes("gravità");
+          const joined = parts.join(" ").toLowerCase();
+          return !joined.includes("elemento stato") &&
+                 !joined.includes("élément") &&
+                 !joined.includes("gravità") &&
+                 !joined.includes("severity") &&
+                 !joined.includes("note") &&
+                 !joined.includes("status");
         })
         .map(parts => {
+          if (parts.length === 4) {
+            return {
+              element: parts[0] || "—",
+              status: parts[1] || "—",
+              notes: parts[2] || "—",
+              severity: parts[3] || "—"
+            };
+          }
+
           if (parts.length >= 5) {
             return {
-              element: parts[1] || "—",
+              element: parts[1] || parts[0] || "—",
               status: parts[2] || "—",
               notes: parts[3] || "—",
               severity: parts[4] || "—"
             };
           }
 
-          return {
-            element: parts[0] || "—",
-            status: parts[1] || "—",
-            notes: parts[2] || "—",
-            severity: parts[3] || "—"
-          };
+          return null;
+        })
+        .filter(Boolean)
+        .filter(row => {
+          const combined = `${row.element} ${row.status} ${row.notes} ${row.severity}`.trim();
+          return combined && combined !== "— — — —";
         });
-    }
 
-    function buildFallbackRows(text) {
-      const lines = text.split("\n").map(l => l.trim()).filter(Boolean);
-
-      return lines
-        .filter(line => /^[\-•\d]/.test(line))
-        .slice(0, 10)
-        .map(line => ({
-          element: line.replace(/^[\-•\d\.\)\s]+/, "").slice(0, 70) || "Elemento rilevato",
-          status: "Da verificare",
-          notes: line,
-          severity: "Moderata"
-        }));
-    }
-
-    function detectOverallStatus(text, rows) {
-      const lower = text.toLowerCase();
-      const hasDanger = rows.some(r => getStatusConfig(r.status).bucket === "danger");
-      const hasWarning = rows.some(r => getStatusConfig(r.status).bucket === "warning");
-
-      if (lower.includes("non conforme") || lower.includes("failed") || hasDanger) {
-        return {
-          badge: "Non conforme",
-          badgeClass: "status-danger",
-          title: "Non conformità rilevate",
-          summary: "L’analisi ha evidenziato almeno un elemento critico che richiede correzione o revisione."
-        };
-      }
-
-      if (lower.includes("da verificare") || lower.includes("partial") || hasWarning) {
-        return {
-          badge: "Da verificare",
-          badgeClass: "status-warning",
-          title: "Esito da verificare",
-          summary: "L’analisi non evidenzia necessariamente una non conformità certa, ma sono presenti elementi che richiedono verifica."
-        };
-      }
-
-      return {
-        badge: "Conforme",
-        badgeClass: "status-success",
-        title: "Esito complessivamente conforme",
-        summary: "Il report non evidenzia criticità manifeste e gli elementi rilevati risultano coerenti con un esito positivo."
-      };
+      return rows;
     }
 
     function detectMeta(text, fileName) {
+      const tr = t();
+
       const qrTrue = /qr_detected\s*:\s*true/i.test(text);
       const qrFalse = /qr_detected\s*:\s*false/i.test(text);
 
-      const lotMatch = text.match(/lot_detected\s*:\s*([^\n\r]+)/i);
+      const lotTrue = /lot_detected\s*:\s*true/i.test(text);
+      const lotFalse = /lot_detected\s*:\s*false/i.test(text);
+
+      const lotValueMatch = text.match(/lot_detected\s*:\s*([^\n\r]+)/i);
+
+      let lotValue = tr.notIndicated;
+      if (lotTrue) lotValue = tr.yes;
+      else if (lotFalse) lotValue = tr.no;
+      else if (lotValueMatch) lotValue = lotValueMatch[1].trim();
 
       return {
         file: fileName || "—",
         lang: selectedLang.toUpperCase(),
-        qr: qrTrue ? "Sì" : qrFalse ? "No" : "Non indicato",
-        lot: lotMatch ? lotMatch[1].trim() : "Non indicato"
+        qr: qrTrue ? tr.yes : qrFalse ? tr.no : tr.notIndicated,
+        lot: lotValue
+      };
+    }
+
+    function detectOverallStatus(text, rows) {
+      const tr = t();
+      const lower = normalizeText(text);
+
+      const hasDanger = rows.some(r => getStatusConfig(r.status).bucket === "danger");
+      const hasWarning = rows.some(r => getStatusConfig(r.status).bucket === "warning");
+
+      if (
+        lower.includes("non conforme") ||
+        lower.includes("non-compliant") ||
+        lower.includes("failed") ||
+        hasDanger
+      ) {
+        return {
+          badge: tr.badgeDanger,
+          badgeClass: "status-danger",
+          title: tr.titleDanger,
+          summary: tr.summaryDanger
+        };
+      }
+
+      if (
+        lower.includes("da verificare") ||
+        lower.includes("à vérifier") ||
+        lower.includes("to verify") ||
+        lower.includes("partial") ||
+        hasWarning
+      ) {
+        return {
+          badge: tr.badgeWarning,
+          badgeClass: "status-warning",
+          title: tr.titleWarning,
+          summary: tr.summaryWarning
+        };
+      }
+
+      return {
+        badge: tr.badgeSuccess,
+        badgeClass: "status-success",
+        title: tr.titleSuccess,
+        summary: tr.summarySuccess
       };
     }
 
     function renderList(targetId, items, emptyText) {
       const el = document.getElementById(targetId);
+
       if (!items.length) {
         el.innerHTML = `<div class="section-empty">${escapeHtml(emptyText)}</div>`;
         return;
       }
 
-      el.innerHTML = `<ul>${items.map(item => `<li>${escapeHtml(item.element)} — ${escapeHtml(item.notes)}</li>`).join("")}</ul>`;
+      el.innerHTML = `
+        <ul>
+          ${items.map(item => `
+            <li><strong>${escapeHtml(item.element)}</strong> — ${escapeHtml(item.notes || "—")}</li>
+          `).join("")}
+        </ul>
+      `;
     }
 
     function renderReport(rawText, fileName = "") {
+      const tr = t();
       const text = rawText || "";
-      let rows = extractTableRows(text);
-
-      if (!rows.length) {
-        rows = buildFallbackRows(text);
-      }
-
+      const rows = extractTableRows(text);
       const status = detectOverallStatus(text, rows);
       const meta = detectMeta(text, fileName);
 
@@ -1127,8 +1420,14 @@
       document.getElementById("finalBadge").className = `status-badge ${status.badgeClass}`;
       document.getElementById("finalBadge").textContent = status.badge;
       document.getElementById("resultTitle").textContent = status.title;
-      document.getElementById("resultSummary").textContent =
-        `${status.summary} Controlli letti: ${rows.length}. Criticità: ${dangerRows.length}. Da verificare: ${warningRows.length}.`;
+
+      if (rows.length > 0) {
+        document.getElementById("resultSummary").textContent =
+          `${status.summary} ${tr.statsTotal}: ${rows.length}. ${tr.statsDanger}: ${dangerRows.length}. ${tr.statsWarning}: ${warningRows.length}.`;
+      } else {
+        document.getElementById("resultSummary").textContent =
+          `${status.summary} ${tr.summaryNoTable}`;
+      }
 
       document.getElementById("statTotal").textContent = rows.length;
       document.getElementById("statSuccess").textContent = successRows.length;
@@ -1136,31 +1435,33 @@
       document.getElementById("statWarning").textContent = warningRows.length;
 
       const tbody = document.getElementById("controlsTableBody");
+
       if (!rows.length) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="4" class="table-note">Nessuna riga strutturata rilevata. Consulta l’output completo originale.</td>
-          </tr>
-        `;
+        reportCard.style.display = "none";
+        sectionGrid.style.display = "none";
+        tbody.innerHTML = "";
       } else {
+        reportCard.style.display = "block";
+        sectionGrid.style.display = "grid";
+
         tbody.innerHTML = rows.map(row => {
-          const cfg = getStatusConfig(row.status);
-          const sev = getStatusConfig(row.severity);
+          const rowStatus = getStatusConfig(row.status);
+          const rowSeverity = getStatusConfig(row.severity);
 
           return `
             <tr>
               <td><strong>${escapeHtml(row.element)}</strong></td>
-              <td><span class="cell-badge ${cfg.shortClass}">${escapeHtml(cfg.label)}</span></td>
+              <td><span class="cell-badge ${rowStatus.className}">${escapeHtml(row.status || "—")}</span></td>
               <td class="table-note">${escapeHtml(row.notes || "—")}</td>
-              <td><span class="cell-badge ${sev.shortClass}">${escapeHtml(row.severity || "—")}</span></td>
+              <td><span class="cell-badge ${rowSeverity.className}">${escapeHtml(row.severity || "—")}</span></td>
             </tr>
           `;
         }).join("");
-      }
 
-      renderList("dangerList", dangerRows, "Nessuna non conformità reale rilevata.");
-      renderList("warningList", warningRows, "Nessun elemento da verificare rilevato.");
-      renderList("successList", successRows, "Nessun elemento conforme classificato automaticamente.");
+        renderList("dangerList", dangerRows, tr.noDanger);
+        renderList("warningList", warningRows, tr.noWarning);
+        renderList("successList", successRows, tr.noSuccess);
+      }
 
       document.getElementById("metaFile").textContent = meta.file;
       document.getElementById("metaLang").textContent = meta.lang;
@@ -1171,9 +1472,9 @@
 
     async function analyzeImageFile(file) {
       progress.style.display = "block";
-      resultBox.style.display = "none";
-      emptyState.style.display = "none";
       progressBar.style.width = "0%";
+      emptyState.style.display = "none";
+      resultBox.style.display = "none";
 
       let width = 0;
       const interval = setInterval(() => {
@@ -1190,7 +1491,10 @@
         formData.append("telefono", document.getElementById("phone").value);
         formData.append("lang", selectedLang);
 
-        const res = await fetch("/analyze", { method: "POST", body: formData });
+        const res = await fetch("/analyze", {
+          method: "POST",
+          body: formData
+        });
 
         clearInterval(interval);
         progressBar.style.width = "100%";
@@ -1198,48 +1502,38 @@
         if (res.ok) {
           const data = await res.json();
           renderReport(data.result || "", file.name);
+
+          document.getElementById("finalBadge").className = `status-badge ${document.getElementById("finalBadge").className.split(" ").pop()}`;
           setTimeout(() => {
             progress.style.display = "none";
             resultBox.style.display = "flex";
-            resultBox.style.flexDirection = "column";
-            resultBox.style.gap = "18px";
           }, 220);
         } else {
           const err = await res.json().catch(() => ({}));
-          renderReport(err.error || "Impossibile analizzare il file.", file.name);
+          renderReport(err.error || t().resultError, file.name);
 
           document.getElementById("finalBadge").className = "status-badge status-danger";
-          document.getElementById("finalBadge").textContent = "Errore";
-          document.getElementById("resultTitle").textContent = translations[selectedLang].error;
-          document.getElementById("resultSummary").textContent = err.error || "Impossibile analizzare il file.";
+          document.getElementById("finalBadge").textContent = t().badgeError;
+          document.getElementById("resultTitle").textContent = t().resultError;
+          document.getElementById("resultSummary").textContent = err.error || t().connectionError;
 
           setTimeout(() => {
             progress.style.display = "none";
             resultBox.style.display = "flex";
-            resultBox.style.flexDirection = "column";
-            resultBox.style.gap = "18px";
           }, 220);
         }
-      } catch (e) {
+      } catch (error) {
         clearInterval(interval);
         progress.style.display = "none";
-        renderReport("Controlla la connessione o riprova.", file.name);
 
+        renderReport(t().connectionError, file.name);
         document.getElementById("finalBadge").className = "status-badge status-danger";
-        document.getElementById("finalBadge").textContent = "Errore";
-        document.getElementById("resultTitle").textContent = translations[selectedLang].error;
-        document.getElementById("resultSummary").textContent = "Controlla la connessione o riprova.";
-
+        document.getElementById("finalBadge").textContent = t().badgeError;
+        document.getElementById("resultTitle").textContent = t().resultError;
+        document.getElementById("resultSummary").textContent = t().connectionError;
         resultBox.style.display = "flex";
-        resultBox.style.flexDirection = "column";
-        resultBox.style.gap = "18px";
       }
     }
-
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files?.[0];
-      if (file) analyzeImageFile(file);
-    });
   </script>
 </body>
 </html>

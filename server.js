@@ -372,7 +372,7 @@ REGOLE DECISIONALI IMPORTANTI:
 
   const response = await anthropic.messages.create({
     model: ANTHROPIC_MODEL,
-    max_tokens: 3500,
+    max_tokens: 2000,
     temperature: 0,
     messages: [
       { role: "user", content: prompt }

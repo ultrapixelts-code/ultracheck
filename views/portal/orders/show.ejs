@@ -8,8 +8,39 @@
 
   <h1>Richiesta #<%= order.id %></h1>
 
-  <p><b>Titolo:</b> <%= order.title %></p>
-  <p><b>Stato:</b> <%= order.status %></p>
+<p><b>Titolo:</b> <%= order.title %></p>
+<p><b>Stato:</b> <%= order.status %></p>
+
+<hr>
+
+<h2>Scheda richiesta</h2>
+
+<h3>Cliente</h3>
+<p><b>Cliente finale:</b> <%= order.customer_name || "—" %></p>
+<p><b>Email cliente:</b> <%= order.customer_email || "—" %></p>
+
+<h3>Prodotto</h3>
+<p><b>Prodotto:</b> <%= order.product_name || "—" %></p>
+<p><b>Formato:</b>
+  <%= order.width_mm || "—" %> × <%= order.height_mm || "—" %> mm
+</p>
+<p><b>Quantità:</b> <%= order.quantity || "—" %></p>
+
+<h3>Materiale e stampa</h3>
+<p><b>Materiale:</b> <%= order.material || "—" %></p>
+<p><b>Adesivo:</b> <%= order.adhesive || "—" %></p>
+<p><b>Colori:</b> <%= order.colors || "—" %></p>
+<p><b>Finiture:</b> <%= order.finishing || "—" %></p>
+
+<h3>Dati tecnici bobina</h3>
+<p><b>Anima:</b> <%= order.core_mm ? order.core_mm + " mm" : "—" %></p>
+<p><b>Uscita:</b> <%= order.unwind_direction ? "Uscita " + order.unwind_direction : "—" %></p>
+<p><b>Applicazione:</b> <%= order.application_type || "—" %></p>
+<p><b>Dati variabili:</b> <%= order.variable_data ? "Sì" : "No" %></p>
+<p><b>Urgente:</b> <%= order.urgent ? "Sì" : "No" %></p>
+
+<h3>Note</h3>
+<p><%= order.notes_dealer || "—" %></p>
 
 <% if (quote) { %>
   <hr>

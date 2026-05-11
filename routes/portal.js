@@ -601,6 +601,7 @@ router.post(
     const orderId = Number(req.params.id);
     const price_total = Number(req.body.price_total);
     const lead_time_days = Number(req.body.lead_time_days);
+     const price_options = String(req.body.price_options || "").trim();
 
     if (!Number.isSafeInteger(orderId) || orderId < 1) return res.status(400).send("ID ordine non valido");
     if (!Number.isFinite(price_total) || price_total <= 0) return res.status(400).send("Prezzo totale non valido (> 0)");
@@ -621,15 +622,16 @@ router.post(
       }
 
       // Salva/aggiorna preventivo (1 sola quote per ordine)
-      await client.query(
-        `INSERT INTO quotes (order_id, price_total, lead_time_days, sent_at)
-         VALUES ($1, $2, $3, NOW())
-         ON CONFLICT (order_id) DO UPDATE SET
-           price_total    = EXCLUDED.price_total,
-           lead_time_days = EXCLUDED.lead_time_days,
-           sent_at        = NOW()`,
-        [orderId, price_total, lead_time_days]
-      );
+     await client.query(
+  `INSERT INTO quotes (order_id, price_total, price_options, lead_time_days, sent_at)
+   VALUES ($1, $2, $3, $4, NOW())
+   ON CONFLICT (order_id) DO UPDATE SET
+     price_total    = EXCLUDED.price_total,
+     price_options  = EXCLUDED.price_options,
+     lead_time_days = EXCLUDED.lead_time_days,
+     sent_at        = NOW()`,
+  [orderId, price_total, price_options, lead_time_days]
+);
 
       // Aggiorna stato ordine
       const { rowCount } = await client.query(
@@ -644,7 +646,7 @@ router.post(
       await client.query(
         `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
          VALUES ($1, $2, 'QUOTE_SENT', $3, NOW())`,
-        [orderId, req.session.user.id, JSON.stringify({ price_total, lead_time_days })]
+        [orderId, req.session.user.id, JSON.stringify({ price_total, price_options, lead_time_days })]
       );
 
       await client.query(
@@ -867,8 +869,8 @@ router.post("/orders/:id/confirm", requireLogin, async (req, res) => {
      
     // Leggi il preventivo (quote) e prenditi il prezzo
     const { rows: qRows } = await client.query(
-      `SELECT price_total, lead_time_days
-       FROM quotes
+      `SELECT price_total, price_options, lead_time_days
+FROM quotes
        WHERE order_id = $1
        LIMIT 1`,
       [orderId]
@@ -879,7 +881,7 @@ router.post("/orders/:id/confirm", requireLogin, async (req, res) => {
       return res.status(400).send("Nessun preventivo trovato per questo ordine");
     }
 
-    const { price_total, lead_time_days } = qRows[0];
+    const { price_total, price_options, lead_time_days } = qRows[0];
 
     // 1) aggiorna ordine e "congela" il prezzo approvato
     const { rowCount } = await client.query(
@@ -895,11 +897,11 @@ router.post("/orders/:id/confirm", requireLogin, async (req, res) => {
     if (rowCount === 0) throw new Error("Conferma fallita: stato cambiato nel frattempo");
 
     // 2) eventi SOLO dopo update riuscito
-    await client.query(
-      `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
-       VALUES ($1, $2, 'PRICE_APPROVED', $3, NOW())`,
-      [orderId, user.id, JSON.stringify({ price_total, lead_time_days })]
-    );
+   await client.query(
+  `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+   VALUES ($1, $2, 'PRICE_APPROVED', $3, NOW())`,
+ [orderId, user.id, JSON.stringify({ price_total, price_options, lead_time_days })]
+);
 
     await client.query(
       `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)

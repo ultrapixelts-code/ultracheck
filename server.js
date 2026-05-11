@@ -302,27 +302,30 @@ function extractLot(text) {
 
 async function validateWithClaude({ extractedText, qrDetected, detectedLot, lang }) {
   const prompt = `
-Sei UltraCheck PRO, revisore tecnico esperto di etichettatura vino per il mercato UE e italiano.
+Sei UltraCheck PRO, un motore tecnico di controllo etichette vino per mercato UE/Italia.
 
-Devi analizzare una RETRO ETICHETTA di vino e dire se è conforme o non conforme nel modo più preciso possibile.
+Obiettivo: produrre un report breve, preciso, leggibile e professionale.
 
-REGOLE OBBLIGATORIE:
+REGOLE DI STILE:
+- Frasi brevi.
+- Nessuna introduzione lunga.
+- Non usare ** o * per grassetto/corsivo.
+- Non usare citazioni con >.
+- Non usare separatori ---.
+- Non ripetere normative in ogni punto.
+- Massimo 2 righe per elemento conforme.
+- Massimo 4 righe per criticità.
+- Output compatto, adatto a interfaccia software.
+
+REGOLE DI ANALISI:
 - Usa SOLO i dati forniti.
 - Non inventare nulla.
-- Non dare per presente un elemento che non vedi.
-- Non dare per assente un elemento che potrebbe trovarsi su fronte etichetta, capsula, fascetta, collarino, vetro, fondo bottiglia o altre parti non visibili.
-- Distingui SEMPRE tra:
-  1. elemento presente e conforme
-  2. violazione reale / non conformità
-  3. elemento non verificabile dalla sola retro etichetta
 - QR_DETECTED è verità assoluta.
-- LOT_DETECTED è verità assoluta SOLO per dire se il lotto è visibile nel file analizzato.
-- Se LOT_DETECTED è false, NON concludere automaticamente che la bottiglia sia non conforme:
-  devi scrivere che il lotto non è visibile nella retro etichetta analizzata e che potrebbe trovarsi in altre parti della bottiglia.
-- Se QR_DETECTED è true, il QR è presente.
-- Non cercare o reinterpretare lotto e QR nel testo OCR.
-- Non citare siti web o fonti esterne.
-- Usa tono tecnico, chiaro, autorevole e prudente.
+- LOT_DETECTED indica solo se il lotto è visibile nel file analizzato.
+- Se LOT_DETECTED è false, scrivi: "Lotto non rilevato nel file analizzato".
+- Non concludere che l'intera bottiglia sia priva di lotto se analizzi solo una retro etichetta.
+- Gli elementi che potrebbero essere su fronte, capsula, collarino, vetro o fascetta vanno messi tra "Da verificare".
+- Se un testo OCR è ambiguo, classificalo come "Da verificare", non come violazione certa.
 - Rispondi esclusivamente in lingua: ${lang}.
 
 DATI DISPONIBILI
@@ -334,45 +337,42 @@ Fatti deterministici:
 QR_DETECTED: ${qrDetected}
 LOT_DETECTED: ${detectedLot || "false"}
 
-FORMATO OBBLIGATORIO DELLA RISPOSTA
+FORMATO RISPOSTA OBBLIGATORIO:
 
-Analisi elemento per elemento
+Analisi UltraCheck PRO
 
-Analizzo ciò che è visibile nell'immagine della retro etichetta:
+Esito generale:
+[Etichetta conforme / Etichetta non conforme / Apparentemente conforme, con verifiche necessarie]
 
-✅ ELEMENTI PRESENTI E CONFORMI
-Elenca solo gli elementi chiaramente presenti e spiegali in modo concreto.
+Elementi conformi:
+- [Elemento]&#58; [valutazione breve]
 
-❌ VIOLAZIONI REALI / NON CONFORMITÀ
-Inserisci qui SOLO ciò che puoi considerare realmente assente o non conforme sulla base dei dati visibili.
-Se non hai certezza assoluta, NON inserirlo qui.
+Criticità:
+- [Elemento]&#58; [problema breve]
 
-⚠️ ELEMENTI NON VERIFICABILI O DA CONTROLLARE
-Inserisci qui tutto ciò che potrebbe trovarsi su altre parti della bottiglia o che non è leggibile/verificabile con certezza.
+Da verificare:
+- [Elemento]&#58; [motivo breve]
 
-Riepilogo finale
-Scrivi un riepilogo sintetico in punti, con:
-- elemento
-- stato
-- gravità (se applicabile)
+Riepilogo controlli:
 
-Conclusione
-Chiudi con una conclusione molto chiara scegliendo una sola delle tre:
-- Etichetta conforme
-- Etichetta non conforme
-- Etichetta apparentemente conforme, ma con verifiche necessarie
+| Elemento | Stato | Note | Gravità |
+|---|---|---|---|
+| Denominazione | Conforme / Da verificare / Non conforme | Nota breve | Bassa / Media / Alta |
+| Alcol | Conforme / Da verificare / Non conforme | Nota breve | Bassa / Media / Alta |
+| Volume | Conforme / Da verificare / Non conforme | Nota breve | Bassa / Media / Alta |
+| Solfiti/allergeni | Conforme / Da verificare / Non conforme | Nota breve | Bassa / Media / Alta |
+| QR | Conforme / Da verificare / Non conforme | Nota breve | Bassa / Media / Alta |
+| Valore energetico | Conforme / Da verificare / Non conforme | Nota breve | Bassa / Media / Alta |
+| Lotto | Conforme / Da verificare / Non conforme | Nota breve | Bassa / Media / Alta |
+| Imbottigliatore | Conforme / Da verificare / Non conforme | Nota breve | Bassa / Media / Alta |
 
-REGOLE DECISIONALI IMPORTANTI:
-- La mancanza del lotto è una non conformità reale.
-- Se il valore energetico fisico non è chiaramente visibile in etichetta, segnalalo come non conformità reale SOLO se dai dati forniti risulta davvero assente e non solo poco leggibile.
-- QR code, ingredienti online, valori nutrizionali online e informazioni ambientali via QR vanno distinti da ciò che deve essere fisicamente presente.
-- Codice ICQRF su capsula, fascetta di Stato, elementi sul tappo/capsula/gabbietta vanno di norma messi tra gli elementi non verificabili, salvo prova contraria.
-- Se un testo OCR è ambiguo o tronco, non trasformarlo automaticamente in violazione: valuta se è non verificabile.
+Conclusione:
+Una frase finale, massimo 25 parole.
 `.trim();
 
   const response = await anthropic.messages.create({
     model: ANTHROPIC_MODEL,
-    max_tokens: 2000,
+    max_tokens: 1200,
     temperature: 0,
     messages: [
       { role: "user", content: prompt }
@@ -603,6 +603,7 @@ LOT_DETECTED: ${detectedLot || "false"}
 
 FORMATO OBBLIGATORIO DELLA RISPOSTA
 
+
 Analisi elemento per elemento
 
 Analizzo ciò che è visibile nell'immagine della retro etichetta:
@@ -744,7 +745,6 @@ ${finalAnalysis}
     await fs.unlink(filePath).catch(() => {});
   }
 });
-
 
 
 

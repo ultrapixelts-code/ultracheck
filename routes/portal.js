@@ -234,43 +234,209 @@ router.get("/orders/new", requireLogin, (req, res) => {
 /* ────────────────────────────────────────────────
    CREATE ORDER
 ──────────────────────────────────────────────── */
-router.post("/orders", requireLogin, express.urlencoded({ extended: true }), async (req, res) => {
-  const user = req.session.user;
-  const title = String(req.body.title || "").trim();
-  const notes_dealer = String(req.body.notes_dealer || "").trim() || null;
+router.post("/orders", requireLogin, (req, res) => {
+  upload.array("files", 10)(req, res, async (err) => {
+    const user = req.session.user;
 
-  if (!title) {
-    return res.render("portal/orders/new", { user, error: "Il titolo è obbligatorio" });
-  }
+    if (err) {
+      return res.render("portal/orders/new", {
+        user,
+        error: err.message || "Errore upload file",
+      });
+    }
 
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
+    const title = String(req.body.title || "").trim();
+    const customer_name = String(req.body.customer_name || "").trim();
+    const customer_email = String(req.body.customer_email || "").trim() || null;
+    const product_name = String(req.body.product_name || "").trim();
+    const width_mm = req.body.width_mm ? Number(req.body.width_mm) : null;
+    const height_mm = req.body.height_mm ? Number(req.body.height_mm) : null;
+    const quantity = req.body.quantity ? Number(req.body.quantity) : null;
+    const material = String(req.body.material || "").trim() || null;
+    const adhesive = String(req.body.adhesive || "").trim() || null;
+    const colors = String(req.body.colors || "").trim() || null;
+    const core_mm = req.body.core_mm ? Number(req.body.core_mm) : null;
+    const unwind_direction = String(req.body.unwind_direction || "").trim() || null;
+    const application_type = String(req.body.application_type || "").trim() || null;
+    const variable_data = req.body.variable_data === "true";
+    const urgent = req.body.urgent === "true";
+    const notes_dealer = String(req.body.notes_dealer || "").trim() || null;
 
-    const { rows } = await client.query(
-      `INSERT INTO orders (dealer_user_id, title, status, notes_dealer, created_at, updated_at)
-       VALUES ($1, $2, 'RFQ', $3, NOW(), NOW())
-       RETURNING id`,
-      [user.id, title, notes_dealer]
-    );
+    const finishingOptionsRaw = req.body.finishing_options;
+    const finishingOptions = Array.isArray(finishingOptionsRaw)
+      ? finishingOptionsRaw
+      : finishingOptionsRaw
+        ? [finishingOptionsRaw]
+        : [];
 
-    const orderId = rows[0].id;
+    const hotfoil_count = req.body.hotfoil_count ? Number(req.body.hotfoil_count) : 0;
+    const hotfoil_colors = String(req.body.hotfoil_colors || "").trim();
 
-    await client.query(
-      `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
-       VALUES ($1, $2, 'STATUS_CHANGED', $3, NOW())`,
-      [orderId, user.id, JSON.stringify({ from: null, to: "RFQ" })]
-    );
+    const finishingParts = [...finishingOptions];
 
-    await client.query("COMMIT");
-    res.redirect(`/portal/orders/${orderId}`);
-  } catch (err) {
-    await client.query("ROLLBACK");
-    console.error("Errore creazione ordine:", err);
-    res.render("portal/orders/new", { user, error: "Errore durante la creazione dell'ordine" });
-  } finally {
-    client.release();
-  }
+    if (hotfoil_count > 0) {
+      finishingParts.push(
+        `${hotfoil_count} stampa${hotfoil_count > 1 ? "e" : ""} a caldo${hotfoil_colors ? ` (${hotfoil_colors})` : ""}`
+      );
+    }
+
+    const finishing = finishingParts.length ? finishingParts.join(", ") : null;
+
+    if (!title || !customer_name || !product_name || !width_mm || !height_mm || !quantity) {
+      return res.render("portal/orders/new", {
+        user,
+        error: "Compila tutti i campi obbligatori",
+      });
+    }
+
+    const client = await pool.connect();
+
+    try {
+      await client.query("BEGIN");
+
+      const { rows } = await client.query(
+        `INSERT INTO orders (
+          dealer_user_id,
+          title,
+          status,
+          notes_dealer,
+          customer_name,
+          customer_email,
+          product_name,
+          width_mm,
+          height_mm,
+          material,
+          adhesive,
+          colors,
+          finishing,
+          quantity,
+          core_mm,
+          unwind_direction,
+          application_type,
+          variable_data,
+          urgent,
+          created_at,
+          updated_at
+        )
+        VALUES (
+          $1, $2, 'RFQ', $3, $4, $5, $6, $7, $8, $9,
+          $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW()
+        )
+        RETURNING id`,
+        [
+          user.id,
+          title,
+          notes_dealer,
+          customer_name,
+          customer_email,
+          product_name,
+          width_mm,
+          height_mm,
+          material,
+          adhesive,
+          colors,
+          finishing,
+          quantity,
+          core_mm,
+          unwind_direction,
+          application_type,
+          variable_data,
+          urgent,
+        ]
+      );
+
+      const orderId = rows[0].id;
+
+      const uploadedFiles = req.files || [];
+
+      for (const file of uploadedFiles) {
+        await client.query(
+          `INSERT INTO order_files (
+            order_id,
+            uploader_user_id,
+            original_name,
+            mime_type,
+            size_bytes,
+            content,
+            kind
+          )
+          VALUES ($1, $2, $3, $4, $5, $6, 'ARTWORK')`,
+          [
+            orderId,
+            user.id,
+            file.originalname,
+            file.mimetype,
+            file.size,
+            file.buffer,
+          ]
+        );
+      }
+
+      await client.query(
+        `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+         VALUES ($1, $2, 'STATUS_CHANGED', $3, NOW())`,
+        [orderId, user.id, JSON.stringify({ from: null, to: "RFQ" })]
+      );
+
+      await client.query(
+        `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+         VALUES ($1, $2, 'RFQ_CREATED', $3, NOW())`,
+        [
+          orderId,
+          user.id,
+          JSON.stringify({
+            customer_name,
+            product_name,
+            width_mm,
+            height_mm,
+            quantity,
+            material,
+            adhesive,
+            colors,
+            finishing,
+            core_mm,
+            unwind_direction,
+            application_type,
+            variable_data,
+            urgent,
+            files_count: uploadedFiles.length,
+          }),
+        ]
+      );
+
+      if (uploadedFiles.length > 0) {
+        await client.query(
+          `INSERT INTO order_events (order_id, actor_user_id, type, payload_json, created_at)
+           VALUES ($1, $2, 'FILES_UPLOADED', $3, NOW())`,
+          [
+            orderId,
+            user.id,
+            JSON.stringify({
+              count: uploadedFiles.length,
+              files: uploadedFiles.map(f => ({
+                name: f.originalname,
+                size_bytes: f.size,
+                mime_type: f.mimetype,
+              })),
+            }),
+          ]
+        );
+      }
+
+      await client.query("COMMIT");
+      return res.redirect(`/portal/orders/${orderId}`);
+    } catch (err) {
+      await client.query("ROLLBACK");
+      console.error("Errore creazione ordine:", err);
+
+      return res.render("portal/orders/new", {
+        user,
+        error: "Errore durante la creazione dell'ordine",
+      });
+    } finally {
+      client.release();
+    }
+  });
 });
 
 /* ────────────────────────────────────────────────

@@ -3,30 +3,322 @@
 <head>
   <meta charset="utf-8">
   <title>Nuova richiesta</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f6f7f9;
+      margin: 0;
+      padding: 32px;
+      color: #111827;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+    }
+
+    .subtitle {
+      margin: 0 0 26px;
+      color: #6b7280;
+    }
+
+    .section {
+      margin-top: 28px;
+      padding-top: 22px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .section h2 {
+      margin: 0 0 16px;
+      font-size: 18px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    label {
+      display: block;
+      font-weight: 650;
+      margin-bottom: 7px;
+      font-size: 14px;
+    }
+
+    input,
+    select,
+    textarea {
+      width: 100%;
+      box-sizing: border-box;
+      border: 1px solid #d1d5db;
+      border-radius: 12px;
+      padding: 12px 13px;
+      font-size: 15px;
+      background: white;
+    }
+
+    textarea {
+      min-height: 110px;
+      resize: vertical;
+    }
+
+    .checkrow {
+      display: flex;
+      gap: 18px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+      color: #374151;
+    }
+
+    .check input {
+      width: auto;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 28px;
+      align-items: center;
+    }
+
+    button,
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    button {
+      background: #111827;
+      color: white;
+    }
+
+    .btn {
+      background: #eef0f4;
+      color: #111827;
+    }
+
+    .error {
+      color: #b42318;
+      background: #fff1f0;
+      border: 1px solid #f0c3bf;
+      padding: 12px 14px;
+      border-radius: 12px;
+      margin-bottom: 18px;
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 18px;
+      }
+
+      .grid,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
-<body style="font-family:system-ui; padding:24px;">
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Nuova richiesta etichette</h1>
+      <p class="subtitle">Compila i dati principali per preparare preventivo, bozza e produzione.</p>
 
-  <h1>Nuova richiesta</h1>
+      <% if (error) { %>
+        <div class="error"><%= error %></div>
+      <% } %>
 
-  <% if (error) { %>
-    <p style="color:red;"><%= error %></p>
-  <% } %>
+      <form method="post" action="/portal/orders">
+        <div class="section" style="border-top:0; padding-top:0; margin-top:0;">
+          <h2>Cliente finale</h2>
 
-  <form method="post" action="/portal/orders">
-    <p>
-      <label>Titolo</label><br>
-      <input name="title" required>
-    </p>
+          <div class="grid">
+            <p>
+              <label>Nome cliente finale *</label>
+              <input name="customer_name" required>
+            </p>
 
-    <p>
-      <label>Note</label><br>
-      <textarea name="notes_dealer"></textarea>
-    </p>
+            <p>
+              <label>Email cliente finale</label>
+              <input type="email" name="customer_email">
+            </p>
+          </div>
+        </div>
 
-    <button type="submit">Invia</button>
-  </form>
+        <div class="section">
+          <h2>Prodotto</h2>
 
-  <p><a href="/portal/orders">← Indietro</a></p>
+          <div class="grid">
+            <p>
+              <label>Nome prodotto / riferimento *</label>
+              <input name="product_name" required placeholder="Es. Chardonnay DOC 2025">
+            </p>
 
+            <p>
+              <label>Titolo richiesta *</label>
+              <input name="title" required placeholder="Es. Etichetta retro Chardonnay">
+            </p>
+          </div>
+
+          <div class="grid-3">
+            <p>
+              <label>Larghezza etichetta mm *</label>
+              <input type="number" step="0.1" min="1" name="width_mm" required>
+            </p>
+
+            <p>
+              <label>Altezza etichetta mm *</label>
+              <input type="number" step="0.1" min="1" name="height_mm" required>
+            </p>
+
+            <p>
+              <label>Quantità *</label>
+              <input type="number" min="1" name="quantity" required>
+            </p>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Materiale e stampa</h2>
+
+          <div class="grid">
+            <p>
+              <label>Materiale</label>
+              <select name="material">
+                <option value="">Da definire</option>
+                <option value="Carta vino">Carta vino</option>
+                <option value="Carta naturale">Carta naturale</option>
+                <option value="Carta greaseproof">Carta greaseproof</option>
+                <option value="PP bianco">PP bianco</option>
+                <option value="PP trasparente">PP trasparente</option>
+                <option value="PP argento">PP argento</option>
+                <option value="Altro">Altro</option>
+              </select>
+            </p>
+
+            <p>
+              <label>Adesivo</label>
+              <select name="adhesive">
+                <option value="">Standard / da definire</option>
+                <option value="Permanente">Permanente</option>
+                <option value="Removibile">Removibile</option>
+                <option value="Freezer">Freezer</option>
+                <option value="Wash-off">Wash-off</option>
+                <option value="High tack">High tack</option>
+                <option value="Altro">Altro</option>
+              </select>
+            </p>
+          </div>
+
+          <div class="grid">
+            <p>
+              <label>Colori</label>
+              <input name="colors" placeholder="Es. CMYK, CMYK + bianco, 1 colore">
+            </p>
+
+            <p>
+              <label>Finiture</label>
+              <input name="finishing" placeholder="Es. vernice, lamina oro, rilievo, fustella laser">
+            </p>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Dati tecnici bobina</h2>
+
+          <div class="grid-3">
+            <p>
+              <label>Anima</label>
+              <select name="core_mm">
+                <option value="">Da definire</option>
+                <option value="40">40 mm</option>
+                <option value="76">76 mm</option>
+              </select>
+            </p>
+
+            <p>
+              <label>Senso uscita</label>
+              <select name="unwind_direction">
+               <option value="1">Uscita 1</option>
+              <option value="2">Uscita 2</option>
+               <option value="3">Uscita 3</option>
+               <option value="4">Uscita 4</option>
+               <option value="5">Uscita 5</option>
+               <option value="6">Uscita 6</option>
+               <option value="7">Uscita 7</option>
+               <option value="8">Uscita 8</option>
+              </select>
+            </p>
+
+            <p>
+              <label>Applicazione</label>
+              <input name="application_type" placeholder="Es. manuale, automatica, bottiglia vetro">
+            </p>
+          </div>
+
+          <div class="checkrow">
+            <label class="check">
+              <input type="checkbox" name="variable_data" value="true">
+              Dati variabili
+            </label>
+
+            <label class="check">
+              <input type="checkbox" name="urgent" value="true">
+              Urgente
+            </label>
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Note</h2>
+
+          <p>
+            <label>Note tecniche / commerciali</label>
+            <textarea name="notes_dealer" placeholder="Specifiche particolari, materiali richiesti, uso finale, urgenze, riferimenti cliente..."></textarea>
+          </p>
+        </div>
+
+        <div class="actions">
+          <button type="submit">Invia richiesta</button>
+          <a class="btn" href="/portal/orders">← Indietro</a>
+        </div>
+      </form>
+    </div>
+  </div>
 </body>
 </html>

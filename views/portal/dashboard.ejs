@@ -1,5 +1,16 @@
 <%
   const title = "Dashboard";
+
+  const s = stats || {};
+  const totalOpen =
+    (s.RFQ || 0) +
+    (s.QUOTED || 0) +
+    (s.PRICE_APPROVED || 0) +
+    (s.PROOF_SENT || 0) +
+    (s.PROOF_CHANGES_REQUESTED || 0) +
+    (s.PROOF_APPROVED || 0) +
+    (s.IN_PRODUCTION || 0);
+
   const body = `
     <div class="shell">
       <header class="topbar">
@@ -24,34 +35,36 @@
           <div class="hero__bg" aria-hidden="true"></div>
 
           <div class="hero__inner">
-            <div class="kicker">Gestion distributeurs</div>
+            <div class="kicker">${user.role === "admin" ? "Dashboard admin" : "Espace distributeur"}</div>
 
-            <h1 class="h1">Vos étiquettes : premium.<br/>Rapide. Au prix juste.</h1>
-            <p class="lead">Carica file, ricevi preventivi, approva bozze e lancia UltraCheck — in un flusso semplice e tracciato.</p>
+            <h1 class="h1">Gestione richieste etichette</h1>
+            <p class="lead">
+              Carica file, ricevi preventivi, approva bozze e segui ogni pratica in un flusso semplice e tracciato.
+            </p>
 
             <div class="hero__cta">
-              <a class="btn btn--primary" href="/portal/upload">
-                <span class="btn__icon" aria-hidden="true">⬆︎</span>
-                Carica una nuova richiesta
+              <a class="btn btn--primary" href="/portal/orders/new">
+                <span class="btn__icon" aria-hidden="true">＋</span>
+                Nuova richiesta
               </a>
               <a class="btn btn--ghost" href="/portal/orders">
                 <span class="btn__icon" aria-hidden="true">↗︎</span>
-                Vedi richieste
+                Tutte le richieste
               </a>
             </div>
 
             <div class="hero__stats">
               <div class="stat">
-                <div class="stat__label">Tempo medio</div>
-                <div class="stat__value">Rapido</div>
+                <div class="stat__label">Richieste aperte</div>
+                <div class="stat__value">${totalOpen}</div>
               </div>
               <div class="stat">
-                <div class="stat__label">Qualità</div>
-                <div class="stat__value">Premium</div>
+                <div class="stat__label">Da preventivare</div>
+                <div class="stat__value">${s.RFQ || 0}</div>
               </div>
               <div class="stat">
-                <div class="stat__label">Conformità</div>
-                <div class="stat__value">UltraCheck</div>
+                <div class="stat__label">Bozze in approvazione</div>
+                <div class="stat__value">${s.PROOF_SENT || 0}</div>
               </div>
             </div>
           </div>
@@ -60,36 +73,78 @@
         <section class="grid">
           <article class="card card--glow">
             <div class="card__head">
-              <div class="pill">Step 1</div>
-              <div class="card__title">Upload</div>
+              <div class="pill">RFQ</div>
+              <div class="card__title">Nuove richieste</div>
             </div>
-            <div class="card__text">Carica PDF/immagini + specifiche. Versioni e allegati sempre tracciati.</div>
+            <div class="card__text">${s.RFQ || 0} richieste in attesa di preventivo.</div>
             <div class="card__footer">
-              <span class="hint">PDF • JPG/PNG • Specifiche</span>
+              <span class="hint">Upload • Specifiche • Analisi</span>
             </div>
           </article>
 
           <article class="card">
             <div class="card__head">
-              <div class="pill">Step 2</div>
-              <div class="card__title">Preventivo</div>
+              <div class="pill">Quote</div>
+              <div class="card__title">Preventivi inviati</div>
             </div>
-            <div class="card__text">Tu carichi il preventivo PDF. Il distributore conferma con un click.</div>
+            <div class="card__text">${s.QUOTED || 0} preventivi in attesa di approvazione.</div>
             <div class="card__footer">
-              <span class="hint">Prezzo • Tempi • Note</span>
+              <span class="hint">Prezzo • Tempi • Conferma</span>
             </div>
           </article>
 
           <article class="card">
             <div class="card__head">
-              <div class="pill">Step 3</div>
-              <div class="card__title">Bozza + UltraCheck</div>
+              <div class="pill">Proof</div>
+              <div class="card__title">Bozze</div>
             </div>
-            <div class="card__text">Bozza → approvazione → UltraCheck → stampa. Zero confusione, tutto in ordine.</div>
+            <div class="card__text">${s.PROOF_SENT || 0} bozze inviate al cliente/distributore.</div>
             <div class="card__footer">
-              <span class="hint">Approva • Analizza • Produci</span>
+              <span class="hint">Approva • Modifiche • Produzione</span>
             </div>
           </article>
+        </section>
+
+        <section class="card" style="margin-top: 22px;">
+          <div class="card__head">
+            <div class="pill">Ultime</div>
+            <div class="card__title">Richieste recenti</div>
+          </div>
+
+          ${
+            recentOrders && recentOrders.length
+              ? `
+                <div style="overflow-x:auto;">
+                  <table style="width:100%; border-collapse: collapse;">
+                    <thead>
+                      <tr>
+                        <th style="text-align:left; padding:12px 0;">ID</th>
+                        <th style="text-align:left; padding:12px 0;">Titolo</th>
+                        ${user.role === "admin" ? `<th style="text-align:left; padding:12px 0;">Dealer</th>` : ""}
+                        <th style="text-align:left; padding:12px 0;">Stato</th>
+                        <th style="text-align:left; padding:12px 0;">Aggiornato</th>
+                        <th style="text-align:right; padding:12px 0;"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${recentOrders.map(o => `
+                        <tr style="border-top:1px solid rgba(255,255,255,0.08);">
+                          <td style="padding:12px 0;">#${o.id}</td>
+                          <td style="padding:12px 0;">${o.title || "Senza titolo"}</td>
+                          ${user.role === "admin" ? `<td style="padding:12px 0;">${o.dealer_name || o.email || "—"}</td>` : ""}
+                          <td style="padding:12px 0;">${o.status || "—"}</td>
+                          <td style="padding:12px 0;">${o.updated_at ? new Date(o.updated_at).toLocaleDateString("it-IT") : "—"}</td>
+                          <td style="padding:12px 0; text-align:right;">
+                            <a class="btn btn--ghost" style="width:auto; padding:8px 12px;" href="/portal/orders/${o.id}">Apri</a>
+                          </td>
+                        </tr>
+                      `).join("")}
+                    </tbody>
+                  </table>
+                </div>
+              `
+              : `<div class="card__text">Nessuna richiesta ancora presente.</div>`
+          }
         </section>
 
         <footer class="footer">

@@ -163,7 +163,7 @@
         <div class="error"><%= error %></div>
       <% } %>
 
-      <form method="post" action="/portal/orders">
+      <form method="post" action="/portal/orders" enctype="multipart/form-data">
         <div class="section" style="border-top:0; padding-top:0; margin-top:0;">
           <h2>Cliente finale</h2>
 
@@ -251,10 +251,39 @@
               <input name="colors" placeholder="Es. CMYK, CMYK + bianco, 1 colore">
             </p>
 
-            <p>
-              <label>Finiture</label>
-              <input name="finishing" placeholder="Es. vernice, lamina oro, rilievo, fustella laser">
-            </p>
+            <div>
+  <label>Finiture</label>
+
+  <div class="checkrow">
+    <label class="check"><input type="checkbox" name="finishing_options" value="Vernice lucida"> Vernice lucida</label>
+    <label class="check"><input type="checkbox" name="finishing_options" value="Vernice opaca"> Vernice opaca</label>
+    <label class="check"><input type="checkbox" name="finishing_options" value="Soft touch"> Soft touch</label>
+    <label class="check"><input type="checkbox" name="finishing_options" value="Stampa a caldo"> Stampa a caldo</label>
+    <label class="check"><input type="checkbox" name="finishing_options" value="Rilievo"> Rilievo</label>
+    <label class="check"><input type="checkbox" name="finishing_options" value="Bassorilievo"> Bassorilievo</label>
+    <label class="check"><input type="checkbox" name="finishing_options" value="Serigrafia"> Serigrafia</label>
+    <label class="check"><input type="checkbox" name="finishing_options" value="Laminazione lucida"> Laminazione lucida</label>
+    <label class="check"><input type="checkbox" name="finishing_options" value="Laminazione opaca"> Laminazione opaca</label>
+    <label class="check"><input type="checkbox" name="finishing_options" value="Fustella laser"> Fustella laser</label>
+  </div>
+
+  <div class="grid" style="margin-top:18px;">
+    <p>
+      <label>Numero stampe a caldo</label>
+      <select name="hotfoil_count">
+        <option value="0">Nessuna</option>
+        <option value="1">1 stampa a caldo</option>
+        <option value="2">2 stampe a caldo</option>
+        <option value="3">3 stampe a caldo</option>
+      </select>
+    </p>
+
+    <p>
+      <label>Colori stampa a caldo</label>
+      <input name="hotfoil_colors" placeholder="Es. Oro + Nero">
+    </p>
+  </div>
+</div>
           </div>
         </div>
 
@@ -312,7 +341,14 @@
             <textarea name="notes_dealer" placeholder="Specifiche particolari, materiali richiesti, uso finale, urgenze, riferimenti cliente..."></textarea>
           </p>
         </div>
+<div class="section">
+  <h2>File</h2>
 
+  <p>
+    <label>File grafica / brief / immagini</label>
+    <input type="file" name="files" multiple>
+  </p>
+</div>
         <div class="actions">
           <button type="submit">Invia richiesta</button>
           <a class="btn" href="/portal/orders">← Indietro</a>

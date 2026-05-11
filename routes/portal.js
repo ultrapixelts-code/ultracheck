@@ -249,9 +249,12 @@ router.post("/orders", requireLogin, (req, res) => {
     const customer_name = String(req.body.customer_name || "").trim();
     const customer_email = String(req.body.customer_email || "").trim() || null;
     const product_name = String(req.body.product_name || "").trim();
+    const quantity_options = String(req.body.quantity_options || "").trim();
+    const variants = String(req.body.variants || "").trim() || null;
+
     const width_mm = req.body.width_mm ? Number(req.body.width_mm) : null;
     const height_mm = req.body.height_mm ? Number(req.body.height_mm) : null;
-    const quantity = req.body.quantity ? Number(req.body.quantity) : null;
+
     const material = String(req.body.material || "").trim() || null;
     const adhesive = String(req.body.adhesive || "").trim() || null;
     const colors = String(req.body.colors || "").trim() || null;
@@ -282,7 +285,7 @@ router.post("/orders", requireLogin, (req, res) => {
 
     const finishing = finishingParts.length ? finishingParts.join(", ") : null;
 
-    if (!title || !customer_name || !product_name || !width_mm || !height_mm || !quantity) {
+    if (!title || !customer_name || !product_name || !width_mm || !height_mm || !quantity_options) {
       return res.render("portal/orders/new", {
         user,
         error: "Compila tutti i campi obbligatori",
@@ -309,7 +312,8 @@ router.post("/orders", requireLogin, (req, res) => {
           adhesive,
           colors,
           finishing,
-          quantity,
+          quantity_options,
+          variants,
           core_mm,
           unwind_direction,
           application_type,
@@ -320,7 +324,7 @@ router.post("/orders", requireLogin, (req, res) => {
         )
         VALUES (
           $1, $2, 'RFQ', $3, $4, $5, $6, $7, $8, $9,
-          $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW(), NOW()
+          $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW(), NOW()
         )
         RETURNING id`,
         [
@@ -336,7 +340,8 @@ router.post("/orders", requireLogin, (req, res) => {
           adhesive,
           colors,
           finishing,
-          quantity,
+          quantity_options,
+          variants,
           core_mm,
           unwind_direction,
           application_type,
@@ -346,7 +351,6 @@ router.post("/orders", requireLogin, (req, res) => {
       );
 
       const orderId = rows[0].id;
-
       const uploadedFiles = req.files || [];
 
       for (const file of uploadedFiles) {
@@ -389,7 +393,8 @@ router.post("/orders", requireLogin, (req, res) => {
             product_name,
             width_mm,
             height_mm,
-            quantity,
+            quantity_options,
+            variants,
             material,
             adhesive,
             colors,

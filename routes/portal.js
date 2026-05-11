@@ -86,10 +86,57 @@ router.get("/__ping", (req, res) => res.send("PORTAL OK"));
 /* ────────────────────────────────────────────────
    DASHBOARD
 ──────────────────────────────────────────────── */
-router.get("/", requireLogin, (req, res) => {
-  res.render("portal/dashboard", { user: req.session.user });
-});
+router.get("/", requireLogin, async (req, res) => {
+  const user = req.session.user;
 
+  try {
+    const isAdmin = user.role === "admin";
+
+    const ordersQuery = isAdmin
+      ? `SELECT o.*, u.dealer_name, u.email
+         FROM orders o
+         JOIN users u ON u.id = o.dealer_user_id
+         ORDER BY o.updated_at DESC
+         LIMIT 20`
+      : `SELECT *
+         FROM orders
+         WHERE dealer_user_id = $1
+         ORDER BY updated_at DESC
+         LIMIT 20`;
+
+    const ordersParams = isAdmin ? [] : [user.id];
+
+    const { rows: recentOrders } = await pool.query(ordersQuery, ordersParams);
+
+    const statsQuery = isAdmin
+      ? `SELECT status, COUNT(*)::int AS count
+         FROM orders
+         GROUP BY status`
+      : `SELECT status, COUNT(*)::int AS count
+         FROM orders
+         WHERE dealer_user_id = $1
+         GROUP BY status`;
+
+    const { rows: statsRows } = await pool.query(statsQuery, ordersParams);
+
+    const stats = {};
+    for (const row of statsRows) {
+      stats[row.status] = row.count;
+    }
+
+    res.render("portal/dashboard", {
+      user,
+      recentOrders,
+      stats,
+    });
+  } catch (err) {
+    console.error("Errore dashboard:", err);
+    res.status(500).render("portal/error", {
+      user,
+      message: "Impossibile caricare la dashboard",
+    });
+  }
+});
 /* ────────────────────────────────────────────────
    LOGIN / LOGOUT
 ──────────────────────────────────────────────── */

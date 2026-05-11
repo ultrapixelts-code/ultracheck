@@ -46,7 +46,12 @@
 <% if (quote) { %>
   <hr>
   <h2>Preventivo</h2>
+  <% if (quote.price_options) { %>
+  <p><b>Prezzi per quantità:</b></p>
+  <pre style="background:#f6f7f9; padding:12px; border-radius:10px;"><%= quote.price_options %></pre>
+<% } else { %>
   <p><b>Prezzo:</b> <%= (Number(quote.price_total) || 0).toFixed(2) %> €</p>
+<% } %>
   <p><b>Lead time:</b> <%= quote.lead_time_days %> giorni</p>
   <% if (quote.sent_at) { %>
     <p style="opacity:.7;">Inviato: <%= new Date(quote.sent_at).toLocaleString('it-IT') %></p>
@@ -61,8 +66,15 @@
   <% if (user && user.role === 'admin' && order.status === 'RFQ') { %>
     <h3>Invia preventivo (admin)</h3>
     <form action="/portal/orders/<%= order.id %>/quote" method="POST">
-      <label>Prezzo totale (€):</label>
-      <input type="number" name="price_total" step="0.01" min="0.01" required>
+      <label>Prezzi per quantità:</label><br>
+<textarea name="price_options" rows="5" style="width:420px;" required placeholder="10.000 pezzi = 450 €
+20.000 pezzi = 620 €
+30.000 pezzi = 790 €"></textarea>
+
+<br><br>
+
+<label>Prezzo principale (€):</label>
+<input type="number" name="price_total" step="0.01" min="0.01" required>
       <label>Lead time (giorni):</label>
       <input type="number" name="lead_time_days" step="1" min="1" required>
       <button type="submit">Invia preventivo</button>
